@@ -35,13 +35,15 @@ int main(void) {
 
 	my7seg::count_down(3,500);
 
-/*
+	myprintf("vol -> %f\n\r", get_battery());
+	/*
 	while (get_battery() < 4.0) {
 		my7seg::light_error();
 		myprintf("vol -> %f\n\r", get_battery());
-		myprintf("wait_countter %d \n\r",wait_counter);
-		wait::ms(10);
-		//break;
+		wait::ms(100);
+		my7seg::turn_off();
+		wait::ms(100);
+		break;
 	}
 
 	ADC_ClearFlag(ADC1, ADC_FLAG_EOC);		//EndFlagをクリアする
@@ -72,7 +74,6 @@ int main(void) {
 	uint16_t ret;
 
 	//MPU6000のリセット解除
-
 	GPIO_ResetBits(GPIOA, GPIO_Pin_4); // CSをセット
 
 	//レジスタ指定
@@ -123,8 +124,35 @@ int main(void) {
 
 
 	while(1){
-		myprintf("%d\n\r", ret);
+		myprintf("0x%x\n\r", ret);
+
 		wait::ms(100);
+
+
+		GPIO_ResetBits(GPIOA, GPIO_Pin_4); // CSをセット
+
+		//レジスタ指定
+		while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET)
+			; // 送信可能になるまで待つ
+		SPI_I2S_SendData(SPI1, 0xf5); // 送信(今回はWHO_AM_I)
+		while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET)
+			; // 受信可能になるまで待つ
+		ret = SPI_I2S_ReceiveData(SPI1); // 空データを受信する
+
+
+		//データの送受信
+		while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET)
+			; // 送信可能になるまで待つ
+		SPI_I2S_SendData(SPI1, 0x00); // 送信
+		while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET)
+			; // 受信可能になるまで待つ
+		ret = SPI_I2S_ReceiveData(SPI1); // 受信する
+		while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET)
+			;
+		wait::ms(1);
+
+		GPIO_SetBits(GPIOA, GPIO_Pin_4); //CSをリセット
+
 	}
 	return 1;
 }

@@ -190,7 +190,7 @@ void init_spi(void) {
 	GPIO_StructInit(&GPIO_InitStructure);
 
 	//スレーブセレクト端子
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
@@ -209,6 +209,7 @@ void init_spi(void) {
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_SPI1);
 
 	SPI_InitTypeDef SPI_InitStructure;
+
 	SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;	//双方向送信
 	SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
 	SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;		//データサイズは8bit
