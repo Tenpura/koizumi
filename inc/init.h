@@ -12,10 +12,12 @@
 
 void init_all(void);		//以下のinit群を呼び出してるだけ
 
+void init_system(void);
 void init_tim(void);		//タイマー周り割り込みとかここ
 void init_gpio(void);		//IO
 void init_adc(void);		//AD変換
 void init_usart(void);		//UART通信
 void init_spi(void);		//SPI通信
+void init_pwm(void);		//pwm波形
 
 #endif /* INIT_H_ */

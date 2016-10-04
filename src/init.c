@@ -8,20 +8,26 @@
 #include "init.h"
 
 void init_all(void) {
+	init_system();
 	init_tim();
 	init_gpio();
 	init_adc();
 	init_usart();
 	init_spi();
+	init_pwm();
 }
 
-void init_tim(void) {
+void init_system(){
 	//この辺完全に理解はできてない
 	SystemInit();		//クロックやらなんやらシステム周りの初期化？
 	RCC_ClocksTypeDef RCC_Clocks;
 	RCC_GetClocksFreq(&RCC_Clocks);	//RCC_Clocksに値を代入？ たぶんSYSCLK_Frequency16MHｚが代入されてる.HCLKはSYSCLKと同じ？(16MHｚ)
 	SysTick_Config(RCC_Clocks.HCLK_Frequency / 1000);//SysTick割り込みの周期決め。カウントの最大を代入。これで周期1msのはず。
 	//SysTick割り込みの優先度は15で最低。忘れそうだからメモしておく。
+
+}
+
+void init_tim(void) {
 
 	//割り込みコントローラー
 	NVIC_InitTypeDef NVIC_InitStructure;
@@ -166,10 +172,10 @@ void init_usart(void) {
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_USART1);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	USART_InitStructure.USART_BaudRate = 9600;	//ポーレート設定
+	USART_InitStructure.USART_BaudRate = 38400;	//ポーレート設定
 	USART_InitStructure.USART_StopBits = USART_WordLength_8b;//パケットのワード長を8bitに
 	USART_InitStructure.USART_HardwareFlowControl =
 	USART_HardwareFlowControl_None;	//フロー制御をなしに。
@@ -224,5 +230,62 @@ void init_spi(void) {
 
 	GPIO_SetBits(GPIOA, GPIO_Pin_4); // CSをセット
 
+}
 
+void init_pwm() {
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+
+	GPIO_InitTypeDef GPIO_InitStructure;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+	GPIO_ResetBits(GPIOC, GPIO_Pin_2);		//モータードライバーをスリープモードに
+
+
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
+
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	TIM_TimeBaseInitTypeDef TIM_InitStructure;
+	TIM_InitStructure.TIM_Period = 840-1;	//カウンタクリア要因 200kHz ExcelファイルからTIMのクロックを確認
+	TIM_InitStructure.TIM_Prescaler = 0;//プリスケーラ(カウンタがPrescaler回カウントされたタイミングで，TIMのカウンタが1加算される)
+	TIM_InitStructure.TIM_ClockDivision = 0;//デットタイム発生回路用の分周。通常0(分周しない)。
+	TIM_InitStructure.TIM_CounterMode = TIM_CounterMode_Up;	//アップカウント
+	TIM_InitStructure.TIM_RepetitionCounter = 0;
+	TIM_TimeBaseInit(TIM4, &TIM_InitStructure);
+	TIM_TimeBaseInit(TIM5, &TIM_InitStructure);
+
+	TIM_OCInitTypeDef TIM_OC_InitStructure;
+	TIM_OC_InitStructure.TIM_OCMode = TIM_OCMode_PWM1;		//モードはPWM1
+	TIM_OC_InitStructure.TIM_OCPolarity = TIM_OCPolarity_High;	//たぶんいらない。This parameter is valid only for TIM1 and TIM8.
+	TIM_OC_InitStructure.TIM_OutputState = TIM_OutputState_Enable;	//たぶんいらない。This parameter is valid only for TIM1 and TIM8.
+	TIM_OC_InitStructure.TIM_Pulse = 0;	//the Capture Compare Register にロードされる値
+	TIM_OC1Init(TIM4, &TIM_OC_InitStructure);
+	TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Enable);
+	TIM_OC4Init(TIM5, &TIM_OC_InitStructure);
+	TIM_OC4PreloadConfig(TIM5, TIM_OCPreload_Enable);
+
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_TIM4);
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_TIM4);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource0, GPIO_AF_TIM5);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_TIM5);
+
+	TIM_TimeBaseInit(TIM4, &TIM_InitStructure);
+	TIM_TimeBaseInit(TIM5, &TIM_InitStructure);
+
+	//TIM起動
+	TIM_ARRPreloadConfig(TIM4, ENABLE);
+	TIM_ARRPreloadConfig(TIM5, ENABLE);
 }

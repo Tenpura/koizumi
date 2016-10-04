@@ -36,6 +36,7 @@ int main(void) {
 	my7seg::count_down(3,500);
 
 	myprintf("vol -> %f\n\r", get_battery());
+	myprintf("abcdefghijklmnopqrstuxyz");
 	/*
 	while (get_battery() < 4.0) {
 		my7seg::light_error();
