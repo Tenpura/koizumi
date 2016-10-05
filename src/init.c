@@ -9,7 +9,7 @@
 
 void init_all(void) {
 	init_system();
-	init_tim();
+	//init_tim();
 	init_gpio();
 	init_adc();
 	init_usart();
@@ -17,7 +17,7 @@ void init_all(void) {
 	init_pwm();
 }
 
-void init_system(){
+void init_system() {
 	//この辺完全に理解はできてない
 	SystemInit();		//クロックやらなんやらシステム周りの初期化？
 	RCC_ClocksTypeDef RCC_Clocks;
@@ -150,39 +150,30 @@ void init_adc(void) {
 }
 
 void init_usart(void) {
-	//初期設定用の構造体
 	GPIO_InitTypeDef GPIO_InitStructure;
 	USART_InitTypeDef USART_InitStructure;
 
 	//必要な周辺機能にクロックを供給(PA9,PA10がTX,RXなので、GPIOAとUSART1)
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
 
 	//GPIOをUSARTにRemapする。　他のSTM32のシリーズとかはGPIO_PinAFConfigまでいじらなくて良いらしい。
-	//出力
-	GPIO_StructInit(&GPIO_InitStructure);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_USART1);
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-	//入力（printfを使う分にはいらない）
-	GPIO_StructInit(&GPIO_InitStructure);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_USART1);
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_10;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	USART_InitStructure.USART_BaudRate = 38400;	//ポーレート設定
-	USART_InitStructure.USART_StopBits = USART_WordLength_8b;//パケットのワード長を8bitに
-	USART_InitStructure.USART_HardwareFlowControl =
-	USART_HardwareFlowControl_None;	//フロー制御をなしに。
-	USART_InitStructure.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;	//TXとRXにモード設定
-	USART_InitStructure.USART_Parity = USART_Parity_No;	//パリティーを無し
+	USART_InitStructure.USART_BaudRate = 115200;	//ポーレート設定
+	USART_InitStructure.USART_WordLength = USART_WordLength_8b;	//パケットのワード長を8bitに
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;	//ストップビットを1に設定。
+	USART_InitStructure.USART_Parity = USART_Parity_No;	//パリティーを無し
+	USART_InitStructure.USART_HardwareFlowControl =
+	USART_HardwareFlowControl_None;		//フロー制御をなしに。
+	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;	//TXとRXにモード設定
 	USART_Init(USART1, &USART_InitStructure);	//USART1設定
+	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 	USART_Cmd(USART1, ENABLE);		//USART1起動
 
 }
@@ -219,8 +210,11 @@ void init_spi(void) {
 	SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;	//双方向送信
 	SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
 	SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;		//データサイズは8bit
-	SPI_InitStructure.SPI_CPOL = SPI_CPOL_High;	//クロック定常状態はHigh　http://hantasmouse.hatenablog.jp/entry/2015/12/12/142413参照
-	SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;//http://hantasmouse.hatenablog.jp/entry/2015/12/12/142413参照
+	SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;	//クロック定常状態はLow
+	SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;	//
+	//部長の表だとこれでいいはずだけどなぜかうまくいかない。
+	//SPI_InitStructure.SPI_CPOL = SPI_CPOL_High;	//クロック定常状態はHigh　http://hantasmouse.hatenablog.jp/entry/2015/12/12/142413参照
+	//SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;//http://hantasmouse.hatenablog.jp/entry/2015/12/12/142413参照
 	SPI_InitStructure.SPI_NSS = SPI_NSSInternalSoft_Set | SPI_NSS_Soft;	//スレーブセレクトはソフトで
 	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;//SCKクロックの送受信のボーレート設定
 	SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;			//MSBファースト
@@ -232,6 +226,7 @@ void init_spi(void) {
 
 }
 
+const uint16_t MAX_PERIOD = (420 - 1);//PWMの周波数決めのための最大カウント
 void init_pwm() {
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
 
@@ -244,7 +239,6 @@ void init_pwm() {
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 	GPIO_ResetBits(GPIOC, GPIO_Pin_2);		//モータードライバーをスリープモードに
-
 
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
@@ -259,9 +253,9 @@ void init_pwm() {
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	TIM_TimeBaseInitTypeDef TIM_InitStructure;
-	TIM_InitStructure.TIM_Period = 840-1;	//カウンタクリア要因 200kHz ExcelファイルからTIMのクロックを確認
+	TIM_InitStructure.TIM_Period = MAX_PERIOD;//カウンタクリア要因 200kHz ExcelファイルからTIMのクロックを確認
 	TIM_InitStructure.TIM_Prescaler = 0;//プリスケーラ(カウンタがPrescaler回カウントされたタイミングで，TIMのカウンタが1加算される)
-	TIM_InitStructure.TIM_ClockDivision = 0;//デットタイム発生回路用の分周。通常0(分周しない)。
+	TIM_InitStructure.TIM_ClockDivision = 0;	//デットタイム発生回路用の分周。通常0(分周しない)。
 	TIM_InitStructure.TIM_CounterMode = TIM_CounterMode_Up;	//アップカウント
 	TIM_InitStructure.TIM_RepetitionCounter = 0;
 	TIM_TimeBaseInit(TIM4, &TIM_InitStructure);
@@ -269,21 +263,24 @@ void init_pwm() {
 
 	TIM_OCInitTypeDef TIM_OC_InitStructure;
 	TIM_OC_InitStructure.TIM_OCMode = TIM_OCMode_PWM1;		//モードはPWM1
-	TIM_OC_InitStructure.TIM_OCPolarity = TIM_OCPolarity_High;	//たぶんいらない。This parameter is valid only for TIM1 and TIM8.
-	TIM_OC_InitStructure.TIM_OutputState = TIM_OutputState_Enable;	//たぶんいらない。This parameter is valid only for TIM1 and TIM8.
-	TIM_OC_InitStructure.TIM_Pulse = 0;	//the Capture Compare Register にロードされる値
-	TIM_OC1Init(TIM4, &TIM_OC_InitStructure);
+	TIM_OC_InitStructure.TIM_OCPolarity = TIM_OCPolarity_High;//たぶんいらない。This parameter is valid only for TIM1 and TIM8.
+	TIM_OC_InitStructure.TIM_OutputState = TIM_OutputState_Enable;//たぶんいらない。This parameter is valid only for TIM1 and TIM8.
+	TIM_OC_InitStructure.TIM_Pulse = 0;	//パルス幅。Duty比に関係。
+
+	//PWM出力が4本必要なので各タイマ2つずつ
+	TIM_OC1Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH1
 	TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Enable);
-	TIM_OC4Init(TIM5, &TIM_OC_InitStructure);
-	TIM_OC4PreloadConfig(TIM5, TIM_OCPreload_Enable);
+	TIM_OC2Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH2
+	TIM_OC2PreloadConfig(TIM4, TIM_OCPreload_Enable);
+	TIM_OC1Init(TIM5, &TIM_OC_InitStructure);		//TIM5のCH1
+	TIM_OC1PreloadConfig(TIM5, TIM_OCPreload_Enable);
+	TIM_OC2Init(TIM5, &TIM_OC_InitStructure);		//TIM5のCH2
+	TIM_OC2PreloadConfig(TIM5, TIM_OCPreload_Enable);
 
 	GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_TIM4);
 	GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_TIM4);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource0, GPIO_AF_TIM5);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_TIM5);
-
-	TIM_TimeBaseInit(TIM4, &TIM_InitStructure);
-	TIM_TimeBaseInit(TIM5, &TIM_InitStructure);
 
 	//TIM起動
 	TIM_ARRPreloadConfig(TIM4, ENABLE);

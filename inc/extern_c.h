@@ -31,6 +31,8 @@ extern "C" void TIM_ITConfig(TIM_TypeDef* TIMx, uint16_t TIM_IT, FunctionalState
 extern "C" FlagStatus SPI_I2S_GetFlagStatus(SPI_TypeDef* SPIx, uint16_t SPI_I2S_FLAG);
 extern "C" void SPI_I2S_SendData(SPI_TypeDef* SPIx, uint16_t Data);
 
+extern "C" void TIM_OC1PreloadConfig(TIM_TypeDef* TIMx, uint16_t TIM_OCPreload);
+extern "C" void TIM_OC2PreloadConfig(TIM_TypeDef* TIMx, uint16_t TIM_OCPreload);
 
 //ユーザー定義関数
 extern "C" void init_all(void);

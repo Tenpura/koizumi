@@ -41,6 +41,7 @@ static const uint16_t buf_count=100;	//バッファ式ログのバッファ数。
 #define	M_DRIVER_ORM	1	//モータードライバーの抵抗[Ω]
 #define M_SUM_ORM	5.5		//上2つの合算抵抗[Ω]
 
+
 #define GYRO_SENSITIVITY	0.67		//Gyroの感度[mV・s/degree]
 #define GYRO_CONST_RIGHT	1.53		//gyroの定数[degree/V/ms]パラメーターの1つ
 #define GYRO_CONST_LEFT		1.53		//gyroの定数[degree/V/ms]パラメーターの1つ

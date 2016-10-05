@@ -10,6 +10,8 @@
 
 #include "stm32f4xx.h"
 
+//const uint16_t MAX_PERIOD;	//PWMの周波数決めのための最大カウント 定義されてる
+
 void init_all(void);		//以下のinit群を呼び出してるだけ
 
 void init_system(void);

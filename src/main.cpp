@@ -36,7 +36,7 @@ int main(void) {
 	my7seg::count_down(3,500);
 
 	myprintf("vol -> %f\n\r", get_battery());
-	myprintf("abcdefghijklmnopqrstuxyz");
+
 	/*
 	while (get_battery() < 4.0) {
 		my7seg::light_error();
@@ -122,7 +122,7 @@ int main(void) {
 	GPIO_SetBits(GPIOA, GPIO_Pin_4); //CS‚ðƒŠƒZƒbƒg
 
 
-
+	motor::set_duty(motor_right,50);
 
 	while(1){
 		myprintf("0x%x\n\r", ret);

@@ -11,6 +11,7 @@
 #include "stm32f4xx.h"
 #include "extern_c.h"
 #include "user.h"
+#include "init.h"
 
 /*
  #include"define.h"
@@ -40,5 +41,36 @@ public:
 			const unsigned short cycle_ms);
 
 };
+
+
+//motor関連
+extern const uint16_t MAX_PERIOD;
+enum MOTOR_SIDE{
+		motor_left=0,
+		motor_right=1
+};
+
+class motor {
+private:
+
+	static signed short get_duty_left();	//左モーターのDuty取得
+	static signed short get_duty_right();//右モーターのDuty取得
+
+	static const char MAX_DUTY;	 	//Dutyの最大値［％］
+	static const char MAX_COUNT;	//Dutyの最大値［％］
+
+	motor();
+
+public:
+	static signed char right_duty,left_duty;		//duty[％]
+
+	static void set_duty(const MOTOR_SIDE side, const signed short set_duty);//モーターのDuty決定
+
+	static void sleep_motor();//モータードライバをスリープ状態に
+	static void stanby_motor();//モータードライバをスタンバイ状態に
+
+	~motor();
+};
+
 
 #endif /* HARDWARE_H_ */
