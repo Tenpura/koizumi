@@ -238,7 +238,7 @@ void init_pwm() {
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	GPIO_ResetBits(GPIOC, GPIO_Pin_2);		//モータードライバーをスリープモードに
+	GPIO_ResetBits(GPIOA, GPIO_Pin_2);		//モータードライバーをスリープモードに
 
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
@@ -265,7 +265,7 @@ void init_pwm() {
 	TIM_OC_InitStructure.TIM_OCMode = TIM_OCMode_PWM1;		//モードはPWM1
 	TIM_OC_InitStructure.TIM_OCPolarity = TIM_OCPolarity_High;//たぶんいらない。This parameter is valid only for TIM1 and TIM8.
 	TIM_OC_InitStructure.TIM_OutputState = TIM_OutputState_Enable;//たぶんいらない。This parameter is valid only for TIM1 and TIM8.
-	TIM_OC_InitStructure.TIM_Pulse = 0;	//パルス幅。Duty比に関係。
+	TIM_OC_InitStructure.TIM_Pulse = 42-1;	//パルス幅。Duty比に関係。
 
 	//PWM出力が4本必要なので各タイマ2つずつ
 	TIM_OC1Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH1

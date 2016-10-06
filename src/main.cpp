@@ -121,8 +121,8 @@ int main(void) {
 		;
 	GPIO_SetBits(GPIOA, GPIO_Pin_4); //CS‚ðƒŠƒZƒbƒg
 
-
-	motor::set_duty(motor_right,50);
+	//motor::stanby_motor();
+	//motor::set_duty(motor_left,50);
 
 	while(1){
 		myprintf("0x%x\n\r", ret);

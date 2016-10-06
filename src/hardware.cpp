@@ -256,14 +256,14 @@ signed short motor::get_duty_right() {
 }
 
 void motor::sleep_motor() {
-	GPIO_ResetBits(GPIOC, GPIO_Pin_2);	//モータードライバースリープ
+	GPIO_ResetBits(GPIOA, GPIO_Pin_2);	//モータードライバースリープ
 	motor::set_duty(motor_left, 0);
 	motor::set_duty(motor_right, 0);
 
 }
 
 void motor::stanby_motor() {
-	GPIO_SetBits(GPIOC, GPIO_Pin_2);	//モータードライバースタンバイ
+	GPIO_SetBits(GPIOA, GPIO_Pin_2);	//モータードライバースタンバイ
 }
 
 motor::motor() {
