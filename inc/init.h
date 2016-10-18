@@ -21,5 +21,7 @@ void init_adc(void);		//AD•ÏŠ·
 void init_usart(void);		//UART’ÊM
 void init_spi(void);		//SPI’ÊM
 void init_pwm(void);		//pwm”gŒ`
+void init_enc(void);		//encoder ˆÊ‘ŠŒW”
+//void init_mtu(void);		//MPU
 
 #endif /* INIT_H_ */

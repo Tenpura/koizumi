@@ -32,6 +32,8 @@ static const uint16_t buf_count=100;	//バッファ式ログのバッファ数。
 
 #define LOGIK_V 3.3
 
+#define CONTORL_PERIOD 0.001		//制御周期[s]
+
 #define PINION	9	//ピニオンギアの歯数
 #define SPAR	41	//スパーギアの歯数
 
@@ -43,19 +45,21 @@ static const uint16_t buf_count=100;	//バッファ式ログのバッファ数。
 
 
 #define GYRO_SENSITIVITY	0.67		//Gyroの感度[mV・s/degree]
-#define GYRO_CONST_RIGHT	1.53		//gyroの定数[degree/V/ms]パラメーターの1つ
-#define GYRO_CONST_LEFT		1.53		//gyroの定数[degree/V/ms]パラメーターの1つ
+#define GYRO_CONST	1.53		//gyroの定数[degree/V/ms]パラメーターの1つ
+//XXX左右分ける必要があるかも？
 
 #define ENCODER_CONST	(1.534 * 0.001)			//encoderの分解能[rad/count]
 
 #define MOTOR_CONST	(222.6)		//モーターの回転定数[回転/s/V]
 
 //疑似真偽値
+/*
 #define ON	1
 #define OFF	0
 
 #define TRUE	1
 #define FALSE	0
+*/
 
 //#define ERROR	14
 

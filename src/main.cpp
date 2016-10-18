@@ -33,18 +33,26 @@ int main(void) {
 
 	my7seg::light(5);
 
-	my7seg::count_down(3,500);
+	my7seg::count_down(3, 500);
 
 	myprintf("vol -> %f\n\r", get_battery());
 
-	/*
-	while (get_battery() < 4.0) {
+	while (1) {
 		my7seg::light_error();
-		myprintf("vol -> %f\n\r", get_battery());
 		wait::ms(100);
 		my7seg::turn_off();
 		wait::ms(100);
-		break;
+
+		ADC_ClearFlag(ADC1, ADC_FLAG_EOC);		//EndFlagをクリアする
+		ADC_RegularChannelConfig(ADC1, ADC_Channel_9, 1,
+		ADC_SampleTime_3Cycles);		//ADC1_CH9を
+		ADC_SoftwareStartConv(ADC1);	//ADC1を開始
+		while (ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET)
+			;		//終わるまで待つ
+		temp = (ADC_GetConversionValue(ADC1));//XXX 4ビットシフトでうまくいってる気がする　右詰めのはずなのに意味わからん。値を取得
+		myprintf("temp -> %d\r\n", temp);
+
+
 	}
 
 	ADC_ClearFlag(ADC1, ADC_FLAG_EOC);		//EndFlagをクリアする
@@ -69,9 +77,8 @@ int main(void) {
 		tekitou /= 2;
 	}
 	myprintf("\n\r");
-*/
-	// 送信，受信
 
+	// 送信，受信
 	uint16_t ret;
 
 	//MPU6000のリセット解除
@@ -96,9 +103,6 @@ int main(void) {
 		;
 	GPIO_SetBits(GPIOA, GPIO_Pin_4); //CSをリセット
 
-
-
-
 	GPIO_ResetBits(GPIOA, GPIO_Pin_4); // CSをセット
 
 	//レジスタ指定
@@ -108,7 +112,6 @@ int main(void) {
 	while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET)
 		; // 受信可能になるまで待つ
 	ret = SPI_I2S_ReceiveData(SPI1); // 空データを受信する
-
 
 	//データの送受信
 	while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET)
@@ -121,14 +124,15 @@ int main(void) {
 		;
 	GPIO_SetBits(GPIOA, GPIO_Pin_4); //CSをリセット
 
-	//motor::stanby_motor();
-	//motor::set_duty(motor_left,50);
+	motor::stanby_motor();
+	wait::ms(100);
+	motor::set_duty(motor_left, 20);
+	motor::set_duty(motor_right, 20);
 
-	while(1){
+	while (1) {
 		myprintf("0x%x\n\r", ret);
 
 		wait::ms(100);
-
 
 		GPIO_ResetBits(GPIOA, GPIO_Pin_4); // CSをセット
 
@@ -140,7 +144,6 @@ int main(void) {
 			; // 受信可能になるまで待つ
 		ret = SPI_I2S_ReceiveData(SPI1); // 空データを受信する
 
-
 		//データの送受信
 		while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET)
 			; // 送信可能になるまで待つ
@@ -150,7 +153,6 @@ int main(void) {
 		ret = SPI_I2S_ReceiveData(SPI1); // 受信する
 		while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET)
 			;
-		wait::ms(1);
 
 		GPIO_SetBits(GPIOA, GPIO_Pin_4); //CSをリセット
 

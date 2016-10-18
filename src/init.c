@@ -15,6 +15,7 @@ void init_all(void) {
 	init_usart();
 	init_spi();
 	init_pwm();
+	init_enc();
 }
 
 void init_system() {
@@ -140,7 +141,7 @@ void init_adc(void) {
 	ADC_InitStructure.ADC_ScanConvMode = DISABLE;		//シングルモードで動作
 	ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;		//シングルモードで動作
 	ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;	//AD変換の開始に外部トリガは使用しない
-	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Left;	//右詰め左詰め
+	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;	//右詰め左詰め
 	ADC_InitStructure.ADC_NbrOfConversion = 9;		//AD変換の入力は9チャンネル
 	ADC_Init(ADC1, &ADC_InitStructure);
 
@@ -226,9 +227,11 @@ void init_spi(void) {
 
 }
 
-const uint16_t MAX_PERIOD = (420 - 1);//PWMの周波数決めのための最大カウント
+const uint16_t MAX_PERIOD = (420 - 1); //PWMの周波数決めのための最大カウント
 void init_pwm() {
+
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
 
 	GPIO_InitTypeDef GPIO_InitStructure;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
@@ -265,7 +268,7 @@ void init_pwm() {
 	TIM_OC_InitStructure.TIM_OCMode = TIM_OCMode_PWM1;		//モードはPWM1
 	TIM_OC_InitStructure.TIM_OCPolarity = TIM_OCPolarity_High;//たぶんいらない。This parameter is valid only for TIM1 and TIM8.
 	TIM_OC_InitStructure.TIM_OutputState = TIM_OutputState_Enable;//たぶんいらない。This parameter is valid only for TIM1 and TIM8.
-	TIM_OC_InitStructure.TIM_Pulse = 42-1;	//パルス幅。Duty比に関係。
+	TIM_OC_InitStructure.TIM_Pulse = 0;	//パルス幅。Duty比に関係。
 
 	//PWM出力が4本必要なので各タイマ2つずつ
 	TIM_OC1Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH1
@@ -277,12 +280,81 @@ void init_pwm() {
 	TIM_OC2Init(TIM5, &TIM_OC_InitStructure);		//TIM5のCH2
 	TIM_OC2PreloadConfig(TIM5, TIM_OCPreload_Enable);
 
+	TIM_ARRPreloadConfig(TIM2, ENABLE);
+	TIM_CtrlPWMOutputs(TIM2, ENABLE);
+	TIM_ARRPreloadConfig(TIM3, ENABLE);
+	TIM_CtrlPWMOutputs(TIM3, ENABLE);
+
 	GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_TIM4);
 	GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_TIM4);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource0, GPIO_AF_TIM5);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_TIM5);
 
-	//TIM起動
 	TIM_ARRPreloadConfig(TIM4, ENABLE);
 	TIM_ARRPreloadConfig(TIM5, ENABLE);
+
+	//TIM起動
+	TIM_Cmd(TIM4, ENABLE);
+	TIM_Cmd(TIM5, ENABLE);
 }
+
+void init_enc() {
+	//クロック供給
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
+
+	//Remap
+	GPIO_PinAFConfig(GPIOC, GPIO_PinSource6, GPIO_AF_TIM3);
+	GPIO_PinAFConfig(GPIOC, GPIO_PinSource7, GPIO_AF_TIM3);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource15, GPIO_AF_TIM4);
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource3, GPIO_AF_TIM4);
+
+	//端子を位相係数ように設定
+	GPIO_InitTypeDef GPIO_InitStructure;
+	GPIO_StructInit(&GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	//TIMの設定
+	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+	TIM_TimeBaseStructure.TIM_Period = 65534;		//カウンタクリア要因
+	TIM_TimeBaseStructure.TIM_Prescaler = 0;//分周(カウンタがPrescaler回カウントされたタイミングで，TIMのカウンタが1加算される)
+	TIM_TimeBaseStructure.TIM_ClockDivision = 0;	//デットタイム発生回路用の分周。通常0(分周しない)。
+	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;	//アップカウント
+	TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
+	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
+	TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
+
+	//エンコーダ―について設定
+	TIM_SetAutoreload(TIM2, 65534);			//この値が上限になる？
+	TIM_EncoderInterfaceConfig(TIM2, TIM_EncoderMode_TI12,
+			TIM_ICPolarity_Rising, TIM_ICPolarity_Rising);		//CH1とCH2の両方のエッジでカウント、CH1もCH2も立ち上がりを読む
+	TIM_Cmd(TIM2, ENABLE);		//タイマ起動
+	TIM_SetAutoreload(TIM3, 65534);			//この値が上限になる？
+	TIM_EncoderInterfaceConfig(TIM3, TIM_EncoderMode_TI12,
+			TIM_ICPolarity_Rising, TIM_ICPolarity_Rising);
+	TIM_Cmd(TIM3, ENABLE);
+
+}
+/*
+void initMPU(void) {
+
+ spiRorW(SIGNAL_PATH_RESET, 0x04, WRITE); //ジャイロリセット
+ spiRorW(PWR_MGMT_1, 0x08, WRITE);       //サイクル1，スリープモード解除，温度センサーストップ
+ spiRorW(USER_CTRL, 0x10, WRITE);  //I2Cの停止
+ spiRorW(GYRO_CONFIG, 0x18, WRITE);  //2000°/sに設定
+ spiRorW(ACCEL_CONFIG, 0x18, WRITE);  //16 gに設定
+ spiRorW(PWR_MGMT_2, 0xEE, WRITE);       //z軸ジャイロ,y加速度以外ストップ
+
+}
+*/

@@ -35,9 +35,9 @@ src/main.o: ../src/main.cpp \
  C:/Users/Koizumi/workspace/halfmouse/inc/define.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/init.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/hardware.h \
+ C:/Users/Koizumi/workspace/halfmouse/inc/define.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/extern_c.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/user.h \
- C:/Users/Koizumi/workspace/halfmouse/inc/define.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/hardware.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/init.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/ad_convert.h
@@ -114,11 +114,11 @@ C:/Users/Koizumi/workspace/halfmouse/inc/init.h:
 
 C:/Users/Koizumi/workspace/halfmouse/inc/hardware.h:
 
+C:/Users/Koizumi/workspace/halfmouse/inc/define.h:
+
 C:/Users/Koizumi/workspace/halfmouse/inc/extern_c.h:
 
 C:/Users/Koizumi/workspace/halfmouse/inc/user.h:
-
-C:/Users/Koizumi/workspace/halfmouse/inc/define.h:
 
 C:/Users/Koizumi/workspace/halfmouse/inc/hardware.h:
 
