@@ -21,6 +21,8 @@
  #include"run.h"
  */
 
+void init_hardware();	//init.hに引き渡すための初期化関数
+
 
 //自作7セグ関連
 class my7seg {
@@ -101,7 +103,8 @@ private:
 	static GPIO_TypeDef* cs_GPIOx;	//csをたたくIOピンのタイプ		ex)GPIOA
 	const static uint16_t cs_GPIO_Pin;	//csをたたくIOピンの番号
 
-protected:
+//protected:
+public:
 	static uint16_t read_spi(uint16_t read_reg);		//SPI通信でregレジスタから読みだす
 	static void write_spi(uint16_t reg, uint16_t data);		//SPI通信でregレジスタにdataを書き込む
 	static uint16_t get_mpu6000_value(SEN_TYPE sen, AXIS_t axis);		//senセンサーのaxis軸方向のデータを読む

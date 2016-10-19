@@ -32,12 +32,6 @@ int myprintf(const char *fmt, ...) {
 	putnbyte(buffer, len);	//文字データ送信
 	va_end(ap);		//可変長引数アクセス後の終了処理
 	return len;
-	SystemInit();		//クロックやらなんやらシステム周りの初期化？
-	RCC_ClocksTypeDef RCC_Clocks;
-	RCC_GetClocksFreq(&RCC_Clocks);	//RCC_Clocksに値を代入？ たぶんSYSCLK_Frequency16MHｚが代入されてる.HCLKはSYSCLKと同じ？(16MHｚ)
-	SysTick_Config(RCC_Clocks.HCLK_Frequency / 1000);//SysTick割り込みの周期決め。カウントの最大を代入。これで周期1msのはず。
-	//SysTick割り込みの優先度は15で最低。忘れそうだからメモしておく。
-
 
 }
 

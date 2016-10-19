@@ -1,4 +1,4 @@
-src/init.o: ../src/init.cpp \
+src/init .o: ../src/init\ .c \
  C:/Users/Koizumi/workspace/halfmouse/inc/init.h \
  C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/CMSIS/device/stm32f4xx.h \
  C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/CMSIS/core/core_cm4.h \

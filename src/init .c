@@ -1,7 +1,7 @@
 /*
- * init.cpp
+ * init.c
  *
- *  Created on: 2016/10/18
+ *  Created on: 2016/08/21
  *      Author: Koizumi
  */
 

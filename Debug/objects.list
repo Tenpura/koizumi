@@ -1,6 +1,6 @@
 "src/ad_convert.o"
 "src/hardware.o"
-"src/init.o"
+"src/init .o"
 "src/main.o"
 "src/serial.o"
 "src/stm32f4xx_it.o"

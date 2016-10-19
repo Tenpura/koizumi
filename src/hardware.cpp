@@ -7,6 +7,10 @@
 
 #include"hardware.h"
 
+void init_hardware() {
+	mpu6000::init_mpu6000();
+}
+
 //自作7セグ関連
 
 void my7seg::light(const unsigned char number) {
@@ -184,9 +188,6 @@ void motor::set_duty(const MOTOR_SIDE side, const signed short set_duty) {
 	TIM_OC_InitStructure.TIM_OutputState = TIM_OutputState_Enable;//たぶんいらない。This parameter is valid only for TIM1 and TIM8.
 
 	TIM_OC_InitStructure.TIM_Pulse = (uint32_t) (MAX_PERIOD * duty * 0.01);	//dutyに応じてカウントを変更
-//static_cast<uint32_t>
-	myprintf("duty ->%d\n\r", (duty));
-	myprintf("motor's duty ->%f\n\r", (MAX_PERIOD * duty * 0.01));
 
 	if (side == motor_left) {
 
@@ -422,7 +423,7 @@ const float gyro::GYRO_PERIOD = CONTORL_PERIOD;		//制御周期[s]
 const float gyro::REF_TIME = 1;							//リファレンスとる時間[s]
 
 void gyro::interrupt_gyro() {
-	gyro_value = mpu6000::get_mpu6000_value(sen_gyro, axis_z);		//Z方向のジャイロを見る
+	gyro_value = mpu6000::get_mpu6000_value(sen_gyro, axis_z);	//Z方向のジャイロを見る
 }
 
 unsigned short gyro::get_gyro() {

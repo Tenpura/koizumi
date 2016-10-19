@@ -4,6 +4,7 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../src/init\ .c \
 ../src/serial.c \
 ../src/stm32f4xx_it.c \
 ../src/syscalls.c \
@@ -12,14 +13,13 @@ C_SRCS += \
 CPP_SRCS += \
 ../src/ad_convert.cpp \
 ../src/hardware.cpp \
-../src/init.cpp \
 ../src/main.cpp \
 ../src/user.cpp 
 
 OBJS += \
 ./src/ad_convert.o \
 ./src/hardware.o \
-./src/init.o \
+./src/init\ .o \
 ./src/main.o \
 ./src/serial.o \
 ./src/stm32f4xx_it.o \
@@ -28,6 +28,7 @@ OBJS += \
 ./src/user.o 
 
 C_DEPS += \
+./src/init\ .d \
 ./src/serial.d \
 ./src/stm32f4xx_it.d \
 ./src/syscalls.d \
@@ -36,7 +37,6 @@ C_DEPS += \
 CPP_DEPS += \
 ./src/ad_convert.d \
 ./src/hardware.d \
-./src/init.d \
 ./src/main.d \
 ./src/user.d 
 
@@ -47,6 +47,14 @@ src/%.o: ../src/%.cpp
 	@echo 'Invoking: MCU G++ Compiler'
 	@echo %cd%
 	arm-none-eabi-g++ -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -DSTM32F405RGTx -DSTM32F4 -DSTM32 -DDEBUG -DUSE_STDPERIPH_DRIVER -DSTM32F40XX -DSTM32F40_41xxx -I"C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib" -I"C:/Users/Koizumi/workspace/halfmouse/inc" -I"C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/CMSIS/core" -I"C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/CMSIS/device" -I"C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/StdPeriph_Driver/inc" -O0 -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fno-exceptions -fno-rtti -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+
+src/init\ .o: ../src/init\ .c
+	@echo 'Building file: $<'
+	@echo 'Invoking: MCU GCC Compiler'
+	@echo %cd%
+	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -DSTM32F405RGTx -DSTM32F4 -DSTM32 -DDEBUG -DUSE_STDPERIPH_DRIVER -DSTM32F40XX -DSTM32F40_41xxx -I"C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib" -I"C:/Users/Koizumi/workspace/halfmouse/inc" -I"C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/CMSIS/core" -I"C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/CMSIS/device" -I"C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/StdPeriph_Driver/inc" -O0 -g3 -Wall -fmessage-length=0 -ffunction-sections -c -MMD -MP -MF"src/init .d" -MT"$@" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 
