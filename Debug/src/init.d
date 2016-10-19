@@ -1,4 +1,5 @@
-src/init.o: ../src/init.c C:/Users/Koizumi/workspace/halfmouse/inc/init.h \
+src/init.o: ../src/init.cpp \
+ C:/Users/Koizumi/workspace/halfmouse/inc/init.h \
  C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/CMSIS/device/stm32f4xx.h \
  C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/CMSIS/core/core_cm4.h \
  C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/CMSIS/core/core_cmInstr.h \
@@ -30,7 +31,8 @@ src/init.o: ../src/init.c C:/Users/Koizumi/workspace/halfmouse/inc/init.h \
  C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/StdPeriph_Driver/inc/stm32f4xx_rng.h \
  C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/StdPeriph_Driver/inc/stm32f4xx_can.h \
  C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/StdPeriph_Driver/inc/stm32f4xx_dac.h \
- C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/StdPeriph_Driver/inc/stm32f4xx_dcmi.h
+ C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/StdPeriph_Driver/inc/stm32f4xx_dcmi.h \
+ C:/Users/Koizumi/workspace/halfmouse/inc/extern_c.h
 
 C:/Users/Koizumi/workspace/halfmouse/inc/init.h:
 
@@ -97,3 +99,5 @@ C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/StdPeriph_Driver/inc/stm32f
 C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/StdPeriph_Driver/inc/stm32f4xx_dac.h:
 
 C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/StdPeriph_Driver/inc/stm32f4xx_dcmi.h:
+
+C:/Users/Koizumi/workspace/halfmouse/inc/extern_c.h:

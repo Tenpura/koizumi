@@ -44,7 +44,7 @@ uint32_t wait::get_count() {
 void wait::ms(uint32_t wait_time) {
 	uint32_t temp_counter = 0;
 	set_count(wait_counter);
-	if (get_count() > (4000000000 - wait_time)) {	//オーバーフロー対策
+	if (get_count() > (400000000 - wait_time)) {	//オーバーフロー対策
 		reset_count();	//カウンターをリセットして
 		wait_counter = 0;
 		temp_counter = wait_time;

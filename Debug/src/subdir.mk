@@ -4,7 +4,6 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../src/init.c \
 ../src/serial.c \
 ../src/stm32f4xx_it.c \
 ../src/syscalls.c \
@@ -13,6 +12,7 @@ C_SRCS += \
 CPP_SRCS += \
 ../src/ad_convert.cpp \
 ../src/hardware.cpp \
+../src/init.cpp \
 ../src/main.cpp \
 ../src/user.cpp 
 
@@ -28,7 +28,6 @@ OBJS += \
 ./src/user.o 
 
 C_DEPS += \
-./src/init.d \
 ./src/serial.d \
 ./src/stm32f4xx_it.d \
 ./src/syscalls.d \
@@ -37,6 +36,7 @@ C_DEPS += \
 CPP_DEPS += \
 ./src/ad_convert.d \
 ./src/hardware.d \
+./src/init.d \
 ./src/main.d \
 ./src/user.d 
 

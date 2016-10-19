@@ -1,7 +1,7 @@
 /*
- * init.c
+ * init.cpp
  *
- *  Created on: 2016/08/21
+ *  Created on: 2016/10/18
  *      Author: Koizumi
  */
 
@@ -346,15 +346,3 @@ void init_enc() {
 	TIM_Cmd(TIM3, ENABLE);
 
 }
-/*
-void initMPU(void) {
-
- spiRorW(SIGNAL_PATH_RESET, 0x04, WRITE); //ジャイロリセット
- spiRorW(PWR_MGMT_1, 0x08, WRITE);       //サイクル1，スリープモード解除，温度センサーストップ
- spiRorW(USER_CTRL, 0x10, WRITE);  //I2Cの停止
- spiRorW(GYRO_CONFIG, 0x18, WRITE);  //2000°/sに設定
- spiRorW(ACCEL_CONFIG, 0x18, WRITE);  //16 gに設定
- spiRorW(PWR_MGMT_2, 0xEE, WRITE);       //z軸ジャイロ,y加速度以外ストップ
-
-}
-*/

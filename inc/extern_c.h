@@ -18,10 +18,13 @@
 extern "C" void GPIO_SetBits(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin);
 extern "C" void GPIO_ResetBits(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin);
 
+extern "C" void GPIO_PinAFConfig(GPIO_TypeDef* GPIOx, uint16_t GPIO_PinSource, uint8_t GPIO_AF);
+
 extern "C" void ADC_ClearFlag(ADC_TypeDef* ADCx, uint8_t ADC_FLAG);
 extern "C" void ADC_RegularChannelConfig(ADC_TypeDef* ADCx, uint8_t ADC_Channel, uint8_t Rank, uint8_t ADC_SampleTime);
 extern "C" FlagStatus ADC_GetFlagStatus(ADC_TypeDef* ADCx, uint8_t ADC_FLAG);
 
+extern "C" void RCC_APB1PeriphClockCmd(uint32_t RCC_APB1Periph, FunctionalState NewState);
 extern "C" void RCC_AHB1PeriphClockCmd(uint32_t RCC_AHB1Periph, FunctionalState NewState);
 extern "C" void RCC_APB2PeriphClockCmd(uint32_t RCC_APB2Periph, FunctionalState NewState);
 
@@ -31,8 +34,15 @@ extern "C" void TIM_ITConfig(TIM_TypeDef* TIMx, uint16_t TIM_IT, FunctionalState
 extern "C" FlagStatus SPI_I2S_GetFlagStatus(SPI_TypeDef* SPIx, uint16_t SPI_I2S_FLAG);
 extern "C" void SPI_I2S_SendData(SPI_TypeDef* SPIx, uint16_t Data);
 
+extern "C" void TIM_SetAutoreload(TIM_TypeDef* TIMx, uint32_t Autoreload);
+extern "C" void TIM_EncoderInterfaceConfig(TIM_TypeDef* TIMx, uint16_t TIM_EncoderMode,uint16_t TIM_IC1Polarity, uint16_t TIM_IC2Polarity);
+
 extern "C" void TIM_OC1PreloadConfig(TIM_TypeDef* TIMx, uint16_t TIM_OCPreload);
 extern "C" void TIM_OC2PreloadConfig(TIM_TypeDef* TIMx, uint16_t TIM_OCPreload);
+
+extern "C" void USART_ITConfig(USART_TypeDef* USARTx, uint16_t USART_IT, FunctionalState NewState);
+
+extern "C" uint32_t SysTick_Config(uint32_t ticks);
 
 //ユーザー定義関数
 extern "C" void init_all(void);

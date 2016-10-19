@@ -271,6 +271,20 @@ SPI_TypeDef* mpu6000::use_SPI = SPI1;		//SPI1~3のどれ使ってるか
 GPIO_TypeDef* mpu6000::cs_GPIOx = GPIOA;		//cs叩くピンの設定
 const uint16_t mpu6000::cs_GPIO_Pin = GPIO_Pin_4;	//cs叩くピンの設定
 
+//レジスター定義
+const uint16_t mpu6000::GYRO_XOUT_H = 0x43;
+const uint16_t mpu6000::GYRO_XOUT_L = 0x44;
+const uint16_t mpu6000::GYRO_YOUT_H = 0x45;
+const uint16_t mpu6000::GYRO_YOUT_L = 0x46;
+const uint16_t mpu6000::GYRO_ZOUT_H = 0x47;
+const uint16_t mpu6000::GYRO_ZOUT_L = 0x48;
+const uint16_t mpu6000::ACCEL_XOUT_H = 0x3b;
+const uint16_t mpu6000::ACCEL_XOUT_L = 0x3c;
+const uint16_t mpu6000::ACCEL_YOUT_H = 0x3d;
+const uint16_t mpu6000::ACCEL_YOUT_L = 0x3e;
+const uint16_t mpu6000::ACCEL_ZOUT_H = 0x3f;
+const uint16_t mpu6000::ACCEL_ZOUT_L = 0x40;
+
 uint16_t mpu6000::read_spi(uint16_t read_reg) {
 	uint16_t data = 0;
 	uint16_t reg = (read_reg | 128);	//read時はレジスターの最上位Bitを1に
@@ -326,7 +340,58 @@ void mpu6000::write_spi(uint16_t reg, uint16_t data) {
 
 }
 
-void mpu6000::init_mpu6000(){
+uint16_t mpu6000::get_mpu6000_value(SEN_TYPE sen, AXIS_t axis) {
+	uint16_t data = 0;
+	uint16_t reg_h = 0;	//highの値へのレジスタ
+	uint16_t reg_l = 0;	//Lowの値へのレジスタ
+
+	switch (sen) {
+	case sen_gyro:
+		switch (axis) {
+		case axis_x:
+			reg_h = GYRO_XOUT_H;
+			reg_l = GYRO_XOUT_L;
+			break;
+		case axis_y:
+			reg_h = GYRO_YOUT_H;
+			reg_l = GYRO_YOUT_L;
+			break;
+		case axis_z:
+			reg_h = GYRO_ZOUT_H;
+			reg_l = GYRO_ZOUT_L;
+			break;
+		}
+		break;
+
+	case sen_accel:
+		switch (axis) {
+		case axis_x:
+			reg_h = ACCEL_XOUT_H;
+			reg_l = ACCEL_XOUT_L;
+			break;
+		case axis_y:
+			reg_h = ACCEL_YOUT_H;
+			reg_l = ACCEL_YOUT_L;
+			break;
+		case axis_z:
+			reg_h = ACCEL_ZOUT_H;
+			reg_l = ACCEL_ZOUT_L;
+			break;
+		}
+		break;
+
+	default:		//gyroと加速度以外は読めないので初期値を返して終了
+		return data;
+		break;
+	}
+
+	//Highの方は上位に8ビットずらしてLowと合わせて、目的のデータを得る。
+	data = (read_spi(reg_h) << 8) + read_spi(reg_l);
+
+	return data;
+}
+
+void mpu6000::init_mpu6000() {
 	static const uint16_t SIGNAL_PATH_RESET = 0x68;
 	static const uint16_t PWR_MGMT_1 = 0x6B;
 	static const uint16_t PWR_MGMT_2 = 0x6c;
@@ -335,13 +400,19 @@ void mpu6000::init_mpu6000(){
 	static const uint16_t ACCEL_CONFIG = 0x1c;
 
 	write_spi(SIGNAL_PATH_RESET, 0x06);	//ジャイロ、加速度リセット
-	write_spi(PWR_MGMT_1,0x08);			//サイクル1、SLEEP解除、温度センサは使わない
-	write_spi(USER_CTRL,0x10);			//I2CをDisable、SPIをEnable
+	write_spi(PWR_MGMT_1, 0x08);			//サイクル1、SLEEP解除、温度センサは使わない
+	write_spi(USER_CTRL, 0x10);			//I2CをDisable、SPIをEnable
 	write_spi(GYRO_CONFIG, 0x18);		//ジャイロを±2000°/sに設定
 	write_spi(ACCEL_CONFIG, 0x18);		//加速度を±16g/sに設定
-	write_spi(PWR_MGMT_2,0xEE);			//ジャイロのZ軸方向、加速度のY軸方向以外は停止
+	write_spi(PWR_MGMT_2, 0xEE);			//ジャイロのZ軸方向、加速度のY軸方向以外は停止
 }
 
+mpu6000::mpu6000() {
+}
+
+mpu6000::~mpu6000() {
+
+}
 unsigned short gyro::gyro_value;
 float gyro::default_angle;
 float gyro::angle, gyro::before_angle, gyro::gyro_ref;
@@ -351,31 +422,7 @@ const float gyro::GYRO_PERIOD = CONTORL_PERIOD;		//制御周期[s]
 const float gyro::REF_TIME = 1;							//リファレンスとる時間[s]
 
 void gyro::interrupt_gyro() {
-	uint16_t data = 0;
-
-	GPIO_ResetBits(GPIOA, GPIO_Pin_4); // CSをセット
-
-	//レジスタ指定
-	while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET)
-		; // 送信可能になるまで待つ
-	SPI_I2S_SendData(SPI1, 0xf5); //XXX 送信(今回はWHO_AM_I)
-	while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET)
-		; // 受信可能になるまで待つ
-	data = SPI_I2S_ReceiveData(SPI1); // 空データを受信する
-
-	//データの送受信
-	while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET)
-		; // 送信可能になるまで待つ
-	SPI_I2S_SendData(SPI1, 0x00); // 送信
-	while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET)
-		; // 受信可能になるまで待つ
-	data = SPI_I2S_ReceiveData(SPI1); // 受信する
-	while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET)
-		;
-
-	GPIO_SetBits(GPIOA, GPIO_Pin_4); //CSをリセット
-
-	gyro_value = data;
+	gyro_value = mpu6000::get_mpu6000_value(sen_gyro, axis_z);		//Z方向のジャイロを見る
 }
 
 unsigned short gyro::get_gyro() {

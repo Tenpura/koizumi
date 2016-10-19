@@ -5,8 +5,6 @@
  *      Author: Koizumi
  */
 
-
-
 #ifndef DEFINE_H_
 #define DEFINE_H_
 
@@ -23,8 +21,8 @@
 
 #define PATH_MAX 200
 
-static const uint8_t log_count=100;	//Logの配列個数
-static const uint16_t buf_count=100;	//バッファ式ログのバッファ数。
+static const uint8_t log_count = 100;	//Logの配列個数
+static const uint16_t buf_count = 100;	//バッファ式ログのバッファ数。
 
 //同じ機体を使ってる限り変わらないdefineはココに書く
 
@@ -43,7 +41,6 @@ static const uint16_t buf_count=100;	//バッファ式ログのバッファ数。
 #define	M_DRIVER_ORM	1	//モータードライバーの抵抗[Ω]
 #define M_SUM_ORM	5.5		//上2つの合算抵抗[Ω]
 
-
 #define GYRO_SENSITIVITY	0.67		//Gyroの感度[mV・s/degree]
 #define GYRO_CONST	1.53		//gyroの定数[degree/V/ms]パラメーターの1つ
 //XXX左右分ける必要があるかも？
@@ -54,15 +51,14 @@ static const uint16_t buf_count=100;	//バッファ式ログのバッファ数。
 
 //疑似真偽値
 /*
-#define ON	1
-#define OFF	0
+ #define ON	1
+ #define OFF	0
 
-#define TRUE	1
-#define FALSE	0
-*/
+ #define TRUE	1
+ #define FALSE	0
+ */
 
 //#define ERROR	14
-
 #define MUKI_RIGHT	0
 #define MUKI_UP		1
 #define MUKI_LEFT	2
@@ -75,7 +71,6 @@ static const uint16_t buf_count=100;	//バッファ式ログのバッファ数。
 //便利ゾーン/////////////////////////////////////////////////////////////////////////////////////////////////////
 #define SQRT2 1.414	//√2
 #define PI()		3.1415		//π　円周率
-
 
 #define ABS(x)		((x) < 0 ? -(x) : (x))	//絶対値
 #define	SIGN(x)	((x) < 0 ? -1 : 1 )		//符合
@@ -218,5 +213,10 @@ typedef enum {
 	max_angular_velocity,
 	time
 } SLALOM_ELEMENT;
+
+//センサータイプを表す列挙型
+typedef enum {
+	sen_gyro = 0, sen_encoder = 1, sen_photo = 2, sen_accel = 3,sen_all
+} SEN_TYPE;
 
 #endif /* DEFINE_H_ */

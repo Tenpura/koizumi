@@ -12,7 +12,6 @@
 #include "define.h"
 #include "extern_c.h"
 #include "user.h"
-#include "init.h"
 
 /*
  #include"define.h"
@@ -77,8 +76,27 @@ public:
 
 //gyro関連
 //時計回りが正
+//センサータイプを表す列挙型
+typedef enum {
+	axis_x = 0, axis_y = 1, axis_z = 2
+} AXIS_t;
 class mpu6000{
 private:
+	//レジスター定義
+	static const uint16_t GYRO_XOUT_H;
+	static const uint16_t GYRO_XOUT_L;
+	static const uint16_t GYRO_YOUT_H;
+	static const uint16_t GYRO_YOUT_L;
+	static const uint16_t GYRO_ZOUT_H;
+	static const uint16_t GYRO_ZOUT_L;
+	static const uint16_t ACCEL_XOUT_H;
+	static const uint16_t ACCEL_XOUT_L;
+	static const uint16_t ACCEL_YOUT_H;
+	static const uint16_t ACCEL_YOUT_L;
+	static const uint16_t ACCEL_ZOUT_H;
+	static const uint16_t ACCEL_ZOUT_L;
+
+
 	static SPI_TypeDef* use_SPI;	//使うSPIのタイプ
 	static GPIO_TypeDef* cs_GPIOx;	//csをたたくIOピンのタイプ		ex)GPIOA
 	const static uint16_t cs_GPIO_Pin;	//csをたたくIOピンの番号
@@ -86,6 +104,8 @@ private:
 protected:
 	static uint16_t read_spi(uint16_t read_reg);		//SPI通信でregレジスタから読みだす
 	static void write_spi(uint16_t reg, uint16_t data);		//SPI通信でregレジスタにdataを書き込む
+	static uint16_t get_mpu6000_value(SEN_TYPE sen, AXIS_t axis);		//senセンサーのaxis軸方向のデータを読む
+
 	mpu6000();
 
 public:
