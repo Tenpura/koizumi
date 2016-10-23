@@ -7,10 +7,6 @@
 
 #include"hardware.h"
 
-void init_hardware() {
-	mpu6000::init_mpu6000();
-}
-
 //自作7セグ関連
 
 void my7seg::light(const unsigned char number) {
@@ -171,8 +167,9 @@ void my7seg::count_down(const unsigned char start_number,
 //motor関連
 signed char motor::right_duty = 0, motor::left_duty = 0;
 const char motor::MAX_DUTY = 100;
+bool motor::motor_state = false;
 
-void motor::set_duty(const MOTOR_SIDE side, const signed short set_duty) {
+void motor::set_duty(const MOTOR_SIDE side, const float set_duty) {
 	signed short duty = 0;		//一時的な保存
 
 	//Dutyに絶対値をとる
@@ -187,34 +184,35 @@ void motor::set_duty(const MOTOR_SIDE side, const signed short set_duty) {
 	TIM_OC_InitStructure.TIM_OCPolarity = TIM_OCPolarity_High;//たぶんいらない。This parameter is valid only for TIM1 and TIM8.
 	TIM_OC_InitStructure.TIM_OutputState = TIM_OutputState_Enable;//たぶんいらない。This parameter is valid only for TIM1 and TIM8.
 
-	TIM_OC_InitStructure.TIM_Pulse = (uint32_t) (MAX_PERIOD * duty * 0.01);	//dutyに応じてカウントを変更
-
-	if (side == motor_left) {
-
-		if (set_duty == 0) {					//0のときはstop
-			TIM_OC_InitStructure.TIM_Pulse = 0;		//duty0の時は一応0を代入しておく
-			TIM_OC1Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH1
-			TIM_OC2Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH2
-
-		} else if (set_duty > 0) {				//正のときは正転
-			TIM_OC1Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH1
-			TIM_OC_InitStructure.TIM_Pulse = 0;		//電位差を作るため、片方は0に
-			TIM_OC2Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH2
-
-		} else {									//負のときは逆転
-			TIM_OC2Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH2
-			TIM_OC_InitStructure.TIM_Pulse = 0;		//電位差を作るため、片方は0に
-			TIM_OC1Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH1
-
-		}
-
-		left_duty = duty;
-	}
+	TIM_OC_InitStructure.TIM_Pulse = static_cast<uint32_t>(MAX_PERIOD * duty
+			* 0.01);	//dutyに応じてカウントを変更
 
 	if (side == motor_right) {
 
 		if (set_duty == 0) {					//0のときはstop
 			TIM_OC_InitStructure.TIM_Pulse = 0;		//duty0の時は一応0を代入しておく
+			TIM_OC1Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH1
+			TIM_OC2Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH2
+
+		} else if (set_duty > 0) {				//正のときは正転
+			TIM_OC2Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH2
+			TIM_OC_InitStructure.TIM_Pulse = 0;		//電位差を作るため、片方は0に
+			TIM_OC1Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH1
+
+		} else {									//負のときは逆転
+			TIM_OC1Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH1
+			TIM_OC_InitStructure.TIM_Pulse = 0;		//電位差を作るため、片方は0に
+			TIM_OC2Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH2
+
+		}
+
+		right_duty = duty;
+	}
+
+	if (side == motor_left) {
+
+		if (set_duty == 0) {					//0のときはstop
+			TIM_OC_InitStructure.TIM_Pulse = 0;		//duty0の時は一応0を代入しておく
 
 			TIM_OC1Init(TIM5, &TIM_OC_InitStructure);		//TIM5のCH1
 			TIM_OC2Init(TIM5, &TIM_OC_InitStructure);		//TIM5のCH2
@@ -231,7 +229,7 @@ void motor::set_duty(const MOTOR_SIDE side, const signed short set_duty) {
 			TIM_OC1Init(TIM5, &TIM_OC_InitStructure);		//TIM5のCH1
 		}
 
-		right_duty = duty;
+		left_duty = duty;
 	}
 
 }
@@ -250,6 +248,7 @@ void motor::sleep_motor() {
 	TIM_Cmd(TIM5, DISABLE);
 	motor::set_duty(motor_left, 0);
 	motor::set_duty(motor_right, 0);
+	motor_state = false;
 
 }
 
@@ -257,7 +256,11 @@ void motor::stanby_motor() {
 	GPIO_SetBits(GPIOA, GPIO_Pin_2);	//モータードライバースタンバイ
 	TIM_Cmd(TIM4, ENABLE);
 	TIM_Cmd(TIM5, ENABLE);
+	motor_state = true;
+}
 
+bool motor::isEnable() {
+	return motor_state;
 }
 
 motor::motor() {
@@ -312,6 +315,10 @@ uint16_t mpu6000::read_spi(uint16_t read_reg) {
 
 	GPIO_SetBits(cs_GPIOx, cs_GPIO_Pin); //CSをリセット
 
+	//連続して行ってもうまくいくように少しだけ待つ。
+	for (int i = 0; i < 5; i++)
+		;
+
 	return data;
 }
 
@@ -339,9 +346,13 @@ void mpu6000::write_spi(uint16_t reg, uint16_t data) {
 
 	GPIO_SetBits(cs_GPIOx, cs_GPIO_Pin); //CSをリセット
 
+	//連続して行ってもうまくいくように少しだけ待つ。
+	for (int i = 0; i < 5; i++)
+		;
+
 }
 
-uint16_t mpu6000::get_mpu6000_value(SEN_TYPE sen, AXIS_t axis) {
+uint16_t mpu6000::get_mpu_value(SEN_TYPE sen, AXIS_t axis) {
 	uint16_t data = 0;
 	uint16_t reg_h = 0;	//highの値へのレジスタ
 	uint16_t reg_l = 0;	//Lowの値へのレジスタ
@@ -423,7 +434,7 @@ const float gyro::GYRO_PERIOD = CONTORL_PERIOD;		//制御周期[s]
 const float gyro::REF_TIME = 1;							//リファレンスとる時間[s]
 
 void gyro::interrupt_gyro() {
-	gyro_value = mpu6000::get_mpu6000_value(sen_gyro, axis_z);	//Z方向のジャイロを見る
+	gyro_value = mpu6000::get_mpu_value(sen_gyro, axis_z);	//Z方向のジャイロを見る
 }
 
 unsigned short gyro::get_gyro() {
@@ -521,24 +532,24 @@ const uint32_t encoder::MOVING_AVERAGE = 30;
 const uint32_t encoder::MEDIAN = 32762;
 float encoder::left_velocity, encoder::right_velocity, encoder::velocity;
 
-void encoder::cal_encoder() {
+void encoder::interrupt_encoder() {
 	static float sample_data[MOVING_AVERAGE] = { 0 };	//データを保存しておく配列
 	float sum = 0;
 
-	//TODO 後で移植！！
-	/*
-	 left_velocity = (MTU2.TCNT - 32762) * ENCODER_CONST * TIRE_R;	//m/s
-	 right_velocity = (MTU1.TCNT - 32762) * ENCODER_CONST * TIRE_R;//count*[rad/count]/[sec]*[m]
-	 MTU1.TCNT = 32762;
-	 MTU2.TCNT = 32762;
+	left_velocity = (static_cast <float> (TIM2->CNT) - 32762) * ENCODER_CONST / CONTORL_PERIOD
+			* tire_R;	//m/s
+	right_velocity = (32762 - static_cast <float> (TIM3->CNT)) * ENCODER_CONST / CONTROL_PERIOD
+			* tire_R;	//count*[rad/count]/[sec]*[m]
+	TIM2->CNT = 32762;
+	TIM3->CNT = 32762;
 
-	 for (signed char i = 0; (i + 1) < MOVING_AVERAGE; i++) {
-	 sample_data[i + 1] = sample_data[i];	//配列を1つずらす
-	 sum += sample_data[i + 1];			//ついでに加算する
-	 }
-	 sample_data[0] = (right_velocity + left_velocity) / 2;	//配列の最初に入れる
-	 sum += sample_data[0];
-	 */
+	for (uint8_t i = 0; (i + 1) < MOVING_AVERAGE; i++) {
+		sample_data[i + 1] = sample_data[i];	//配列を1つずらす
+		sum += sample_data[i + 1];			//ついでに加算する
+	}
+	sample_data[0] = (right_velocity + left_velocity) / 2;	//配列の最初に入れる
+	sum += sample_data[0];
+
 	velocity = sum / MOVING_AVERAGE;
 }
 
@@ -551,6 +562,342 @@ encoder::encoder() {
 }
 
 encoder::~encoder() {
+
+}
+
+signed int photo::right_ad, photo::left_ad, photo::front_right_ad,
+		photo::front_left_ad;
+signed int photo::right_ref, photo::left_ref, photo::front_right_ref,
+		photo::front_left_ref;
+
+bool photo::light_flag = false;
+//TODO Photoセンサーは未実装
+/*
+ void photo::switch_led(PHOTO_TYPE sensor_type, unsigned char one_or_zero) {
+ switch (sensor_type) {
+ case right:
+ PORTA.DR.BIT.B5 = one_or_zero;
+ break;
+
+ case left:
+ PORT9.DR.BIT.B1 = one_or_zero;
+ break;
+
+ case front_right:
+ PORT1.DR.BIT.B0 = one_or_zero;
+ break;
+
+ case front_left:
+ PORT9.DR.BIT.B2 = one_or_zero;
+ break;
+ }
+ }
+
+ void photo::light(PHOTO_TYPE sensor_type) {
+ switch_led(sensor_type, 1);
+ }
+
+ void photo::turn_off(PHOTO_TYPE sensor_type) {
+ switch_led(sensor_type, 0);
+ }
+
+ void photo::turn_off_all() {
+ turn_off(right);
+ turn_off(left);
+ turn_off(front_right);
+ turn_off(front_left);
+
+ }
+
+ void photo::set_ad(PHOTO_TYPE sensor_type, bool on_light) {
+ //LEDが光っているなら消えてるときとの差分を取る
+ if (on_light) {
+ switch (sensor_type) {
+ case right:
+ right_ad = (ad_convert_an102() - right_ref);
+ break;
+
+ case left:
+ left_ad = (ad_convert_an002() - left_ref);
+ break;
+
+ case front_right:
+ front_right_ad = (ad_convert_an103() - front_right_ref);
+ break;
+
+ case front_left:
+ front_left_ad = (ad_convert_an001() - front_left);
+ break;
+ }
+
+ //消えてるなら基準値として記録
+ } else {
+ switch (sensor_type) {
+ case right:
+ right_ref = ad_convert_an102();
+ break;
+
+ case left:
+ left_ref = ad_convert_an002();
+ break;
+
+ case front_right:
+ front_right_ref = ad_convert_an103();
+ break;
+
+ case front_left:
+ front_left_ref = ad_convert_an001();
+ break;
+ }
+ }
+ }
+ */
+unsigned int photo::get_ad(PHOTO_TYPE sensor_type) {
+	switch (sensor_type) {
+	case right:
+		return right_ad;
+		break;
+
+	case left:
+		return left_ad;
+		break;
+
+	case front_right:
+		return front_right_ad;
+		break;
+
+	case front_left:
+		return front_left_ad;
+		break;
+	}
+
+	return 0;
+}
+
+bool photo::check_wall(unsigned char muki) {
+
+	switch (muki) {
+	case MUKI_RIGHT:
+		if (right_ad >= parameter::get_min_wall_photo(right)) {
+			return true;
+		}
+		return false;
+
+	case MUKI_LEFT:
+		if (left_ad >= parameter::get_min_wall_photo(left)) {
+			return true;
+		}
+		return false;
+
+	case MUKI_UP:
+		if ((front_right_ad >= parameter::get_min_wall_photo(front_right))
+				|| (front_left_ad >= parameter::get_min_wall_photo(front_left))) {
+			return true;
+		}
+		return false;
+	}
+
+	return false;
+
+}
+
+photo::photo() {
+}
+
+photo::~photo() {
+}
+
+//XXX 各種ゲイン
+//control関連
+const PID gyro_gain = { 0, 0, 0 };
+const PID photo_gain = { 0, 0, 0 };
+const PID encoder_gain = { 300, 0, 0 };
+
+PID control::gyro_delta, control::photo_delta, control::encoder_delta;
+bool control::control_phase = false;
+bool control::wall_control_flag = false;
+bool control::is_FF_CONTROL = false;
+bool control::is_FB_CONTROL = true;
+
+float control::cross_delta_gain(SEN_TYPE sensor) {
+	switch (sensor) {
+	case sen_gyro:
+		return (gyro_delta.P * gyro_gain.P + gyro_delta.I * gyro_gain.I
+				+ gyro_delta.D * gyro_gain.D);
+
+	case sen_encoder:
+		return (encoder_delta.P * encoder_gain.P
+				+ encoder_delta.I * encoder_gain.I
+				+ encoder_delta.D * encoder_gain.D);
+
+	case sen_photo:
+		return (photo_delta.P * photo_gain.P + photo_delta.I * photo_gain.I
+				+ photo_delta.D * photo_gain.D);
+
+	}
+	return 0;
+}
+
+void control::cal_delta() {
+	float before_p_delta;
+	float photo_right_delta, photo_left_delta;
+
+	//エンコーダーのΔ計算
+	before_p_delta = encoder_delta.P;	//積分用
+	encoder_delta.P = (mouse::get_ideal_velocity() - encoder::get_velocity());
+	encoder_delta.I += (encoder_delta.P * CONTORL_PERIOD);
+	//encoder_delta.D = (encoder_delta.P - before_p_delta) * 1000;
+
+	//センサーのΔ計算
+	before_p_delta = photo_delta.P;
+
+	//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
+	if (mouse::get_ideal_velocity() <= (SEARCH_VELOCITY * 0.5)) {
+		photo_left_delta = 0;
+		photo_right_delta = 0;
+
+	} else {
+		if (photo::check_wall(MUKI_RIGHT)) {		//右壁がある
+			photo_right_delta = -(parameter::get_ideal_photo(right)
+					- photo::get_ad(right));
+			if (photo::check_wall(MUKI_LEFT)) {		//両壁がある
+				photo_left_delta = (parameter::get_ideal_photo(left)
+						- photo::get_ad(left));
+			} else {
+				//片方のときは、壁のある方を2倍かけることで疑似的に両壁アリと同じ制御量にする
+				photo_left_delta = 0;
+				photo_right_delta = (2 * photo_right_delta);
+			}
+		} else {			//右がない
+			photo_right_delta = 0;
+			if (photo::check_wall(MUKI_LEFT)) {		//左だけある
+				photo_left_delta = 2
+						* (parameter::get_ideal_photo(left)
+								- photo::get_ad(left));
+			} else {
+				//両方ない
+				photo_left_delta = 0;
+				photo_right_delta = 0;
+			}
+		}
+	}
+	photo_delta.P = (-photo_right_delta + photo_left_delta);
+	photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
+	//photo_delta.D = (photo_delta.P - before_p_delta) * 1000;
+
+	//ジャイロのΔ計算
+	before_p_delta = gyro_delta.P;	//積分用
+	gyro_delta.P = (mouse::get_ideal_angular_velocity()
+			- gyro::get_angular_velocity());
+	gyro_delta.I += (gyro_delta.P * CONTORL_PERIOD);
+	//gyro_delta.D = (gyro_delta.P - before_p_delta) * 1000;
+
+}
+
+float control::control_velocity() {
+	return cross_delta_gain(sen_encoder);
+}
+
+float control::control_angular_velocity() {
+	if (wall_control_flag) {
+		return (cross_delta_gain(sen_gyro) - cross_delta_gain(sen_photo));
+	} else {
+		return cross_delta_gain(sen_gyro);
+	}
+}
+
+void control::start_wall_control() {
+	wall_control_flag = true;
+}
+
+void control::stop_wall_control() {
+	wall_control_flag = false;
+}
+
+void control::start_control() {
+	control_phase = true;
+}
+
+void control::stop_control() {
+	control_phase = false;
+}
+
+float control::get_feedback(signed char right_or_left) {
+	if (right_or_left == MUKI_RIGHT) {			//右のモーターなら
+		return (control_velocity() - control_angular_velocity());
+
+	} else {										//左のモーターなら
+		return (control_velocity() + control_angular_velocity());
+
+	}
+}
+
+float control::get_feedforward(const signed char right_or_left) {
+	float velocity;		//目標速度
+
+	if (right_or_left == MUKI_RIGHT) {			//右のモーターなら
+		velocity = mouse::get_ideal_velocity()
+				- (mouse::get_ideal_angular_velocity() * TREAD_W / 2 / 1000);
+
+	} else {									//左のモーターなら
+		velocity = mouse::get_ideal_velocity()
+				+ (mouse::get_ideal_angular_velocity() * TREAD_W / 2 / 1000);
+
+	}
+	return (velocity / (2 * PI() * tire_R / 1000) * SPAR / PINION * M_SUM_ORM
+			/ MOTOR_ORM / MOTOR_CONST / get_battery()) * 100;
+}
+
+void control::posture_control() {
+	if (get_control_phase()) {			//制御を掛けるなら
+		if (is_FF_CONTROL || is_FB_CONTROL) {		//FFかFBのどちらかでも制御を掛けるとき
+
+			float duty_r = 0, duty_l = 0;		//dutyを保存するよう
+
+			if (is_FF_CONTROL) {			//FF制御を掛けるなら
+				duty_r = get_feedforward(MUKI_RIGHT);
+				duty_l = get_feedforward(MUKI_LEFT);
+			}
+			if (is_FB_CONTROL) {				//FB制御を掛けるなら
+				duty_r += get_feedback(MUKI_RIGHT);
+				duty_l += get_feedback(MUKI_LEFT);
+			}
+
+			motor::set_duty(motor_right, duty_r);
+			motor::set_duty(motor_left, duty_l);
+		}
+	}
+}
+
+bool control::get_control_phase() {
+	return control_phase;
+}
+
+void control::reset_delta() {
+	gyro_delta.P = 0;
+	gyro_delta.I = 0;
+	gyro_delta.D = 0;
+	photo_delta.P = 0;
+	photo_delta.I = 0;
+	photo_delta.D = 0;
+	encoder_delta.P = 0;
+	encoder_delta.I = 0;
+	encoder_delta.D = 0;
+
+}
+
+void control::fail_safe() {
+	//TODO 閾値どのくらいかわからない。Gyroも参照すべき？
+	if (encoder_delta.P > 0.5) {
+		motor::sleep_motor();
+		mouse::set_fail_flag(true);
+	}
+}
+
+control::control() {
+}
+
+control::~control() {
 
 }
 

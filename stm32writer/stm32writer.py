@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 # coding=utf-8
 
 import sys, optparse, datetime
@@ -71,6 +71,12 @@ try:
 		dest="time_flag",
 		default=False,
 		help="print time after the start of connection with a device")
+	parser.add_option(
+		"-b", "--binary",
+		action="store_true",
+		dest="binary_flag",
+		default=False,
+		help="analyze input file as binary file")
 
 	(options, args) = parser.parse_args()
 	if not args:
@@ -118,47 +124,86 @@ try:
 		print "Write protect was unprotected"
 
 	for filename in args:
-		# motファイルからデータ抽出
-		(addr, data, start_addr) = stm32_data.analyze_mot_file(filename)
+                if options.binary_flag:
+                        (addr, data, start_addr) = stm32_data.analyze_bin_file(filename, 0x08000000)
 
-		# データレコード再構成
-		(addr, data) = stm32_data.reconstruct_records(addr, data)
+                        if options.time_flag:
+			        print_time(datetime.datetime.now() - t0)
 
-		if options.time_flag:
-			print_time(datetime.datetime.now() - t0)
-
-		# 書き込み予定領域のページ番号，セクター番号を取得
-		(pages, sectors) = stm32_data.make_erase_page_list(addr, data, PID)
-		if options.erase_page_flag:
-			if pages:
-				print "Pages to be erased:",
-				for x in pages:
-					print " " + str(x),
-				print
-			if sectors:
-				print "Sectors to be erased:",
-				for x in sectors:
-					print " " + str(x),
-				print
-		
-		# 消去する
-		stm32_data.erase_flash(ser, pages, sectors, commands)
-
-		if options.time_flag:
-			print_time(datetime.datetime.now() - t0)
-
-		# 書き込み
-		stm32_data.write_data(ser, addr, data)
-
-		if options.time_flag:
-			print_time(datetime.datetime.now() - t0)
-
-		# 書き込んだデータとオリジナルの比較
-		if options.compare_flag:
-			stm32_data.compare_data(ser, addr, data)
-
+		        # 書き込み予定領域のページ番号，セクター番号を取得
+			(pages, sectors) = stm32_data.make_erase_page_list(addr, data, PID)
+			if options.erase_page_flag:
+				if pages:
+					print "Pages to be erased:",
+					for x in pages:
+						print " " + str(x),
+					print
+				if sectors:
+					print "Sectors to be erased:",
+					for x in sectors:
+						print " " + str(x),
+					print
+			
+			# 消去する
+			stm32_data.erase_flash(ser, pages, sectors, commands)
+	
 			if options.time_flag:
 				print_time(datetime.datetime.now() - t0)
+	
+			# 書き込み
+			stm32_data.write_data(ser, addr, data)
+	
+			if options.time_flag:
+				print_time(datetime.datetime.now() - t0)
+	
+			# 書き込んだデータとオリジナルの比較
+			if options.compare_flag:
+				stm32_data.compare_data(ser, addr, data)
+	
+				if options.time_flag:
+					print_time(datetime.datetime.now() - t0)
+
+                else :
+		        # motファイルからデータ抽出
+		        (addr, data, start_addr) = stm32_data.analyze_mot_file(filename)
+		        # データレコード再構成
+		        (addr, data) = stm32_data.reconstruct_records(addr, data)
+
+		        if options.time_flag:
+			        print_time(datetime.datetime.now() - t0)
+
+		        # 書き込み予定領域のページ番号，セクター番号を取得
+			(pages, sectors) = stm32_data.make_erase_page_list(addr, data, PID)
+			if options.erase_page_flag:
+				if pages:
+					print "Pages to be erased:",
+					for x in pages:
+						print " " + str(x),
+					print
+				if sectors:
+					print "Sectors to be erased:",
+					for x in sectors:
+						print " " + str(x),
+					print
+			
+			# 消去する
+			stm32_data.erase_flash(ser, pages, sectors, commands)
+	
+			if options.time_flag:
+				print_time(datetime.datetime.now() - t0)
+	
+			# 書き込み
+			stm32_data.write_data(ser, addr, data)
+	
+			if options.time_flag:
+				print_time(datetime.datetime.now() - t0)
+	
+			# 書き込んだデータとオリジナルの比較
+			if options.compare_flag:
+				stm32_data.compare_data(ser, addr, data)
+	
+				if options.time_flag:
+					print_time(datetime.datetime.now() - t0)
 
 		print
 

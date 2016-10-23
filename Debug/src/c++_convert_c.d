@@ -1,4 +1,5 @@
-src/hardware.o: ../src/hardware.cpp \
+src/c++_convert_c.o: ../src/c++_convert_c.cpp \
+ C:/Users/Koizumi/workspace/halfmouse/inc/c++_convert_c.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/hardware.h \
  C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/CMSIS/device/stm32f4xx.h \
  C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/CMSIS/core/core_cm4.h \
@@ -35,11 +36,12 @@ src/hardware.o: ../src/hardware.cpp \
  C:/Users/Koizumi/workspace/halfmouse/inc/define.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/extern_c.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/user.h \
- C:/Users/Koizumi/workspace/halfmouse/inc/hardware.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/ad_convert.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/parameter.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/serial.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/run.h
+
+C:/Users/Koizumi/workspace/halfmouse/inc/c++_convert_c.h:
 
 C:/Users/Koizumi/workspace/halfmouse/inc/hardware.h:
 
@@ -112,8 +114,6 @@ C:/Users/Koizumi/workspace/halfmouse/inc/define.h:
 C:/Users/Koizumi/workspace/halfmouse/inc/extern_c.h:
 
 C:/Users/Koizumi/workspace/halfmouse/inc/user.h:
-
-C:/Users/Koizumi/workspace/halfmouse/inc/hardware.h:
 
 C:/Users/Koizumi/workspace/halfmouse/inc/ad_convert.h:
 

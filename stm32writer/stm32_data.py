@@ -78,6 +78,27 @@ def analyze_mot_file(filename):
 	return (addr, data, start_addr)
 
 
+def analyze_bin_file(filename, staddr):
+	print 'Reading "%s"' % filename
+	f = open(filename)
+
+        addr = []
+	data = []
+	start_addr = staddr
+
+	buf = f.read()
+
+        for i in range(len(buf)/16):
+                line = buf[16*i:16*i+16]
+                data.append(line)
+                addr.append(start_addr+16*i)
+
+	print "    Number of data bytes: %d" % len(data)
+	print "    Start address: 0x%08x" % start_addr
+	f.close()
+	return (addr, data, start_addr)
+
+
 def reconstruct_records(addr, data):
 	print "Reconstructing data records..."
 

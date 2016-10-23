@@ -12,16 +12,11 @@
 #include "define.h"
 #include "extern_c.h"
 #include "user.h"
+#include "ad_convert.h"
+#include "parameter.h"
+#include"run.h"
 
-/*
- #include"define.h"
- #include"parameter.h"
- #include"ad_convert.h"
- #include"user.h"
- #include"run.h"
- */
 
-void init_hardware();	//init.hに引き渡すための初期化関数
 
 
 //自作7セグ関連
@@ -61,15 +56,19 @@ private:
 	static const char MAX_DUTY;	 	//Dutyの最大値［％］
 	static const char MAX_COUNT;	//Dutyの最大値［％］
 
+	static bool motor_state;		//motorが起動していればTRUE。
+
 	motor();
 
 public:
 	static signed char right_duty,left_duty;		//duty[％]
 
-	static void set_duty(const MOTOR_SIDE side, const signed short set_duty);//モーターのDuty決定
+	static void set_duty(const MOTOR_SIDE side, const float set_duty);//モーターのDuty決定
 
 	static void sleep_motor();//モータードライバをスリープ状態に
 	static void stanby_motor();//モータードライバをスタンバイ状態に
+
+	static bool isEnable();		//motorが起動しているかどうか
 
 	~motor();
 };
@@ -107,7 +106,7 @@ private:
 public:
 	static uint16_t read_spi(uint16_t read_reg);		//SPI通信でregレジスタから読みだす
 	static void write_spi(uint16_t reg, uint16_t data);		//SPI通信でregレジスタにdataを書き込む
-	static uint16_t get_mpu6000_value(SEN_TYPE sen, AXIS_t axis);		//senセンサーのaxis軸方向のデータを読む
+	static uint16_t get_mpu_value(SEN_TYPE sen, AXIS_t axis);		//senセンサーのaxis軸方向のデータを読む
 
 	mpu6000();
 
@@ -159,14 +158,97 @@ private:
 	const static uint32_t MOVING_AVERAGE;	//移動平均をとる時間　単位は制御周期
 	const static uint32_t MEDIAN;		//カウントの中央値
 
-	static float right_velocity,left_velocity,velocity;
 	encoder();
 
 public:
-	static void cal_encoder();		//モーターのEncoderの値計算
+	static float right_velocity,left_velocity,velocity;
+
+	static void interrupt_encoder();		//モーターのEncoderの値計算
 	static float get_velocity();//左右の平均(重心速度)のEncoder取得[m/s]　 移動平均取ってることに注意！
 
 	~encoder();
 };
+
+//光学センサー関連
+class photo {
+private:
+	static signed int right_ad, left_ad, front_right_ad, front_left_ad;
+	static signed int right_ref, left_ref, front_right_ref, front_left_ref;
+	static void switch_led(PHOTO_TYPE sensor_type, unsigned char one_or_zero);
+	static bool light_flag;		//赤外線LEDを光らせてセンサー値を読むかどうかのフラグ
+
+	photo();
+
+public:
+
+	static void light(PHOTO_TYPE sensor_type);
+	static void turn_off(PHOTO_TYPE sensor_type);
+	static void turn_off_all();		//すべて消す
+
+	//TODO boolで引数にしなくても、関数内で判別してもいいかも
+	//消えてれば基準値として、光っていればその差分を記録する
+	static void set_ad(PHOTO_TYPE sensor_type, bool on_light);
+
+	static unsigned int get_ad(PHOTO_TYPE sensor_type);
+
+	//TODO この関数はマウスclassにあるべきかも
+	static bool check_wall(unsigned char muki);
+
+
+	~photo();
+
+};
+
+
+
+//それぞれのセンサから制御をかけるクラス
+
+//PIDのゲインと偏差を管理する用の構造体
+typedef struct {
+	float P;
+	float I;
+	float D;
+} PID;
+
+class control {
+private:
+	//TODO D項はいらないらしいハセシュン曰く
+	static float cross_delta_gain(SEN_TYPE sensor);//P_GAIN*P_DELTA+・・・を行う
+
+	static bool wall_control_flag;//壁制御をかけてればtrue、切ってればfalse。
+	static bool control_phase;//姿勢制御をかけてるか否か。かけていればtrue
+
+	static float control_velocity();//速度に関するPID制御(エンコーダーのみ)。戻り値はDuty？
+	static float control_angular_velocity();//速度に関するPID制御(エンコーダーのみ)。戻り値はDuty？
+
+	static float get_feedback(const signed char right_or_left);//FBを掛けた後のDutyを返す。PID制御。
+	static float get_feedforward(const signed char right_or_left);//FFを掛けた後のDutyを返す。
+
+	static bool is_FF_CONTROL,is_FB_CONTROL;	//FFとFBの制御かけるかどうか。かけるならTrue
+
+	control();
+
+public:
+	static PID gyro_delta,photo_delta,encoder_delta;//各種Δ
+
+	static void cal_delta();//割り込み関数内で、偏差を計算する
+
+	static void posture_control();//FF,FB制御をかける。set_dutyまで行う。
+
+	static void start_wall_control();//壁制御をかける
+	static void stop_wall_control();//壁制御を切る
+
+	static void start_control();//制御をかける
+	static void stop_control();//制御をとめる
+
+	static bool get_control_phase();//制御がかかっているかを取得。かかっていればtrue
+
+	static void reset_delta();
+
+	static void fail_safe();//Iゲインが一定以上いったらモーターを止める
+
+	~control();
+};
+
 
 #endif /* HARDWARE_H_ */

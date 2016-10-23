@@ -30,8 +30,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_it.h"
 
-uint32_t wait_counter = 0;
-
 /** @addtogroup Template_Project
  * @{
  */
@@ -129,7 +127,7 @@ void PendSV_Handler(void) {
  * @retval None
  */
 void SysTick_Handler(void) {
-	wait_counter++;
+	interrupt_timer();
 
 }
 

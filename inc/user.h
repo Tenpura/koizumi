@@ -58,7 +58,8 @@ public:
 
 //ログというよりバッファ。掲示板的
 //入力を文字列として保管
-extern "C" void putnbyte(char *buf, int16_t len);	//printf_logで使用
+//extern "C" void putnbyte(char *buf, int16_t len);	//printf_logで使用
+
 class log{
 private:
 	static char buf[buf_count];	//バッファ。+100はメモリオーバーフロー対策でとってある(暗黙で1回のログは100byte以下だと仮定)。

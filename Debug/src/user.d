@@ -35,7 +35,11 @@ src/user.o: ../src/user.cpp \
  C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/StdPeriph_Driver/inc/stm32f4xx_dcmi.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/define.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/hardware.h \
- C:/Users/Koizumi/workspace/halfmouse/inc/user.h
+ C:/Users/Koizumi/workspace/halfmouse/inc/user.h \
+ C:/Users/Koizumi/workspace/halfmouse/inc/ad_convert.h \
+ C:/Users/Koizumi/workspace/halfmouse/inc/parameter.h \
+ C:/Users/Koizumi/workspace/halfmouse/inc/serial.h \
+ C:/Users/Koizumi/workspace/halfmouse/inc/run.h
 
 C:/Users/Koizumi/workspace/halfmouse/inc/user.h:
 
@@ -110,3 +114,11 @@ C:/Users/Koizumi/workspace/halfmouse/inc/define.h:
 C:/Users/Koizumi/workspace/halfmouse/inc/hardware.h:
 
 C:/Users/Koizumi/workspace/halfmouse/inc/user.h:
+
+C:/Users/Koizumi/workspace/halfmouse/inc/ad_convert.h:
+
+C:/Users/Koizumi/workspace/halfmouse/inc/parameter.h:
+
+C:/Users/Koizumi/workspace/halfmouse/inc/serial.h:
+
+C:/Users/Koizumi/workspace/halfmouse/inc/run.h:

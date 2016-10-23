@@ -70,6 +70,12 @@ void init_gpio(void) {
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;	//プルアップかプルダウンか
 	GPIO_Init(GPIOB, &GPIO_InitStructure);	//設定
 
+	//スイッチよう
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14;	//設定するピンを決める
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;		//入力に設定
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;	//プルアップかプルダウンか
+	GPIO_Init(GPIOB, &GPIO_InitStructure);	//設定
+
 	//GPIOC
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);	//クロック供給
 	GPIO_StructInit(&GPIO_InitStructure);	//構造体を初期化
@@ -227,7 +233,7 @@ void init_spi(void) {
 
 }
 
-const uint16_t MAX_PERIOD = (420 - 1); //PWMの周波数決めのための最大カウント
+const uint16_t MAX_PERIOD = (420 * 3 - 1); //PWMの周波数決めのための最大カウント
 void init_pwm() {
 
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
@@ -302,14 +308,14 @@ void init_enc() {
 	//クロック供給
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
 
 	//Remap
 	GPIO_PinAFConfig(GPIOC, GPIO_PinSource6, GPIO_AF_TIM3);
 	GPIO_PinAFConfig(GPIOC, GPIO_PinSource7, GPIO_AF_TIM3);
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource15, GPIO_AF_TIM4);
-	GPIO_PinAFConfig(GPIOB, GPIO_PinSource3, GPIO_AF_TIM4);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource15, GPIO_AF_TIM2);
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource3, GPIO_AF_TIM2);
 
 	//端子を位相係数ように設定
 	GPIO_InitTypeDef GPIO_InitStructure;
@@ -336,13 +342,13 @@ void init_enc() {
 	TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
 
 	//エンコーダ―について設定
-	TIM_SetAutoreload(TIM2, 65534);			//この値が上限になる？
+	TIM_SetAutoreload(TIM2, 65535);			//この値が上限になる？
 	TIM_EncoderInterfaceConfig(TIM2, TIM_EncoderMode_TI12,
-			TIM_ICPolarity_Rising, TIM_ICPolarity_Rising);		//CH1とCH2の両方のエッジでカウント、CH1もCH2も立ち上がりを読む
+	TIM_ICPolarity_Rising, TIM_ICPolarity_Rising);//CH1とCH2の両方のエッジでカウント、CH1もCH2も立ち上がりを読む
 	TIM_Cmd(TIM2, ENABLE);		//タイマ起動
-	TIM_SetAutoreload(TIM3, 65534);			//この値が上限になる？
+	TIM_SetAutoreload(TIM3, 65535);			//この値が上限になる？
 	TIM_EncoderInterfaceConfig(TIM3, TIM_EncoderMode_TI12,
-			TIM_ICPolarity_Rising, TIM_ICPolarity_Rising);
+	TIM_ICPolarity_Rising, TIM_ICPolarity_Rising);
 	TIM_Cmd(TIM3, ENABLE);
 
 }

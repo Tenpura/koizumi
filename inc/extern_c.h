@@ -17,6 +17,7 @@
 //stm32のライブラリ関数
 extern "C" void GPIO_SetBits(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin);
 extern "C" void GPIO_ResetBits(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin);
+extern "C" uint8_t GPIO_ReadInputDataBit(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin);
 
 extern "C" void GPIO_PinAFConfig(GPIO_TypeDef* GPIOx, uint16_t GPIO_PinSource, uint8_t GPIO_AF);
 
@@ -47,6 +48,7 @@ extern "C" uint32_t SysTick_Config(uint32_t ticks);
 //ユーザー定義関数
 extern "C" void init_all(void);
 
+extern "C" void putnbyte(char *buf, int16_t len);	//printf_logで使用
 extern "C" int myprintf(const char *fmt, ...);
 
 /*
@@ -89,6 +91,8 @@ extern "C" unsigned long get_count_ms();//msのカウントを返す。
 
 extern "C" void sound_bz(unsigned int Hz, unsigned int bz_miri_second);
 */
+
+extern "C" void interrupt_timer();
 
 #endif
 

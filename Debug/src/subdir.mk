@@ -12,15 +12,21 @@ C_SRCS += \
 
 CPP_SRCS += \
 ../src/ad_convert.cpp \
+../src/c++_convert_c.cpp \
 ../src/hardware.cpp \
 ../src/main.cpp \
+../src/parameter.cpp \
+../src/run.cpp \
 ../src/user.cpp 
 
 OBJS += \
 ./src/ad_convert.o \
+./src/c++_convert_c.o \
 ./src/hardware.o \
 ./src/init\ .o \
 ./src/main.o \
+./src/parameter.o \
+./src/run.o \
 ./src/serial.o \
 ./src/stm32f4xx_it.o \
 ./src/syscalls.o \
@@ -36,8 +42,11 @@ C_DEPS += \
 
 CPP_DEPS += \
 ./src/ad_convert.d \
+./src/c++_convert_c.d \
 ./src/hardware.d \
 ./src/main.d \
+./src/parameter.d \
+./src/run.d \
 ./src/user.d 
 
 
@@ -46,7 +55,7 @@ src/%.o: ../src/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: MCU G++ Compiler'
 	@echo %cd%
-	arm-none-eabi-g++ -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -DSTM32F405RGTx -DSTM32F4 -DSTM32 -DDEBUG -DUSE_STDPERIPH_DRIVER -DSTM32F40XX -DSTM32F40_41xxx -I"C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib" -I"C:/Users/Koizumi/workspace/halfmouse/inc" -I"C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/CMSIS/core" -I"C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/CMSIS/device" -I"C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/StdPeriph_Driver/inc" -O0 -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fno-exceptions -fno-rtti -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@" "$<"
+	arm-none-eabi-g++ -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -std=c++1y -DSTM32F405RGTx -DSTM32F4 -DSTM32 -DDEBUG -DUSE_STDPERIPH_DRIVER -DSTM32F40XX -DSTM32F40_41xxx -I"C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib" -I"C:/Users/Koizumi/workspace/halfmouse/inc" -I"C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/CMSIS/core" -I"C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/CMSIS/device" -I"C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/StdPeriph_Driver/inc" -O0 -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fno-exceptions -fno-rtti -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

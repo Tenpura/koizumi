@@ -44,6 +44,7 @@ try:
 #	command += " --compare"
 	command += " --go"
 	command += " --time"
+#	command += " --binary"
 	command += " " + mot_files
 	print command
 	print
