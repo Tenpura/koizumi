@@ -5,20 +5,19 @@
  *      Author: Koizumi
  */
 
-
 #include"parameter.h"
-//ideal_photo[x][y]	xは0がクラシック,1がハーフ	yが光学センサの向きに対応。
-//right left front_right front_left
-const unsigned int parameter::ideal_photo[2][4] = { { 3250, 3200, 10815, 10100 }, { 100,
-		100, 100, 100 } };
-const unsigned int parameter::min_wall_photo[2][4]={{20000,2000,0,0},{0,0,0,0}};
-
+//ideal_photo[x][y]	xは0がハーフ,1がクラシック	yが光学センサの向きに対応。
+//right left front_right front_left,front
+const unsigned int parameter::ideal_photo[2][5] = { { 460, 680, 10000, 560, 0 },
+		{ 3250, 3200, 10815, 10100, 0 } };
+const unsigned int parameter::min_wall_photo[2][5] = { { 370, 580, 0, 0, 1100 },
+		{ 20000, 2000, 0, 0, 0 } };
 
 //0番目は探索用
-const TRAPEZOID parameter::straight_run[RUN_MODE_NUMBER] = { { 2.0, SEARCH_VELOCITY, 2.0 },
-		{ 2.0, 2.0, 2.0 }, { 2.0, 2.0, 2.0 } };
+const TRAPEZOID parameter::straight_run[RUN_MODE_NUMBER] = { { 2.0,
+		SEARCH_VELOCITY, 2.0 }, { 2.0, 2.0, 2.0 }, { 2.0, 2.0, 2.0 } };
 
-const INIT_SLALOM parameter::right_slalom[RUN_MODE_NUMBER]={0};
+const INIT_SLALOM parameter::right_slalom[RUN_MODE_NUMBER] = { 0 };
 const INIT_SLALOM parameter::left_slalom[RUN_MODE_NUMBER] = { 0 };
 
 float parameter::get_run_acceleration(const unsigned char select_mode) {
@@ -48,6 +47,10 @@ unsigned int parameter::get_ideal_photo(PHOTO_TYPE photo_type) {
 		return ideal_photo[MOUSE_MODE - 1][front_left];
 		break;
 
+	case front:
+		return ideal_photo[MOUSE_MODE - 1][front];
+		break;
+
 	}
 
 	return 0;
@@ -70,11 +73,14 @@ unsigned int parameter::get_min_wall_photo(PHOTO_TYPE photo_type) {
 	case front_left:
 		return min_wall_photo[MOUSE_MODE - 1][front_left];
 		break;
+
+	case front:
+		return min_wall_photo[MOUSE_MODE - 1][front];
+		break;
 	}
 
 	return 0;
 }
-
 
 float parameter::get_run_max_velocity(const unsigned char select_mode) {
 	if (select_mode >= RUN_MODE_NUMBER) {			//存在しないモードを選択したらエラー

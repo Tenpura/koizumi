@@ -38,8 +38,8 @@
 
 class parameter {
 private:
-	const static unsigned int ideal_photo[2][4];			//ideal_photo[クラシックorハーフ][光学センサの向き]
-	const static unsigned int min_wall_photo[2][4];			//壁がある時の最小値[クラシックorハーフ][光学センサの向き]
+	const static unsigned int ideal_photo[2][5];			//ideal_photo[クラシックorハーフ][光学センサの向き]
+	const static unsigned int min_wall_photo[2][5];			//壁がある時の最小値[クラシックorハーフ][光学センサの向き]
 	const static TRAPEZOID straight_run[RUN_MODE_NUMBER];
 	const static INIT_SLALOM right_slalom[RUN_MODE_NUMBER], left_slalom[RUN_MODE_NUMBER];
 

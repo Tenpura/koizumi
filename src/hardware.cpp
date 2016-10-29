@@ -728,8 +728,10 @@ void photo::interrupt(bool is_light) {
 	photo::set_ad(right, get_ad(right) - get_ref(right));		//差分を代入
 	photo::turn_off(right);
 
-	photo::set_ref(left, get_ad(left));		//消えてる時をrefにする
-	if (is_light) {
+	//XXX 左センサだけ消えてる時との差分をとってない
+	photo::set_ref(left, 0);		//消えてる時をrefにする
+	//photo::set_ref(left, get_ad(left));		//消えてる時をrefにする
+		if (is_light) {
 		photo::light(left);
 		for (int i = 0; i < wait_number; i++) {
 		}
@@ -740,7 +742,7 @@ void photo::interrupt(bool is_light) {
 	photo::set_ref(front_right, get_ad(front_right));		//消えてる時をrefにする
 	if (is_light) {
 		photo::light(front_right);
-		for (int i = 0; i < wait_number; i++) {
+		for (int i = 0; i < wait_number*2; i++) {
 		}
 	}
 	photo::set_ad(front_right, get_ad(front_right) - get_ref(front_right));	//差分を代入
@@ -857,8 +859,10 @@ bool photo::check_wall(unsigned char muki) {
 		return false;
 
 	case MUKI_UP:
-		if ((front_right_ad >= parameter::get_min_wall_photo(front_right))
-				|| (front_left_ad >= parameter::get_min_wall_photo(front_left))) {
+		//TODO 暇があったら、前壁見るのは斜めセンサいらない？？
+		if(get_value(front) >= parameter::get_min_wall_photo(front)){
+		//if ((front_right_ad >= parameter::get_min_wall_photo(front_right))
+		//		|| (front_left_ad >= parameter::get_min_wall_photo(front_left))) {
 			return true;
 		}
 		return false;
@@ -877,7 +881,7 @@ photo::~photo() {
 //XXX 各種ゲイン
 //control関連
 const PID gyro_gain = { 40, 108, 0 };
-const PID photo_gain = { 0, 0, 0 };
+const PID photo_gain = { 0.001,  0.000001, 0 };
 const PID encoder_gain = { 300, 1000, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta;
@@ -924,12 +928,23 @@ void control::cal_delta() {
 		photo_right_delta = 0;
 
 	} else {
+
+		//XXX 壁制御は壁から離れる場合だけ入れてる
 		if (photo::check_wall(MUKI_RIGHT)) {		//右壁がある
 			photo_right_delta = -(parameter::get_ideal_photo(right)
-					- photo::get_value(right));
+					- photo::get_value(right)) / parameter::get_ideal_photo(right)/*規格化*/;
+			if(photo_right_delta < 0){		//壁に近づくようには制御しない。
+				photo_right_delta = 0;
+			}
+
 			if (photo::check_wall(MUKI_LEFT)) {		//両壁がある
 				photo_left_delta = (parameter::get_ideal_photo(left)
-						- photo::get_value(left));
+						- photo::get_value(left)) / parameter::get_ideal_photo(left)/*規格化*/;
+
+				if(photo_left_delta > 0){		//壁に近づくようには制御しない。
+						photo_left_delta = 0;
+				}
+
 			} else {
 				//片方のときは、壁のある方を2倍かけることで疑似的に両壁アリと同じ制御量にする
 				photo_left_delta = 0;
@@ -941,6 +956,11 @@ void control::cal_delta() {
 				photo_left_delta = 2
 						* (parameter::get_ideal_photo(left)
 								- photo::get_value(left));
+
+				if(photo_left_delta > 0){		//壁に近づくようには制御しない。
+							photo_left_delta = 0;
+				}
+
 			} else {
 				//両方ない
 				photo_left_delta = 0;
@@ -948,7 +968,7 @@ void control::cal_delta() {
 			}
 		}
 	}
-	photo_delta.P = (-photo_right_delta + photo_left_delta);
+	photo_delta.P = (photo_right_delta - photo_left_delta);
 	photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
 	//photo_delta.D = (photo_delta.P - before_p_delta) * 1000;
 

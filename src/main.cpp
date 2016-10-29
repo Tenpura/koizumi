@@ -56,7 +56,7 @@ int main(void) {
 
 		}
 	}
-
+/*
 	while (1) {
 		myprintf("right %d  ", photo::get_value(right));
 		myprintf("left %d  ", photo::get_value(left));
@@ -68,13 +68,21 @@ int main(void) {
 		wait::ms(100);
 
 	}
-
+*/
 	mpu6000::init_mpu6000();
 
 	my7seg::count_down(3, 1000);
 
 	gyro::set_gyro_ref();
 	mouse::reset_angle();
+
+
+
+	while(photo::get_value(front)<(parameter::get_min_wall_photo(front)*1.5)){
+		my7seg::blink(8,100,1);
+	}
+
+	my7seg::count_down(5,500);
 
 	motor::stanby_motor();
 
@@ -86,6 +94,7 @@ int main(void) {
 	mouse::set_ideal_angular_velocity(0);
 	control::reset_delta();
 
+
 	flog[0][0] = -1;
 	mouse::set_distance_m(0);
 	mouse::reset_angle();
@@ -94,7 +103,8 @@ int main(void) {
 
 	//run::spin_turn(180);
 
-	run::accel_run(0.18 * 2, 0, 0);
+	control::start_wall_control();
+	run::accel_run(0.09 * 15, 0, 0);
 
 	my7seg::light(5);
 
@@ -130,10 +140,12 @@ int main(void) {
 }
 
 void interrupt_timer() {
+	GPIO_SetBits(GPIOA,GPIO_Pin_14);
+
 	wait_counter++;	//ms(ミリ秒)のカウントを1増加
 	mouse::add_one_count_ms();
 
-//	photo::interrupt(true);
+	photo::interrupt(true);
 
 	gyro::interrupt_gyro();				//gyroの値を取得
 	gyro::cal_angular_velocity();	//gyroから角速度を計算[°/s]
@@ -160,6 +172,9 @@ void interrupt_timer() {
 			i++;
 		}
 	}
+
+
+	GPIO_ResetBits(GPIOA,GPIO_Pin_14);
 
 }
 

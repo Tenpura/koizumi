@@ -61,6 +61,7 @@ void init_gpio(void) {
 	GPIO_InitTypeDef GPIO_InitStructure;	//初期設定のための構造体を宣言
 
 	//クロック供給
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);	//クロック供給
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);	//クロック供給
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);	//クロック供給
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);	//クロック供給
@@ -75,6 +76,10 @@ void init_gpio(void) {
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;		//オープンドレインorプッシュプル
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;	//プルアップかプルダウンか
 	GPIO_Init(GPIOB, &GPIO_InitStructure);	//設定
+
+	//先頭のLED
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14;	//設定するピンを決める
+	GPIO_Init(GPIOA, &GPIO_InitStructure);	//設定
 
 	//スイッチよう
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14;	//設定するピンを決める
