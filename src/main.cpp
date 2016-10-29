@@ -30,32 +30,54 @@ void interrupt_timer();			//CONTROL_PERIODÇ≤Ç∆Ç…äÑÇËçûÇﬁä÷êî
 
 int main(void) {
 
+	for (int16_t i = 0; i < 10000; i++) {
+		//ÉNÉçÉbÉNÇà¿íËÇ≥ÇπÇÈÅH
+	}
+
 	//èâä˙ê›íË
 	init_all();
-	mpu6000::init_mpu6000();
 	mouse::reset_count();
-
-	my7seg::count_down(3, 500);
 
 	myprintf("vol -> %f\n\r", get_battery());
 
-	while (get_battery() < 3.9) {
-		my7seg::light_error();
-		wait::ms(500);
-		my7seg::turn_off();
-		wait::ms(500);
-	}
+	if (get_battery() < 4) {
+		while (1) {
 
-	myprintf("whi am i -> 0x%x\n\r", mpu6000::read_spi(0xf5));
-	myprintf("whi am i -> 0x%x\n\r", mpu6000::read_spi(0xf5));
-	myprintf("whi am i -> 0x%x\n\r", mpu6000::read_spi(0xf5));
+			my7seg::light_error();
+			wait::ms(500);
+
+			my7seg::turn_off();
+			wait::ms(500);
+
+			if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
+				break;
+			}
+
+		}
+	}
+/*
+	while(1){
+		myprintf("right %d  ",photo::get_value(right));
+		myprintf("left %d  ",photo::get_value(left));
+		myprintf("f_r %d  ",photo::get_value(front_right));
+		myprintf("f_l %d  ",photo::get_value(front_left));
+		myprintf("front %d  ",photo::get_value(front));
+		myprintf("\n\r");
+
+		wait::ms(100);
+
+	}
+*/
+	mpu6000::init_mpu6000();
+
+	my7seg::count_down(3, 1000);
+
+	gyro::set_gyro_ref();
+	mouse::reset_angle();
 
 	motor::stanby_motor();
 
-	motor::set_duty(motor_left,20);
-	motor::set_duty(motor_right,20);
-
-	wait::ms(100);
+	wait::ms(10);
 	control::start_control();
 	mouse::set_acceleration(0);
 	mouse::set_ideal_velocity(0);
@@ -63,23 +85,39 @@ int main(void) {
 	mouse::set_ideal_angular_velocity(0);
 	control::reset_delta();
 
+
+	flog[0][0] = -1;
 	mouse::set_distance_m(0);
+	mouse::reset_angle();
 
-	run::accel_run(0.18,0,0);
+	my7seg::light(8);
 
-/*
-	while(GPIO_ReadInputDataBit(GPIOB,GPIO_Pin_14)==1){
-		my7seg::light(3);
-		myprintf("right %.4f,left %.4f, ave %f\n\r",encoder::right_velocity,encoder::left_velocity,encoder::velocity);
-		wait::ms(100);
-	}
-	*/
-	wait::ms(10000);
+
+	run::spin_turn(90);
+
+	//run::accel_run(0.18*2, 0, 0);
+
+	my7seg::light(2);
+
+	wait::ms(1000);
+
+	/*
+	 while(GPIO_ReadInputDataBit(GPIOB,GPIO_Pin_14)==1){
+	 my7seg::light(3);
+	 myprintf("right %.4f,left %.4f, ave %f\n\r",encoder::right_velocity,encoder::left_velocity,encoder::velocity);
+	 wait::ms(100);
+	 }
+	 */
+
+
 	motor::sleep_motor();
 	my7seg::turn_off();
 
-	for(int i=0; i<10000;i++){
-		myprintf("%f,%f\n\r",flog[0][i],flog[1][i]);
+	while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
+	}
+
+	for (int i = 0; i < 1000; i++) {
+		myprintf("%f,%f\n\r", flog[0][i], flog[1][i]);
 	}
 
 	/*
@@ -97,32 +135,33 @@ void interrupt_timer() {
 	wait_counter++;	//ms(É~Éäïb)ÇÃÉJÉEÉìÉgÇ1ëùâ¡
 	mouse::add_one_count_ms();
 
-	/*
-	 gyro::set_gyro();				//gyroÇÃílÇéÊìæ
-	 gyro::cal_angle();				//gyroÇ©ÇÁäpìxÇåvéZ
-	 gyro::cal_angular_velocity();	//gyroÇ©ÇÁäpë¨ìxÇåvéZ[Åã/s]
-	 */
+	photo::interrupt(true);
+
+	gyro::interrupt_gyro();				//gyroÇÃílÇéÊìæ
+	gyro::cal_angular_velocity();	//gyroÇ©ÇÁäpë¨ìxÇåvéZ[Åã/s]
+	gyro::cal_angle();				//gyroÇ©ÇÁäpìxÇåvéZ
+
 	encoder::interrupt_encoder();
 
-	//ë¨ìxÇ∆ãóó£ÇåvéZ
-	mouse::cal_accel();
-	mouse::cal_distance();
+	mouse::interrupt();
 
 	control::cal_delta();			//épê®êßå‰Ç…ópÇ¢ÇÈïŒç∑ÇåvéZ
 	control::posture_control();
 
 //	control::fail_safe();
 
-
-	 static uint16_t i=0;
-	 if(motor::isEnable()){
-	 if(i<10000){
-		 flog[0][i] = encoder::left_velocity;
-		 flog[1][i] = encoder::right_velocity;
-	 i++;
-	 }
-	 }
-
+	static uint16_t i = 0;
+	if (motor::isEnable()) {
+		if (i == 0) {
+			if (flog[0][0] == -1) {
+				i++;
+			}
+		} else if (i < 10000) {
+			flog[0][i] = gyro::get_angular_velocity();
+			flog[1][i] = mouse::get_ideal_angular_velocity();
+			i++;
+		}
+	}
 
 }
 

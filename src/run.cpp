@@ -8,7 +8,8 @@
 #include"run.h"
 
 float mouse::ideal_acceleration, mouse::ideal_angular_acceleration;
-float mouse::ideal_velocity, mouse::ideal_angular_velocity;
+float mouse::ideal_velocity, mouse::ideal_angular_velocity, mouse::ideal_angle,
+		mouse::ideal_distance;
 float mouse::run_distance;
 unsigned long mouse::mouse_count_ms;
 
@@ -59,13 +60,12 @@ void mouse::set_ideal_angular_velocity(const float set_value_rad_s) {
 	ideal_angular_velocity = set_value_rad_s;
 }
 
-
-void mouse::set_ideal(const float accel, const float vel, const float dis){
+void mouse::set_ideal(const float accel, const float vel, const float dis) {
 	set_acceleration(accel);
 	set_ideal_velocity(vel);
 	set_distance_m(dis);
 }
-void mouse::set_ideal_ang(const float ang_a, const float ang_omega){
+void mouse::set_ideal_ang(const float ang_a, const float ang_omega) {
 	set_angular_acceleration(ang_a);
 	set_ideal_angular_velocity(ang_omega);
 }
@@ -80,7 +80,11 @@ void mouse::reset_angle() {
 }
 
 float mouse::get_angle_degree() {
-	return gyro::get_angle();
+	return degree(gyro::get_angle());
+}
+
+float mouse::get_ideal_angle_degree() {
+	return degree(ideal_angle);
 }
 
 float mouse::get_distance_m() {
@@ -157,17 +161,18 @@ void mouse::set_direction(const signed char direction_x,
 	}
 }
 
-bool mouse::get_fail_flag(){
+bool mouse::get_fail_flag() {
 	return fail_flag;
 }
 
-void mouse::set_fail_flag(bool set_flag){
+void mouse::set_fail_flag(bool set_flag) {
 	fail_flag = set_flag;
 }
 
-void mouse::cal_accel() {
+void mouse::cal_velocity() {
 	//（速度+=加速度）を制御にぶち込む
-	set_ideal_velocity(get_ideal_velocity() + get_acceleration() * CONTORL_PERIOD);
+	set_ideal_velocity(
+			get_ideal_velocity() + get_acceleration() * CONTORL_PERIOD);
 	//（角速度+=加角速度）を制御にぶち込む
 	set_ideal_angular_velocity(
 			get_ideal_angular_velocity() + get_angular_acceleration() * CONTORL_PERIOD);
@@ -175,9 +180,18 @@ void mouse::cal_accel() {
 
 void mouse::cal_distance() {
 	run_distance += get_ideal_velocity() * CONTORL_PERIOD;
+	ideal_distance += get_ideal_velocity() * CONTORL_PERIOD;
 }
 
-void mouse::error(){
+void mouse::interrupt() {
+	//速度と距離を計算
+	mouse::cal_velocity();
+	mouse::cal_distance();
+	ideal_angle += get_ideal_angular_velocity() * CONTORL_PERIOD;
+
+}
+
+void mouse::error() {
 	//TODO エラー処理は必要に応じて書くこと
 }
 
@@ -346,7 +360,7 @@ void run::spin_turn(const float target_degree) {
 						/ (2 * angular_acceleration));
 		//減速に必要な角度が残ってなければ抜ける
 		if (angle_degree >= (target_degree - mouse::get_angle_degree())) {
-			break;
+						break;
 		}
 	}
 

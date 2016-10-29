@@ -95,7 +95,7 @@ float parameter::get_run_de_acceleration(const unsigned char select_mode) {
 }
 
 float parameter::get_slalom_para(const SLALOM_ELEMENT slalom_element,
-		const signed char right_or_left, const unsigned char select_mode) {
+		const int8_t right_or_left, const uint8_t select_mode) {
 
 	if (select_mode >= RUN_MODE_NUMBER) {			//存在しないモードを選択したらエラー
 		mouse::error();

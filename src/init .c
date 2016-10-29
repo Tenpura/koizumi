@@ -60,8 +60,14 @@ void init_gpio(void) {
 	//IOの出力設定
 	GPIO_InitTypeDef GPIO_InitStructure;	//初期設定のための構造体を宣言
 
-	//GPIOB
+	//クロック供給
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);	//クロック供給
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);	//クロック供給
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);	//クロック供給
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOH, ENABLE);
+
+
+	//GPIOB
 	GPIO_StructInit(&GPIO_InitStructure);	//構造体を初期化
 	GPIO_InitStructure.GPIO_Pin = (GPIO_Pin_4 | GPIO_Pin_12 | GPIO_Pin_15);	//設定するピンを決める
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;		//クロック
@@ -77,7 +83,6 @@ void init_gpio(void) {
 	GPIO_Init(GPIOB, &GPIO_InitStructure);	//設定
 
 	//GPIOC
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);	//クロック供給
 	GPIO_StructInit(&GPIO_InitStructure);	//構造体を初期化
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_10
 			| GPIO_Pin_11 | GPIO_Pin_12 | GPIO_Pin_14 | GPIO_Pin_15;//設定するピンを決める
@@ -97,7 +102,6 @@ void init_gpio(void) {
 	GPIO_SetBits(GPIOC, GPIO_Pin_15);	//Pinを1に
 
 	//GPIOH
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOH, ENABLE);
 	GPIO_StructInit(&GPIO_InitStructure);	//構造体を初期化
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;	//設定するピンを決める
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;		//クロック
@@ -108,6 +112,24 @@ void init_gpio(void) {
 
 	GPIO_SetBits(GPIOH, GPIO_Pin_0);
 	GPIO_SetBits(GPIOH, GPIO_Pin_1);
+
+
+	//センサーLEDよう
+	GPIO_StructInit(&GPIO_InitStructure);	//構造体を初期化
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12;	//設定するピンを決める
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;		//クロック
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;		//出力に設定
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;		//オープンドレインorプッシュプル
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;	//プルアップかプルダウンか
+	GPIO_Init(GPIOC, &GPIO_InitStructure);	//設定
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;	//設定するピンを決める
+	GPIO_Init(GPIOD, &GPIO_InitStructure);	//設定
+
+	GPIO_ResetBits(GPIOC, GPIO_Pin_10);	//F_LEFT
+	GPIO_ResetBits(GPIOC, GPIO_Pin_11);	//F_RIGHT
+	GPIO_ResetBits(GPIOC, GPIO_Pin_12);	//FRONT
+	GPIO_ResetBits(GPIOD, GPIO_Pin_2);	//SIDE
+
 
 }
 

@@ -27,6 +27,10 @@ private:
 	static float ideal_velocity;//マウスの目標速度[m/s]
 	static float ideal_angular_velocity;//マウスの目標角速度[rad/s]
 
+	//理想値から計算した距離と角度
+	static float ideal_distance;
+	static float ideal_angle;
+
 	static float run_distance;//マウスの走行距離[m]
 
 	static unsigned long mouse_count_ms;//マウスの時間[msec].基本リセットしない
@@ -35,6 +39,10 @@ private:
 
 	static POSITION position;//マウスの位置（座標）
 	static unsigned char mouse_direction;//マウスの向き
+
+	static void cal_velocity();//加速を行う。速度の加減算
+	static void cal_distance();//距離計算
+
 
 	mouse();
 
@@ -62,6 +70,7 @@ public:
 	static void set_ideal_ang(const float ang_a, const float ang_omega);
 
 	static float get_angle_degree();
+	static float get_ideal_angle_degree();
 	static void reset_angle();
 
 	static float get_distance_m();//距離を取得
@@ -80,8 +89,8 @@ public:
 	static bool get_fail_flag();		//フェイルセーフがかかったかどうかの判別用
 	static void set_fail_flag(bool set_flag);
 
-	static void cal_accel();//加速を行う。速度の加減算
-	static void cal_distance();//距離計算
+	static void interrupt();	//
+
 
 	static void error();	//フェイルセーフとか、かかった時に、ここに飛びますよ
 

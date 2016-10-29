@@ -52,7 +52,7 @@ public:
 	static float get_run_max_velocity(const unsigned char select_mode);
 	static float get_run_de_acceleration(const unsigned char select_mode);
 
-	static float get_slalom_para( const SLALOM_ELEMENT slalom_element, const signed char right_or_left, const unsigned char select_mode);
+	static float get_slalom_para( const SLALOM_ELEMENT slalom_element, const int8_t right_or_left, const uint8_t select_mode);
 
 };
 

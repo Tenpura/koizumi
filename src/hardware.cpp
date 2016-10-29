@@ -347,13 +347,13 @@ void mpu6000::write_spi(uint16_t reg, uint16_t data) {
 	GPIO_SetBits(cs_GPIOx, cs_GPIO_Pin); //CSをリセット
 
 	//連続して行ってもうまくいくように少しだけ待つ。
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 10; i++)
 		;
 
 }
 
-uint16_t mpu6000::get_mpu_value(SEN_TYPE sen, AXIS_t axis) {
-	uint16_t data = 0;
+int16_t mpu6000::get_mpu_value(SEN_TYPE sen, AXIS_t axis) {
+	int16_t data = 0;
 	uint16_t reg_h = 0;	//highの値へのレジスタ
 	uint16_t reg_l = 0;	//Lowの値へのレジスタ
 
@@ -398,7 +398,7 @@ uint16_t mpu6000::get_mpu_value(SEN_TYPE sen, AXIS_t axis) {
 	}
 
 	//Highの方は上位に8ビットずらしてLowと合わせて、目的のデータを得る。
-	data = (read_spi(reg_h) << 8) + read_spi(reg_l);
+	data = static_cast<int16_t>((read_spi(reg_h) << 8) + read_spi(reg_l));
 
 	return data;
 }
@@ -408,15 +408,28 @@ void mpu6000::init_mpu6000() {
 	static const uint16_t PWR_MGMT_1 = 0x6B;
 	static const uint16_t PWR_MGMT_2 = 0x6c;
 	static const uint16_t USER_CTRL = 0x6a;
+	static const uint16_t DATA_CONFIG = 0x1a;
 	static const uint16_t GYRO_CONFIG = 0x1b;
 	static const uint16_t ACCEL_CONFIG = 0x1c;
 
-	write_spi(SIGNAL_PATH_RESET, 0x06);	//ジャイロ、加速度リセット
-	write_spi(PWR_MGMT_1, 0x08);			//サイクル1、SLEEP解除、温度センサは使わない
-	write_spi(USER_CTRL, 0x10);			//I2CをDisable、SPIをEnable
+	write_spi(PWR_MGMT_1, 0x00);		//サイクル1、SLEEP解除、温度センサは使わない
+	write_spi(PWR_MGMT_2, 0xEE);		//ジャイロのZ軸方向、加速度のY軸方向以外は停止//6c
+	write_spi(USER_CTRL, 16);			//I2CをDisable、SPIをEnable
+	write_spi(SIGNAL_PATH_RESET, 0x06);	//ジャイロ、加速度リセット//04
+	write_spi(DATA_CONFIG, 0x00);		//フィルターはかけない
 	write_spi(GYRO_CONFIG, 0x18);		//ジャイロを±2000°/sに設定
 	write_spi(ACCEL_CONFIG, 0x18);		//加速度を±16g/sに設定
-	write_spi(PWR_MGMT_2, 0xEE);			//ジャイロのZ軸方向、加速度のY軸方向以外は停止
+
+	//確認用
+	/*
+	 myprintf("PWR_MGMT_1 0x%x\n\r",read_spi(PWR_MGMT_1));
+	 myprintf("PWR_MGMT_2 0x%x\n\r",read_spi(PWR_MGMT_2));
+	 myprintf("USER_CTRL 0d%d\n\r",read_spi(USER_CTRL));
+	 myprintf("SIGNAL_PATH_RESET 0x%x\n\r",read_spi(SIGNAL_PATH_RESET));
+	 myprintf("DATA_CONFIG 0x%x\n\r",read_spi(DATA_CONFIG));
+	 myprintf("GYRO_CONFIG 0x%x\n\r",read_spi(GYRO_CONFIG));
+	 myprintf("ACCEL_CONFIG 0x%x\n\r",read_spi(ACCEL_CONFIG));
+	 */
 }
 
 mpu6000::mpu6000() {
@@ -425,63 +438,64 @@ mpu6000::mpu6000() {
 mpu6000::~mpu6000() {
 
 }
-unsigned short gyro::gyro_value;
+int16_t gyro::gyro_value;
 float gyro::default_angle;
-float gyro::angle, gyro::before_angle, gyro::gyro_ref;
+float gyro::angle, gyro::gyro_ref;
 float gyro::angular_velocity;
 float gyro::least_square_slope = 0;
 const float gyro::GYRO_PERIOD = CONTORL_PERIOD;		//制御周期[s]
-const float gyro::REF_TIME = 1;							//リファレンスとる時間[s]
+const float gyro::REF_TIME = 2;							//リファレンスとる時間[s]
 
 void gyro::interrupt_gyro() {
-	gyro_value = mpu6000::get_mpu_value(sen_gyro, axis_z);	//Z方向のジャイロを見る
+	gyro_value = -mpu6000::get_mpu_value(sen_gyro, axis_z);	//Z方向のジャイロを見る。時計回り正
+
 }
 
-unsigned short gyro::get_gyro() {
+int16_t gyro::get_gyro() {
 	return gyro_value;
 }
 
 float gyro::get_gyro_ref() {
 	int32_t gyro_sum = 0;
-	int i;
-	for (i = 0; i < (REF_TIME / GYRO_PERIOD); i++) {
+	int32_t i;
+	for (i = 0; i < static_cast<int32_t>(REF_TIME / GYRO_PERIOD); i++) {
 		gyro_sum += get_gyro();
 		wait::ms(1);
 	}
 
 	return (gyro_sum / (i + 1));
 }
-/*
- void gyro::set_least_square_slope() {
- //x,yとかはWikiの最小二乗法と同じ。xは時間[ms],yは角度[°]
- float x_square_sum = 0, x_sum = 0, y_sum = 0, xy_sum = 0;
- float temp_count = 0;
- float temp_gyro;
 
- mouse::reset_count();
+void gyro::set_least_square_slope() {
+	//x,yとかはWikiの最小二乗法と同じ。xは時間[ms],yは角度[°]
+	float x_square_sum = 0, x_sum = 0, y_sum = 0, xy_sum = 0;
+	float temp_count = 0;
+	float temp_gyro;
 
- while (mouse::get_count_ms() < LEAST_SQUARE_TIME) {
- temp_count = (float) mouse::get_count_ms();
- temp_gyro = gyro::get_angle();
+	mouse::reset_count();
 
- y_sum += temp_gyro;
- x_sum += temp_count;
- x_square_sum += (temp_count * temp_count);
- xy_sum += (temp_count * temp_gyro);
+	while (mouse::get_count_ms() < LEAST_SQUARE_TIME) {
+		temp_count = (float) mouse::get_count_ms();
+		temp_gyro = gyro::get_angle();
 
- //1ms経つまで待機
- while (temp_count >= mouse::get_count_ms()) {
- }
- }
+		y_sum += temp_gyro;
+		x_sum += temp_count;
+		x_square_sum += (temp_count * temp_count);
+		xy_sum += (temp_count * temp_gyro);
 
- if ((x_square_sum - x_sum * x_sum) == 0) {
- least_square_slope = 0;
- return;
- }
- least_square_slope += (float) ((LEAST_SQUARE_TIME * xy_sum - x_sum * y_sum)
- / (LEAST_SQUARE_TIME * x_square_sum - x_sum * x_sum));
- }
- */
+		//1ms経つまで待機
+		while (temp_count >= mouse::get_count_ms()) {
+		}
+	}
+
+	if ((x_square_sum - x_sum * x_sum) == 0) {
+		least_square_slope = 0;
+		return;
+	}
+	least_square_slope += (float) ((LEAST_SQUARE_TIME * xy_sum - x_sum * y_sum)
+			/ (LEAST_SQUARE_TIME * x_square_sum - x_sum * x_sum));
+}
+
 void gyro::set_gyro_ref() {
 	gyro_ref = get_gyro_ref();
 	//XXX ジャイロの補正に最小二乗法は使ってない
@@ -493,15 +507,11 @@ void gyro::set_gyro_ref() {
 
 void gyro::reset_angle() {
 	default_angle = 0;
-	before_angle = 0;
 	angle = 0;
 }
 
 void gyro::cal_angle() {
-	before_angle = angle;
-	default_angle += (gyro_value - gyro_ref) * GYRO_CONST * LOGIK_V / 4096;
-
-	angle = default_angle;
+	angle += angular_velocity * GYRO_PERIOD;
 	//XXX最小二乗法での補正はしてない
 	//最小二乗法で補正する
 	//angle = default_angle	- (least_square_slope * (float) mouse::get_count_ms());
@@ -512,7 +522,7 @@ float gyro::get_angle() {
 }
 
 void gyro::cal_angular_velocity() {
-	angular_velocity = radian((get_angle() - before_angle) / GYRO_PERIOD);
+	angular_velocity = radian((gyro_value - gyro_ref) / GYRO_SENSITIVITY);
 }
 
 float gyro::get_angular_velocity() {
@@ -533,24 +543,35 @@ const uint32_t encoder::MEDIAN = 32762;
 float encoder::left_velocity, encoder::right_velocity, encoder::velocity;
 
 void encoder::interrupt_encoder() {
-	static float sample_data[MOVING_AVERAGE] = { 0 };	//データを保存しておく配列
-	float sum = 0;
+	static float data_r[MOVING_AVERAGE] = { 0 };	//データを保存しておく配列
+	float sum_r = 0;
+	static float data_l[MOVING_AVERAGE] = { 0 };	//データを保存しておく配列
+	float sum_l = 0;
 
-	left_velocity = (static_cast <float> (TIM2->CNT) - 32762) * ENCODER_CONST / CONTORL_PERIOD
-			* tire_R;	//m/s
-	right_velocity = (32762 - static_cast <float> (TIM3->CNT)) * ENCODER_CONST / CONTROL_PERIOD
-			* tire_R;	//count*[rad/count]/[sec]*[m]
+	for (uint8_t i = 0; (i + 1) < MOVING_AVERAGE; i++) {
+		data_r[i + 1] = data_r[i];	//配列を1つずらす
+		sum_r += data_r[i + 1];			//ついでに加算する
+		data_l[i + 1] = data_l[i];	//配列を1つずらす
+		sum_l += data_l[i + 1];			//ついでに加算する
+	}
+
+	//配列の最初に入れる
+	data_r[0] = (32762 - static_cast<float>(TIM3->CNT)) * ENCODER_CONST
+			/ CONTROL_PERIOD * tire_R;	//count*[rad/count]/[sec]*[m]
+	data_l[0] = (static_cast<float>(TIM2->CNT) - 32762) * ENCODER_CONST
+			/ CONTORL_PERIOD * tire_R;	//m/s
+
 	TIM2->CNT = 32762;
 	TIM3->CNT = 32762;
 
-	for (uint8_t i = 0; (i + 1) < MOVING_AVERAGE; i++) {
-		sample_data[i + 1] = sample_data[i];	//配列を1つずらす
-		sum += sample_data[i + 1];			//ついでに加算する
-	}
-	sample_data[0] = (right_velocity + left_velocity) / 2;	//配列の最初に入れる
-	sum += sample_data[0];
+	sum_r += data_r[0];
+	sum_l += data_r[0];
 
-	velocity = sum / MOVING_AVERAGE;
+	right_velocity = sum_r / MOVING_AVERAGE;
+	left_velocity = sum_l / MOVING_AVERAGE;
+
+	velocity = (right_velocity + left_velocity) / 2;
+
 }
 
 float encoder::get_velocity() {
@@ -566,93 +587,235 @@ encoder::~encoder() {
 }
 
 signed int photo::right_ad, photo::left_ad, photo::front_right_ad,
-		photo::front_left_ad;
+		photo::front_left_ad, photo::front_ad;
 signed int photo::right_ref, photo::left_ref, photo::front_right_ref,
-		photo::front_left_ref;
-
+		photo::front_left_ref, photo::front_ref;
 bool photo::light_flag = false;
-//TODO Photoセンサーは未実装
-/*
- void photo::switch_led(PHOTO_TYPE sensor_type, unsigned char one_or_zero) {
- switch (sensor_type) {
- case right:
- PORTA.DR.BIT.B5 = one_or_zero;
- break;
 
- case left:
- PORT9.DR.BIT.B1 = one_or_zero;
- break;
+void photo::switch_led(PHOTO_TYPE sensor_type, bool is_light) {
+	GPIO_TypeDef* GPIOx;
+	uint16_t GPIO_Pin;
 
- case front_right:
- PORT1.DR.BIT.B0 = one_or_zero;
- break;
+	//どのIOをいじるか設定
+	switch (sensor_type) {
 
- case front_left:
- PORT9.DR.BIT.B2 = one_or_zero;
- break;
- }
- }
+	//左右は同時発行
+	case right:
+	case left:
+		GPIOx = GPIOD;
+		GPIO_Pin = GPIO_Pin_2;
+		break;
 
- void photo::light(PHOTO_TYPE sensor_type) {
- switch_led(sensor_type, 1);
- }
+	case front_right:
+		GPIOx = GPIOC;
+		GPIO_Pin = GPIO_Pin_11;
+		break;
 
- void photo::turn_off(PHOTO_TYPE sensor_type) {
- switch_led(sensor_type, 0);
- }
+	case front_left:
+		GPIOx = GPIOC;
+		GPIO_Pin = GPIO_Pin_10;
+		break;
 
- void photo::turn_off_all() {
- turn_off(right);
- turn_off(left);
- turn_off(front_right);
- turn_off(front_left);
+	case front:
+		GPIOx = GPIOC;
+		GPIO_Pin = GPIO_Pin_12;
+		break;
+	}
 
- }
+	//光らせる
+	if (is_light)
+		GPIO_SetBits(GPIOx, GPIO_Pin);
+	else
+		GPIO_ResetBits(GPIOx, GPIO_Pin);
 
- void photo::set_ad(PHOTO_TYPE sensor_type, bool on_light) {
- //LEDが光っているなら消えてるときとの差分を取る
- if (on_light) {
- switch (sensor_type) {
- case right:
- right_ad = (ad_convert_an102() - right_ref);
- break;
+}
 
- case left:
- left_ad = (ad_convert_an002() - left_ref);
- break;
+uint16_t photo::get_ad(PHOTO_TYPE sensor_type) {
+	uint8_t ADC_CH;
+	ADC_TypeDef* ADCx;
 
- case front_right:
- front_right_ad = (ad_convert_an103() - front_right_ref);
- break;
+	//どのIOをいじるか設定
+	switch (sensor_type) {
+	case right:
+		ADCx = ADC1;
+		ADC_CH = ADC_Channel_15;
+		break;
 
- case front_left:
- front_left_ad = (ad_convert_an001() - front_left);
- break;
- }
+	case left:
+		ADCx = ADC1;
+		ADC_CH = ADC_Channel_11;
+		break;
 
- //消えてるなら基準値として記録
- } else {
- switch (sensor_type) {
- case right:
- right_ref = ad_convert_an102();
- break;
+	case front_right:
+		ADCx = ADC1;
+		ADC_CH = ADC_Channel_8;
+		break;
 
- case left:
- left_ref = ad_convert_an002();
- break;
+	case front_left:
+		ADCx = ADC1;
+		ADC_CH = ADC_Channel_10;
+		break;
 
- case front_right:
- front_right_ref = ad_convert_an103();
- break;
+	case front:
+		ADCx = ADC1;
+		ADC_CH = ADC_Channel_14;
+		break;
+	}
 
- case front_left:
- front_left_ref = ad_convert_an001();
- break;
- }
- }
- }
- */
-unsigned int photo::get_ad(PHOTO_TYPE sensor_type) {
+	//ad変換
+	ADC_ClearFlag(ADCx, ADC_FLAG_EOC);		//EndFlagをクリアする
+	ADC_RegularChannelConfig(ADCx, ADC_CH, 1,
+	ADC_SampleTime_3Cycles);		//ADCxのADC_CHを
+	ADC_SoftwareStartConv(ADCx);	//ADCを開始
+	while (ADC_GetFlagStatus(ADCx, ADC_FLAG_EOC) == RESET)
+		;		//終わるまで待つ
+
+	return (ADC_GetConversionValue(ADCx) >> 4);	//XXX 値を取得　4ビットシフトでうまくいってる気がする　右詰めのはずなのに意味わからん。
+
+}
+
+void photo::light(PHOTO_TYPE sensor_type) {
+	switch_led(sensor_type, true);
+}
+
+void photo::turn_off(PHOTO_TYPE sensor_type) {
+	switch_led(sensor_type, false);
+}
+
+void photo::turn_off_all() {
+	turn_off(right);
+	turn_off(left);
+	turn_off(front_right);
+	turn_off(front_left);
+
+}
+
+void photo::set_ad(PHOTO_TYPE sensor_type, int16_t set_value) {
+
+	switch (sensor_type) {
+	case right:
+		right_ad = set_value;
+		break;
+
+	case left:
+		left_ad = set_value;
+		break;
+
+	case front_right:
+		front_right_ad = set_value;
+		break;
+
+	case front_left:
+		front_left_ad = set_value;
+		break;
+
+	case front:
+		front_ad = set_value;
+		break;
+	}
+}
+
+void photo::interrupt(bool is_light) {
+	const static int wait_number = 1000;
+	photo::turn_off_all();
+
+	photo::set_ref(right, get_ad(right));		//消えてる時をrefにする
+	if (is_light) {
+		photo::light(right);
+		for (int i = 0; i < wait_number; i++) {
+		}
+	}
+	photo::set_ad(right, get_ad(right) - get_ref(right));		//差分を代入
+	photo::turn_off(right);
+
+	photo::set_ref(left, get_ad(left));		//消えてる時をrefにする
+	if (is_light) {
+		photo::light(left);
+		for (int i = 0; i < wait_number; i++) {
+		}
+	}
+	photo::set_ad(left, get_ad(left) - get_ref(left));		//差分を代入
+	photo::turn_off(left);
+
+	photo::set_ref(front_right, get_ad(front_right));		//消えてる時をrefにする
+	if (is_light) {
+		photo::light(front_right);
+		for (int i = 0; i < wait_number; i++) {
+		}
+	}
+	photo::set_ad(front_right, get_ad(front_right) - get_ref(front_right));	//差分を代入
+	photo::turn_off(front_right);
+
+	photo::set_ref(front_left, get_ad(front_left));		//消えてる時をrefにする
+	if (is_light) {
+		photo::light(front_left);
+		for (int i = 0; i < wait_number; i++) {
+		}
+	}
+	photo::set_ad(front_left, get_ad(front_left) - get_ref(front_left));	//差分を代入
+	photo::turn_off(front_left);
+
+	photo::set_ref(front, get_ad(front));		//消えてる時をrefにする
+	if (is_light) {
+		photo::light(front);
+		for (int i = 0; i < wait_number; i++) {
+		}
+	}
+	photo::set_ad(front, get_ad(front) - get_ref(front));	//差分を代入
+	photo::turn_off(front);
+}
+
+int16_t photo::get_ref(PHOTO_TYPE sensor_type) {
+	switch (sensor_type) {
+	case right:
+		return right_ref;
+		break;
+
+	case left:
+		return left_ref;
+		break;
+
+	case front_right:
+		return front_right_ref;
+		break;
+
+	case front_left:
+		return front_left_ref;
+		break;
+
+	case front:
+		return front_ref;
+		break;
+	}
+
+	return 0;
+}
+
+void photo::set_ref(PHOTO_TYPE sensor_type, int16_t set_value) {
+	switch (sensor_type) {
+	case right:
+		right_ref = set_value;
+		break;
+
+	case left:
+		left_ref = set_value;
+		break;
+
+	case front_right:
+		front_right_ref = set_value;
+		break;
+
+	case front_left:
+		front_left_ref = set_value;
+		break;
+
+	case front:
+		front_ref = set_value;
+		break;
+	}
+}
+
+int16_t photo::get_value(PHOTO_TYPE sensor_type) {
 	switch (sensor_type) {
 	case right:
 		return right_ad;
@@ -668,6 +831,10 @@ unsigned int photo::get_ad(PHOTO_TYPE sensor_type) {
 
 	case front_left:
 		return front_left_ad;
+		break;
+
+	case front:
+		return front_ad;
 		break;
 	}
 
@@ -709,9 +876,9 @@ photo::~photo() {
 
 //XXX 各種ゲイン
 //control関連
-const PID gyro_gain = { 0, 0, 0 };
+const PID gyro_gain = { 10, 0, 0 };
 const PID photo_gain = { 0, 0, 0 };
-const PID encoder_gain = { 300, 0, 0 };
+const PID encoder_gain = { 450, 1000, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta;
 bool control::control_phase = false;
@@ -759,10 +926,10 @@ void control::cal_delta() {
 	} else {
 		if (photo::check_wall(MUKI_RIGHT)) {		//右壁がある
 			photo_right_delta = -(parameter::get_ideal_photo(right)
-					- photo::get_ad(right));
+					- photo::get_value(right));
 			if (photo::check_wall(MUKI_LEFT)) {		//両壁がある
 				photo_left_delta = (parameter::get_ideal_photo(left)
-						- photo::get_ad(left));
+						- photo::get_value(left));
 			} else {
 				//片方のときは、壁のある方を2倍かけることで疑似的に両壁アリと同じ制御量にする
 				photo_left_delta = 0;
@@ -773,7 +940,7 @@ void control::cal_delta() {
 			if (photo::check_wall(MUKI_LEFT)) {		//左だけある
 				photo_left_delta = 2
 						* (parameter::get_ideal_photo(left)
-								- photo::get_ad(left));
+								- photo::get_value(left));
 			} else {
 				//両方ない
 				photo_left_delta = 0;

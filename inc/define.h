@@ -41,8 +41,8 @@ static const uint16_t buf_count = 100;	//バッファ式ログのバッファ数。
 #define	M_DRIVER_ORM	1	//モータードライバーの抵抗[Ω]
 #define M_SUM_ORM	5.5		//上2つの合算抵抗[Ω]
 
-#define GYRO_SENSITIVITY	0.67		//Gyroの感度[mV・s/degree]
-#define GYRO_CONST	1.53		//gyroの定数[degree/V/ms]パラメーターの1つ
+#define GYRO_SENSITIVITY	16.4		//Gyroの感度[count/(degree/s)]　これで測定値を割ると角速度になる
+//#define GYRO_CONST	1.53		//gyroの定数[degree/V/ms]パラメーターの1つ
 //XXX左右分ける必要があるかも？
 
 #define ENCODER_CONST	(1.534 * 0.001)			//encoderの分解能[rad/count]
@@ -216,7 +216,11 @@ typedef enum {
 
 //センサータイプを表す列挙型
 typedef enum {
-	sen_gyro = 0, sen_encoder = 1, sen_photo = 2, sen_accel = 3,sen_all
+	sen_gyro,
+	sen_encoder,
+	sen_photo,
+	sen_accel,
+	sen_all
 } SEN_TYPE;
 
 #endif /* DEFINE_H_ */

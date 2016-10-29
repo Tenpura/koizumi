@@ -102,11 +102,11 @@ private:
 	static GPIO_TypeDef* cs_GPIOx;	//csをたたくIOピンのタイプ		ex)GPIOA
 	const static uint16_t cs_GPIO_Pin;	//csをたたくIOピンの番号
 
-//protected:
+protected:
 public:
 	static uint16_t read_spi(uint16_t read_reg);		//SPI通信でregレジスタから読みだす
 	static void write_spi(uint16_t reg, uint16_t data);		//SPI通信でregレジスタにdataを書き込む
-	static uint16_t get_mpu_value(SEN_TYPE sen, AXIS_t axis);		//senセンサーのaxis軸方向のデータを読む
+	static int16_t get_mpu_value(SEN_TYPE sen, AXIS_t axis);		//senセンサーのaxis軸方向のデータを読む
 
 	mpu6000();
 
@@ -123,9 +123,9 @@ private:
 	static const float GYRO_PERIOD;			//ジャイロの制御周期[s]
 	static const float REF_TIME;			//ジャイロのリファレンスとる時間[s]
 
-	static unsigned short gyro_value;
+	static int16_t gyro_value;
 	static float default_angle;				//最小二乗法で補正をかけてない角度
-	static float angle,before_angle,gyro_ref;
+	static float angle,gyro_ref;
 	static float angular_velocity;
 
 	static float get_gyro_ref();
@@ -137,11 +137,11 @@ public:
 	static float least_square_slope;//補正項の傾き
 
 	static void interrupt_gyro();
-	static unsigned short get_gyro();
+	static int16_t get_gyro();
 	static void set_gyro_ref();
 
 	static void reset_angle();
-	static void cal_angle();//角度計算[°]
+	static void cal_angle();//角度計算[rad]
 	static float get_angle();
 
 	static void cal_angular_velocity();//角速度計算[rad/s]
@@ -172,10 +172,18 @@ public:
 //光学センサー関連
 class photo {
 private:
-	static signed int right_ad, left_ad, front_right_ad, front_left_ad;
-	static signed int right_ref, left_ref, front_right_ref, front_left_ref;
-	static void switch_led(PHOTO_TYPE sensor_type, unsigned char one_or_zero);
+
+	static signed int right_ad, left_ad, front_right_ad, front_left_ad,front_ad;
+	static signed int right_ref, left_ref, front_right_ref, front_left_ref,front_ref;
 	static bool light_flag;		//赤外線LEDを光らせてセンサー値を読むかどうかのフラグ
+
+	static void switch_led(PHOTO_TYPE sensor_type, bool is_light);		//LEDをつけたり消したり
+
+	static uint16_t get_ad(PHOTO_TYPE sensor_type);			//??_adの値を取得
+	static void set_ad(PHOTO_TYPE sensor_type, int16_t set_value);		//??_adに値を代入
+
+	static int16_t get_ref(PHOTO_TYPE sensor_type);	//OFFのときのAD値を返す
+	static void set_ref(PHOTO_TYPE sensor_type, int16_t set_value);		//refの値を代入
 
 	photo();
 
@@ -185,11 +193,11 @@ public:
 	static void turn_off(PHOTO_TYPE sensor_type);
 	static void turn_off_all();		//すべて消す
 
-	//TODO boolで引数にしなくても、関数内で判別してもいいかも
-	//消えてれば基準値として、光っていればその差分を記録する
-	static void set_ad(PHOTO_TYPE sensor_type, bool on_light);
 
-	static unsigned int get_ad(PHOTO_TYPE sensor_type);
+	//割り込み内で行う処理
+	static void interrupt(bool is_light);
+
+	static int16_t get_value(PHOTO_TYPE sensor_type);
 
 	//TODO この関数はマウスclassにあるべきかも
 	static bool check_wall(unsigned char muki);
