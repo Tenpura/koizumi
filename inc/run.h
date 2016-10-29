@@ -11,7 +11,7 @@
 #include"define.h"
 #include"hardware.h"
 #include"parameter.h"
-//#include"map.h"
+#include"map.h"
 
 //position
 typedef union {
@@ -89,8 +89,12 @@ public:
 	static bool get_fail_flag();		//フェイルセーフがかかったかどうかの判別用
 	static void set_fail_flag(bool set_flag);
 
-	static void interrupt();	//
+	static void interrupt();	//割り込み関数内で実行するよう
 
+
+	//壁を見て、壁が存在するなら壁を作り、ないなら壊す。見たことも記録
+	//マウスの向きや座標も内部できちんと考える
+	static void look_wall(bool comb_ignore);//壁を見る関数
 
 	static void error();	//フェイルセーフとか、かかった時に、ここに飛びますよ
 
@@ -110,6 +114,43 @@ public:
 	~run();
 
 };
+
+
+//ACTION_TYPE 足立法のとき次に取る行動の種類
+typedef enum {
+	go_straight, turn_right, turn_left, back, stop
+} ACTION_TYPE;
+
+class adachi {
+private:
+	static signed char direction_x, direction_y;
+
+	static void set_direction();
+
+	//現在の座標と向きを与えると歩数的にそのマスに進めるかを判別
+	static bool check_move_by_step(unsigned char target_x, unsigned char target_y, unsigned char muki);
+
+	//目標のマスのまだ見てない壁の数を数え上げる
+	static unsigned int count_unknown_wall(unsigned char target_x, unsigned char target_y);
+
+
+	//引数に応じて次の行動をマウスが実行する（実際に動く部分）
+	static void run_next_action(ACTION_TYPE next_action);
+
+	//次行く方向を与えると、次に取る行動を返す。優先度は、直進、右ターン、左ターン、バックの順
+	static ACTION_TYPE get_next_action(DIRECTION next_direction);
+
+	adachi();
+
+public:
+	static bool adachi_method(const unsigned char target_x, const unsigned char target_y);
+	static bool adachi_method_spin(unsigned char target_x,unsigned char target_y);
+
+	static bool left_hand_method(const uint8_t target_x, const uint8_t target_y);
+	~adachi();
+
+};
+
 
 
 #endif /* RUN_H_ */

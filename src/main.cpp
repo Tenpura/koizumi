@@ -14,6 +14,7 @@
 #include "hardware.h"
 #include "ad_convert.h"
 #include "user.h"
+#include "run.h"
 
 int main(void);
 
@@ -40,7 +41,7 @@ int main(void) {
 	mouse::reset_count();
 
 	myprintf("vol -> %f\n\r", get_battery());
-
+	my7seg::turn_off();
 	if (get_battery() < 4) {
 		while (1) {
 
@@ -56,7 +57,25 @@ int main(void) {
 
 		}
 	}
+
 /*
+	while(1){
+		if(photo::check_wall(right)) GPIO_ResetBits(GPIOH, GPIO_Pin_1);	//Pin‚ð1‚É
+		else GPIO_SetBits(GPIOH, GPIO_Pin_1);	//Pin‚ð1‚É
+
+		if(photo::check_wall(front)) GPIO_ResetBits(GPIOC, GPIO_Pin_2);	//Pin‚ð1‚É
+		else GPIO_SetBits(GPIOC, GPIO_Pin_2);	//Pin‚ð1‚É
+
+		if(photo::check_wall(left)) GPIO_ResetBits(GPIOC, GPIO_Pin_15);	//Pin‚ð1‚É
+		else GPIO_SetBits(GPIOC, GPIO_Pin_15);	//Pin‚ð1‚É
+
+		wait::ms(10);
+
+
+
+	}
+*/
+
 	while (1) {
 		myprintf("right %d  ", photo::get_value(right));
 		myprintf("left %d  ", photo::get_value(left));
@@ -67,14 +86,18 @@ int main(void) {
 
 		wait::ms(100);
 
+		if(photo::get_value(front)>(parameter::get_min_wall_photo(front)*1.5)){
+				break;
+			}
+
+
 	}
-*/
+
+
 	mpu6000::init_mpu6000();
 
 	my7seg::count_down(3, 1000);
 
-	gyro::set_gyro_ref();
-	mouse::reset_angle();
 
 
 
@@ -82,41 +105,46 @@ int main(void) {
 		my7seg::blink(8,100,1);
 	}
 
-	my7seg::count_down(5,500);
+
+	map::reset_wall();
+	map::output_map_data(&mouse::now_map);
+	map::input_map_data(&mouse::now_map);
 
 	motor::stanby_motor();
-
-	wait::ms(10);
 	control::start_control();
+
 	mouse::set_acceleration(0);
 	mouse::set_ideal_velocity(0);
 	mouse::set_angular_acceleration(0);
 	mouse::set_ideal_angular_velocity(0);
+
 	control::reset_delta();
 
-
-	flog[0][0] = -1;
 	mouse::set_distance_m(0);
 	mouse::reset_angle();
 
 	my7seg::light(8);
 
+	mouse::set_position(0, 0);
+	mouse::set_direction(MUKI_UP);
+
+	adachi::left_hand_method(GOAL_x, GOAL_y);
+//	adachi::adachi_method_spin(GOAL_x, GOAL_y);
+
+	//run::spin_turn(180);
+	//run::accel_run(0.09 * 2, 0, 0);
 	//run::spin_turn(180);
 
-	control::start_wall_control();
-	run::accel_run(0.09 * 15, 0, 0);
+	//run::spin_turn(-180);
+	my7seg::count_down(3,500);
 
+	control::start_wall_control();
+	flog[0][0] = -1;
+	run::accel_run(0.09 * 4, 0, 0);
 	my7seg::light(5);
 
 	wait::ms(1000);
 
-	/*
-	 while(GPIO_ReadInputDataBit(GPIOB,GPIO_Pin_14)==1){
-	 my7seg::light(3);
-	 myprintf("right %.4f,left %.4f, ave %f\n\r",encoder::right_velocity,encoder::left_velocity,encoder::velocity);
-	 wait::ms(100);
-	 }
-	 */
 
 	motor::sleep_motor();
 	my7seg::turn_off();

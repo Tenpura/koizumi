@@ -39,7 +39,8 @@ src/c++_convert_c.o: ../src/c++_convert_c.cpp \
  C:/Users/Koizumi/workspace/halfmouse/inc/ad_convert.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/parameter.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/serial.h \
- C:/Users/Koizumi/workspace/halfmouse/inc/run.h
+ C:/Users/Koizumi/workspace/halfmouse/inc/run.h \
+ C:/Users/Koizumi/workspace/halfmouse/inc/map.h
 
 C:/Users/Koizumi/workspace/halfmouse/inc/c++_convert_c.h:
 
@@ -122,3 +123,5 @@ C:/Users/Koizumi/workspace/halfmouse/inc/parameter.h:
 C:/Users/Koizumi/workspace/halfmouse/inc/serial.h:
 
 C:/Users/Koizumi/workspace/halfmouse/inc/run.h:
+
+C:/Users/Koizumi/workspace/halfmouse/inc/map.h:

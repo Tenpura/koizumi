@@ -13,7 +13,7 @@
 //パラメータ
 //TODO メートルにしたい
 
-#define tire_R (7.5 * 0.001)	//タイヤの半径　[m]
+#define tire_R (7.0 * 0.001)	//タイヤの半径　[m]
 #define TREAD_W	44		//トレッド幅[mm]
 
 
@@ -39,14 +39,14 @@
 class parameter {
 private:
 	const static unsigned int ideal_photo[2][5];			//ideal_photo[クラシックorハーフ][光学センサの向き]
-	const static unsigned int min_wall_photo[2][5];			//壁がある時の最小値[クラシックorハーフ][光学センサの向き]
+	const static int16_t min_wall_photo[2][5];			//壁がある時の最小値[クラシックorハーフ][光学センサの向き]
 	const static TRAPEZOID straight_run[RUN_MODE_NUMBER];
 	const static INIT_SLALOM right_slalom[RUN_MODE_NUMBER], left_slalom[RUN_MODE_NUMBER];
 
 
 public:
 	static unsigned int get_ideal_photo(const PHOTO_TYPE photo_type);
-	static unsigned int get_min_wall_photo(const PHOTO_TYPE photo_type);
+	static int16_t get_min_wall_photo(const PHOTO_TYPE photo_type);
 
 	static float get_run_acceleration(const unsigned char select_mode);
 	static float get_run_max_velocity(const unsigned char select_mode);

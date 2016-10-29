@@ -538,7 +538,7 @@ gyro::~gyro() {
 }
 
 //encoder関連
-const uint32_t encoder::MOVING_AVERAGE = 30;
+const uint32_t encoder::MOVING_AVERAGE = 50;
 const uint32_t encoder::MEDIAN = 32762;
 float encoder::left_velocity, encoder::right_velocity, encoder::velocity;
 
@@ -692,25 +692,42 @@ void photo::turn_off_all() {
 
 void photo::set_ad(PHOTO_TYPE sensor_type, int16_t set_value) {
 
+	static const int16_t PHOTO_AVERAGE_TIME = 5;	//いくつの移動平均をとるか
+	static int16_t buf[element_count][PHOTO_AVERAGE_TIME] = { 0 };
+
+	int16_t sum = 0;
+
+	for (uint8_t i = 0; (i + 1) < PHOTO_AVERAGE_TIME; i++) {
+		buf[sensor_type][i + 1] = buf[sensor_type][i];	//配列を1つずらす
+		sum += buf[sensor_type][i + 1];			//ついでに加算する
+	}
+
+	//配列の最初に入れる
+	buf[sensor_type][0] = set_value;	//count*[rad/count]/[sec]*[m]
+	sum += set_value;
+
 	switch (sensor_type) {
 	case right:
-		right_ad = set_value;
+		right_ad = sum / PHOTO_AVERAGE_TIME;
 		break;
 
 	case left:
-		left_ad = set_value;
+		left_ad = sum / PHOTO_AVERAGE_TIME;
 		break;
 
 	case front_right:
-		front_right_ad = set_value;
+		front_right_ad = sum / PHOTO_AVERAGE_TIME;
+		;
 		break;
 
 	case front_left:
-		front_left_ad = set_value;
+		front_left_ad = sum / PHOTO_AVERAGE_TIME;
+		;
 		break;
 
 	case front:
-		front_ad = set_value;
+		front_ad = sum / PHOTO_AVERAGE_TIME;
+		;
 		break;
 	}
 }
@@ -731,7 +748,7 @@ void photo::interrupt(bool is_light) {
 	//XXX 左センサだけ消えてる時との差分をとってない
 	photo::set_ref(left, 0);		//消えてる時をrefにする
 	//photo::set_ref(left, get_ad(left));		//消えてる時をrefにする
-		if (is_light) {
+	if (is_light) {
 		photo::light(left);
 		for (int i = 0; i < wait_number; i++) {
 		}
@@ -742,7 +759,7 @@ void photo::interrupt(bool is_light) {
 	photo::set_ref(front_right, get_ad(front_right));		//消えてる時をrefにする
 	if (is_light) {
 		photo::light(front_right);
-		for (int i = 0; i < wait_number*2; i++) {
+		for (int i = 0; i < wait_number * 2; i++) {
 		}
 	}
 	photo::set_ad(front_right, get_ad(front_right) - get_ref(front_right));	//差分を代入
@@ -754,7 +771,7 @@ void photo::interrupt(bool is_light) {
 		for (int i = 0; i < wait_number; i++) {
 		}
 	}
-	photo::set_ad(front_left, get_ad(front_left) - get_ref(front_left));	//差分を代入
+	photo::set_ad(front_left, get_ad(front_left) - get_ref(front_left));//差分を代入
 	photo::turn_off(front_left);
 
 	photo::set_ref(front, get_ad(front));		//消えてる時をrefにする
@@ -847,28 +864,40 @@ bool photo::check_wall(unsigned char muki) {
 
 	switch (muki) {
 	case MUKI_RIGHT:
-		if (right_ad >= parameter::get_min_wall_photo(right)) {
+		if (photo::get_value(right) >= parameter::get_min_wall_photo(right)) {
 			return true;
 		}
 		return false;
 
 	case MUKI_LEFT:
-		if (left_ad >= parameter::get_min_wall_photo(left)) {
+		//XXX leftは安定しないからFrontLeftでみる
+		if (photo::get_value(front_left)
+				>= parameter::get_min_wall_photo(front_left)) {
 			return true;
 		}
 		return false;
 
 	case MUKI_UP:
 		//TODO 暇があったら、前壁見るのは斜めセンサいらない？？
-		if(get_value(front) >= parameter::get_min_wall_photo(front)){
-		//if ((front_right_ad >= parameter::get_min_wall_photo(front_right))
-		//		|| (front_left_ad >= parameter::get_min_wall_photo(front_left))) {
+		if (photo::get_value(front) >= parameter::get_min_wall_photo(front)) {
+			//if ((front_right_ad >= parameter::get_min_wall_photo(front_right))
+			//		|| (front_left_ad >= parameter::get_min_wall_photo(front_left))) {
 			return true;
 		}
 		return false;
 	}
 
 	return false;
+
+}
+
+bool photo::check_wall(PHOTO_TYPE type) {
+	//XXX leftは安定しないからFrontLeftでみる
+	if (type == left)
+		return (photo::get_value(front_left)
+				>= parameter::get_min_wall_photo(front_left));
+	else
+		return (photo::get_value(type) >= parameter::get_min_wall_photo(type));
 
 }
 
@@ -881,7 +910,7 @@ photo::~photo() {
 //XXX 各種ゲイン
 //control関連
 const PID gyro_gain = { 40, 108, 0 };
-const PID photo_gain = { 0.001,  0.000001, 0 };
+const PID photo_gain = { 0.000001, 0/*0.000001*/, 0 };
 const PID encoder_gain = { 300, 1000, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta;
@@ -931,18 +960,21 @@ void control::cal_delta() {
 
 		//XXX 壁制御は壁から離れる場合だけ入れてる
 		if (photo::check_wall(MUKI_RIGHT)) {		//右壁がある
-			photo_right_delta = -(parameter::get_ideal_photo(right)
-					- photo::get_value(right)) / parameter::get_ideal_photo(right)/*規格化*/;
-			if(photo_right_delta < 0){		//壁に近づくようには制御しない。
+			photo_right_delta = -1*(parameter::get_ideal_photo(right)
+					- photo::get_value(right))
+					/ parameter::get_ideal_photo(right)/*規格化*/;
+
+			if (photo_right_delta < 0) {		//壁に近づくようには制御しない。
 				photo_right_delta = 0;
 			}
 
 			if (photo::check_wall(MUKI_LEFT)) {		//両壁がある
-				photo_left_delta = (parameter::get_ideal_photo(left)
-						- photo::get_value(left)) / parameter::get_ideal_photo(left)/*規格化*/;
+				photo_left_delta = (parameter::get_ideal_photo(front_left)
+						- photo::get_value(front_left))
+						/ parameter::get_ideal_photo(front_left)/*規格化*/;
 
-				if(photo_left_delta > 0){		//壁に近づくようには制御しない。
-						photo_left_delta = 0;
+				if (photo_left_delta > 0) {		//壁に近づくようには制御しない。
+					photo_left_delta = 0;
 				}
 
 			} else {
@@ -954,11 +986,11 @@ void control::cal_delta() {
 			photo_right_delta = 0;
 			if (photo::check_wall(MUKI_LEFT)) {		//左だけある
 				photo_left_delta = 2
-						* (parameter::get_ideal_photo(left)
-								- photo::get_value(left));
+						* (parameter::get_ideal_photo(front_left)
+								- photo::get_value(front_left));
 
-				if(photo_left_delta > 0){		//壁に近づくようには制御しない。
-							photo_left_delta = 0;
+				if (photo_left_delta > 0) {		//壁に近づくようには制御しない。
+					photo_left_delta = 0;
 				}
 
 			} else {
@@ -968,7 +1000,8 @@ void control::cal_delta() {
 			}
 		}
 	}
-	photo_delta.P = (photo_right_delta - photo_left_delta);
+	//TODO　壁制御何かおかしい
+	photo_delta.P = -(photo_right_delta-photo_left_delta);
 	photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
 	//photo_delta.D = (photo_delta.P - before_p_delta) * 1000;
 
@@ -978,6 +1011,9 @@ void control::cal_delta() {
 			- gyro::get_angular_velocity());
 	gyro_delta.I += (gyro_delta.P * CONTORL_PERIOD);
 	//gyro_delta.D = (gyro_delta.P - before_p_delta) * 1000;
+
+	if (photo_delta.P != 0 && get_wall_control_phase())
+		gyro_delta.I = 0;		//壁制御かけるときはGyroのIは使わない
 
 }
 
@@ -1058,6 +1094,10 @@ void control::posture_control() {
 
 bool control::get_control_phase() {
 	return control_phase;
+}
+
+bool control::get_wall_control_phase() {
+	return wall_control_flag;
 }
 
 void control::reset_delta() {

@@ -8,9 +8,9 @@
 #include"parameter.h"
 //ideal_photo[x][y]	xは0がハーフ,1がクラシック	yが光学センサの向きに対応。
 //right left front_right front_left,front
-const unsigned int parameter::ideal_photo[2][5] = { { 460, 680, 10000, 560, 0 },
+const unsigned int parameter::ideal_photo[2][5] = { { 400, 680, 10000, 300, 0 },
 		{ 3250, 3200, 10815, 10100, 0 } };
-const unsigned int parameter::min_wall_photo[2][5] = { { 370, 580, 0, 0, 1100 },
+const int16_t parameter::min_wall_photo[2][5] = { { 370, 600, 0, 250, 900 },
 		{ 20000, 2000, 0, 0, 0 } };
 
 //0番目は探索用
@@ -56,7 +56,7 @@ unsigned int parameter::get_ideal_photo(PHOTO_TYPE photo_type) {
 	return 0;
 }
 
-unsigned int parameter::get_min_wall_photo(PHOTO_TYPE photo_type) {
+int16_t parameter::get_min_wall_photo(PHOTO_TYPE photo_type) {
 	switch (photo_type) {
 	case right:
 		return min_wall_photo[MOUSE_MODE - 1][right];

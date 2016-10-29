@@ -165,7 +165,7 @@ typedef struct {
 
 //光学センサの種類
 enum PHOTO_TYPE {
-	right = 0, left = 1, front_right = 2, front_left = 3, front = 4
+	right = 0, left = 1, front_right = 2, front_left = 3, front = 4, element_count
 };
 
 //台形加速に用いるパラメータ用構造体

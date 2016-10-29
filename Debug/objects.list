@@ -3,6 +3,7 @@
 "src/hardware.o"
 "src/init .o"
 "src/main.o"
+"src/map.o"
 "src/parameter.o"
 "src/run.o"
 "src/serial.o"

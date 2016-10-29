@@ -15,6 +15,7 @@ CPP_SRCS += \
 ../src/c++_convert_c.cpp \
 ../src/hardware.cpp \
 ../src/main.cpp \
+../src/map.cpp \
 ../src/parameter.cpp \
 ../src/run.cpp \
 ../src/user.cpp 
@@ -25,6 +26,7 @@ OBJS += \
 ./src/hardware.o \
 ./src/init\ .o \
 ./src/main.o \
+./src/map.o \
 ./src/parameter.o \
 ./src/run.o \
 ./src/serial.o \
@@ -45,6 +47,7 @@ CPP_DEPS += \
 ./src/c++_convert_c.d \
 ./src/hardware.d \
 ./src/main.d \
+./src/map.d \
 ./src/parameter.d \
 ./src/run.d \
 ./src/user.d 

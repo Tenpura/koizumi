@@ -201,6 +201,8 @@ public:
 
 	//TODO この関数はマウスclassにあるべきかも
 	static bool check_wall(unsigned char muki);
+	static bool check_wall(PHOTO_TYPE type);
+
 
 
 	~photo();
@@ -250,6 +252,7 @@ public:
 	static void stop_control();//制御をとめる
 
 	static bool get_control_phase();//制御がかかっているかを取得。かかっていればtrue
+	static bool get_wall_control_phase();//制御がかかっているかを取得。かかっていればtrue
 
 	static void reset_delta();
 

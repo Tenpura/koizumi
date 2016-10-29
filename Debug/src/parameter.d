@@ -39,6 +39,7 @@ src/parameter.o: ../src/parameter.cpp \
  C:/Users/Koizumi/workspace/halfmouse/inc/ad_convert.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/parameter.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/run.h \
+ C:/Users/Koizumi/workspace/halfmouse/inc/map.h \
  C:/Users/Koizumi/workspace/halfmouse/inc/serial.h
 
 C:/Users/Koizumi/workspace/halfmouse/inc/parameter.h:
@@ -120,5 +121,7 @@ C:/Users/Koizumi/workspace/halfmouse/inc/ad_convert.h:
 C:/Users/Koizumi/workspace/halfmouse/inc/parameter.h:
 
 C:/Users/Koizumi/workspace/halfmouse/inc/run.h:
+
+C:/Users/Koizumi/workspace/halfmouse/inc/map.h:
 
 C:/Users/Koizumi/workspace/halfmouse/inc/serial.h:

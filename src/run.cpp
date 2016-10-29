@@ -191,8 +191,280 @@ void mouse::interrupt() {
 
 }
 
+void mouse::look_wall(bool comb_ignore) {
+	//壁を見て、壁が存在するなら壁を作り、ないなら壊す。見たことも記録
+	//マウスの向きや座標も内部できちんと考える
+
+	signed char direction_x, direction_y;
+	mouse::get_direction(&direction_x, &direction_y);
+
+	switch (mouse_direction) {
+	case MUKI_UP:
+		//壁情報を更新
+		//マウスから見て右
+		map::remember_exist(position.x, position.y, MUKI_RIGHT);	//壁を見たことを記録
+		if (photo::check_wall(MUKI_RIGHT)) {
+			map::create_wall(position.x, position.y, MUKI_RIGHT);
+		} else {
+			map::destroy_wall(position.x, position.y, MUKI_RIGHT);
+
+			//櫛無視するなら
+			if (comb_ignore) {
+				//既に見ていて壁がないなら
+				if (map::check_exist(position.x - direction_x,
+						position.y - direction_y,
+						MUKI_RIGHT)) {
+					if (map::get_wall(position.x - direction_x,
+							position.y - direction_y,
+							MUKI_RIGHT) == false) {
+						//ルール的に壁があるはず
+						map::create_wall(position.x + 1, position.y,
+						MUKI_DOWN);
+						map::remember_exist(position.x + 1, position.y,
+						MUKI_DOWN);		//壁を見たことを記録
+					}
+				}
+			}
+		}
+		//マウスから見て前
+		map::remember_exist(position.x, position.y, MUKI_UP); //壁を見たことを記録
+		if (photo::check_wall(MUKI_UP)) {
+			map::create_wall(position.x, position.y, MUKI_UP);
+		} else {
+			map::destroy_wall(position.x, position.y, MUKI_UP);
+		}
+		//マウスから見て左
+		map::remember_exist(position.x, position.y, MUKI_LEFT);	//壁を見たことを記録
+		if (photo::check_wall(MUKI_LEFT)) {
+			map::create_wall(position.x, position.y, MUKI_LEFT);
+		} else {
+			map::destroy_wall(position.x, position.y, MUKI_LEFT);
+
+			//櫛無視するなら
+			if (comb_ignore) {
+				//既に見ていて壁がないなら
+				if (map::check_exist(position.x - direction_x,
+						position.y - direction_y,
+						MUKI_LEFT)) {
+					if (map::get_wall(position.x - direction_x,
+							position.y - direction_y,
+							MUKI_LEFT) == false) {
+						//ルール的に壁があるはず
+						map::create_wall(position.x - 1, position.y,
+						MUKI_DOWN);
+						map::remember_exist(position.x - 1, position.y,
+						MUKI_DOWN);	//壁を見たことを記録
+					}
+				}
+			}
+
+		}
+
+		break;
+
+	case MUKI_RIGHT:
+		//壁情報を更新
+		//マウスから見て右
+		map::remember_exist(position.x, position.y, MUKI_DOWN);	//壁を見たことを記録
+		if (photo::check_wall(MUKI_RIGHT)) {
+			map::create_wall(position.x, position.y, MUKI_DOWN);
+		} else {
+			map::destroy_wall(position.x, position.y, MUKI_DOWN);
+
+			//櫛無視するなら
+			if (comb_ignore) {
+				//既に見ていて壁がないなら
+				if (map::check_exist(position.x - direction_x,
+						position.y - direction_y,
+						MUKI_DOWN)) {
+					if (map::get_wall(position.x - direction_x,
+							position.y - direction_y,
+							MUKI_DOWN) == false) {
+						//ルール的に壁があるはず
+						map::create_wall(position.x, position.y - 1,
+						MUKI_LEFT);
+						map::remember_exist(position.x, position.y - 1,
+						MUKI_LEFT);	//壁を見たことを記録
+					}
+				}
+			}
+
+		}
+		//マウスから見て前
+		map::remember_exist(position.x, position.y, MUKI_RIGHT);	//壁を見たことを記録
+		if (photo::check_wall(MUKI_UP)) {
+			map::create_wall(position.x, position.y, MUKI_RIGHT);
+		} else {
+			map::destroy_wall(position.x, position.y, MUKI_RIGHT);
+		}
+		//マウスから見て左
+		map::remember_exist(position.x, position.y, MUKI_UP);	//壁を見たことを記録
+		if (photo::check_wall(MUKI_LEFT)) {
+			map::create_wall(position.x, position.y, MUKI_UP);
+		} else {
+			map::destroy_wall(position.x, position.y, MUKI_UP);
+			//櫛無視するなら
+			if (comb_ignore) {
+				//既に見ていて壁がないなら
+				if (map::check_exist(position.x - direction_x,
+						position.y - direction_y,
+						MUKI_UP)) {
+					if (map::get_wall(position.x - direction_x,
+							position.y - direction_y,
+							MUKI_UP) == false) {
+						//ルール的に壁があるはず
+						map::create_wall(position.x, position.y + 1,
+						MUKI_LEFT);
+						map::remember_exist(position.x, position.y + 1,
+						MUKI_LEFT);	//壁を見たことを記録
+					}
+				}
+			}
+
+		}
+
+		break;
+
+	case MUKI_LEFT:
+		//壁情報を更新
+		//マウスから見て右
+		map::remember_exist(position.x, position.y, MUKI_UP);		//壁を見たことを記録
+		if (photo::check_wall(MUKI_RIGHT)) {
+			map::create_wall(position.x, position.y, MUKI_UP);
+		} else {
+			map::destroy_wall(position.x, position.y, MUKI_UP);
+
+			//櫛無視するなら
+			if (comb_ignore) {
+				//既に見ていて壁がないなら
+				if (map::check_exist(position.x - direction_x,
+						position.y - direction_y,
+						MUKI_UP)) {
+					if (map::get_wall(position.x - direction_x,
+							position.y - direction_y,
+							MUKI_UP) == false) {
+						//ルール的に壁があるはず
+						map::create_wall(position.x, position.y + 1,
+						MUKI_RIGHT);
+						map::remember_exist(position.x, position.y + 1,
+						MUKI_RIGHT);	//壁を見たことを記録
+					}
+				}
+			}
+
+		}
+		//マウスから見て前
+		map::remember_exist(position.x, position.y, MUKI_LEFT);	//壁を見たことを記録
+		if (photo::check_wall(MUKI_UP)) {
+			map::create_wall(position.x, position.y, MUKI_LEFT);
+		} else {
+			map::destroy_wall(position.x, position.y, MUKI_LEFT);
+		}
+		//マウスから見て左
+		map::remember_exist(position.x, position.y, MUKI_DOWN);	//壁を見たことを記録
+		if (photo::check_wall(MUKI_LEFT)) {
+			map::create_wall(position.x, position.y, MUKI_DOWN);
+		} else {
+			map::destroy_wall(position.x, position.y, MUKI_DOWN);
+
+			//櫛無視するなら
+			if (comb_ignore) {
+				//既に見ていて壁がないなら
+				if (map::check_exist(position.x - direction_x,
+						position.y - direction_y,
+						MUKI_DOWN)) {
+					if (map::get_wall(position.x - direction_x,
+							position.y - direction_y,
+							MUKI_DOWN) == false) {
+						//ルール的に壁があるはず
+						map::create_wall(position.x, position.y - 1,
+						MUKI_RIGHT);
+						map::remember_exist(position.x, position.y - 1,
+						MUKI_RIGHT);	//壁を見たことを記録
+					}
+				}
+			}
+
+		}
+
+		break;
+
+	case MUKI_DOWN:
+		//壁情報を更新
+		//マウスから見て右
+		map::remember_exist(position.x, position.y, MUKI_LEFT);	//壁を見たことを記録
+		if (photo::check_wall(MUKI_RIGHT)) {
+			map::create_wall(position.x, position.y, MUKI_LEFT);
+		} else {
+			map::destroy_wall(position.x, position.y, MUKI_LEFT);
+
+			//櫛無視するなら
+			if (comb_ignore) {
+				//既に見ていて壁がないなら
+				if (map::check_exist(position.x - direction_x,
+						position.y - direction_y,
+						MUKI_LEFT)) {
+					if (map::get_wall(position.x - direction_x,
+							position.y - direction_y,
+							MUKI_LEFT) == false) {
+						//ルール的に壁があるはず
+						map::create_wall(position.x - 1, position.y,
+						MUKI_UP);
+						map::remember_exist(position.x - 1, position.y,
+						MUKI_UP);	//壁を見たことを記録
+					}
+				}
+			}
+
+		}
+		//マウスから見て前
+		map::remember_exist(position.x, position.y, MUKI_DOWN);	//壁を見たことを記録
+		if (photo::check_wall(MUKI_UP)) {
+			map::create_wall(position.x, position.y, MUKI_DOWN);
+		} else {
+			map::destroy_wall(position.x, position.y, MUKI_DOWN);
+		}
+		//マウスから見て左
+		map::remember_exist(position.x, position.y, MUKI_RIGHT);	//壁を見たことを記録
+		if (photo::check_wall(MUKI_LEFT)) {
+			map::create_wall(position.x, position.y, MUKI_RIGHT);
+		} else {
+			map::destroy_wall(position.x, position.y, MUKI_RIGHT);
+
+			//櫛無視するなら
+			if (comb_ignore) {
+				//既に見ていて壁がないなら
+				if (map::check_exist(position.x - direction_x,
+						position.y - direction_y,
+						MUKI_RIGHT)) {
+					if (map::get_wall(position.x - direction_x,
+							position.y - direction_y,
+							MUKI_RIGHT) == false) {
+						//ルール的に壁があるはず
+						map::create_wall(position.x + 1, position.y,
+						MUKI_UP);
+						map::remember_exist(position.x + 1, position.y,
+						MUKI_UP);	//壁を見たことを記録
+					}
+				}
+			}
+		}
+
+		break;
+
+	}
+
+}
+
 void mouse::error() {
 	//TODO エラー処理は必要に応じて書くこと
+	while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
+		my7seg::light_error();
+		wait::ms(500);
+		my7seg::turn_off();
+		wait::ms(500);
+	}
+
 }
 
 mouse::mouse() {
@@ -255,7 +527,7 @@ void run::accel_run(const float distance_m, const float end_velocity,
 	//速度0だとここに閉じ込められてしまう
 	if (end_velocity > 0) {
 		//もし速度が先に無くなっても、最後まで走りきるよう
-		while (distance_m < mouse::get_distance_m()) {
+		while (distance_m > mouse::get_distance_m()) {
 		}
 	}
 
@@ -324,6 +596,7 @@ void run::spin_turn(const float target_degree) {
 	const static float max_angular_velocity = 2.0;	//rad/s
 	float angular_acceleration = 2.0;				//rad/s^2
 	float angle_degree = 0;
+	bool wall_flag = control::get_wall_control_phase();
 
 	control::stop_wall_control();
 
@@ -373,19 +646,602 @@ void run::spin_turn(const float target_degree) {
 			mouse::set_angular_acceleration(0);
 		}
 
-		my7seg::light(4);
 	}
 
 	mouse::set_angular_acceleration(0);
 	mouse::set_ideal_angular_velocity(0);
 	mouse::set_distance_m(0);
 
-	control::start_wall_control();
+	//もともと壁制御かかってたなら復活させる
+	if(wall_flag) control::start_wall_control();
 }
 
 run::run() {
 }
 
 run::~run() {
+}
+
+signed char adachi::direction_x, adachi::direction_y;
+
+void adachi::set_direction() {
+	unsigned char direction = mouse::get_direction();
+
+	switch (direction) {
+	case MUKI_RIGHT:
+		direction_x = 1;
+		direction_y = 0;
+		break;
+
+	case MUKI_LEFT:
+		direction_x = -1;
+		direction_y = 0;
+		break;
+
+	case MUKI_UP:
+		direction_x = 0;
+		direction_y = 1;
+		break;
+
+	case MUKI_DOWN:
+		direction_x = 0;
+		direction_y = -1;
+		break;
+	}
+
+}
+
+bool adachi::check_move_by_step(unsigned char target_x, unsigned char target_y,
+		unsigned char muki) {
+	signed char muki_x, muki_y;
+
+	switch (muki) {
+	case MUKI_RIGHT:
+		//迷路外ならfalseを返す
+		if ((target_x + 1) >= MAZE_SIZE) {
+			return false;
+		}
+		muki_x = 1;
+		muki_y = 0;
+		break;
+
+	case MUKI_LEFT:
+		//迷路外ならfalseを返す
+		if ((target_x - 1) < 0) {
+			return false;
+		}
+		muki_x = -1;
+		muki_y = 0;
+		break;
+
+	case MUKI_UP:
+		//迷路外ならfalseを返す
+		if ((target_y + 1) >= MAZE_SIZE) {
+			return false;
+		}
+		muki_x = 0;
+		muki_y = 1;
+		break;
+
+	case MUKI_DOWN:
+		//迷路外ならfalseを返す
+		if ((target_y - 1) < 0) {
+			return false;
+		}
+		muki_x = 0;
+		muki_y = -1;
+		break;
+	}
+
+	if (step::get_step((target_x + muki_x), (target_y + muki_y))
+			== (step::get_step(target_x, target_y) - 1)) {			//歩数の小さいほうへ
+		if ((map::get_wall(target_x, target_y, muki) == false)) {	//壁がないなら
+			return true;
+		}
+	}
+
+	return false;
+}
+
+unsigned int adachi::count_unknown_wall(unsigned char target_x,
+		unsigned char target_y) {
+	unsigned int unknown_count = 0;
+
+	//各方向について探索済みか調べる.未探索ならカウントアップ
+	if ((map::check_exist(target_x, target_y, MUKI_RIGHT)) == false) {
+		unknown_count++;
+	}
+	if ((map::check_exist(target_x, target_y, MUKI_LEFT)) == false) {
+		unknown_count++;
+	}
+	if ((map::check_exist(target_x, target_y, MUKI_UP)) == false) {
+		unknown_count++;
+	}
+	if ((map::check_exist(target_x, target_y, MUKI_DOWN)) == false) {
+		unknown_count++;
+	}
+
+	return unknown_count;
+}
+
+void adachi::run_next_action(ACTION_TYPE next_action) {
+	//TODO 超信地になってる。いつかスラロームになおすこと
+	switch (next_action) {
+	case go_straight:
+		//1区間直進
+		run::accel_run((0.045 * MOUSE_MODE), 0, 0);
+		wait::ms(100);
+		run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
+		break;
+
+	case turn_right:
+		//半区間⇒超信地⇒半区間
+		run::accel_run((0.045 * MOUSE_MODE), 0, 0);
+		run::spin_turn(90);
+		run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
+		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
+		break;
+
+	case turn_left:
+		//半区間⇒超信地⇒半区間
+		run::accel_run((0.045 * MOUSE_MODE), 0, 0);
+		run::spin_turn(270);
+		run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
+		direction_turn(&direction_x, &direction_y, MUKI_LEFT);	//向きを90°変える
+		break;
+
+	case back:
+		//半区間進んで180°ターンして半区間直進
+		run::accel_run((0.045 * MOUSE_MODE), 0, 0);			//半区間直進
+		run::spin_turn(180);
+		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
+		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
+		run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);		//半区間直進
+		break;
+
+	case stop:
+		//半区間進んでストップ
+		run::accel_run((0.045 * MOUSE_MODE), 0, 0);			//半区間直進
+		//TODO ここでモーターの電源切るべき？
+		break;
+	}
+}
+
+ACTION_TYPE adachi::get_next_action(DIRECTION next_direction) {
+	switch (mouse::get_direction()) {
+	case MUKI_RIGHT:
+		//真っ直ぐ行けるなら、それを最優先
+		if (next_direction.element.right == 1) {
+			return go_straight;
+		}
+		//右のターンを次に優先
+		else if (next_direction.element.down == 1) {
+			return turn_right;
+		}
+		//左のターンを次に優先
+		else if (next_direction.element.up == 1) {
+			return turn_left;
+		}
+		//Uターンは優先度最低
+		else if (next_direction.element.left == 1) {
+			return back;
+		}
+		break;
+
+		//やってることは以下同様なのでコメントは省く
+	case MUKI_LEFT:
+		if (next_direction.element.left == 1) {
+			return go_straight;
+		} else if (next_direction.element.up == 1) {
+			return turn_right;
+		} else if (next_direction.element.down == 1) {
+			return turn_left;
+		} else if (next_direction.element.right == 1) {
+			return back;
+		}
+		break;
+
+	case MUKI_UP:
+		if (next_direction.element.up == 1) {
+			return go_straight;
+		} else if (next_direction.element.right == 1) {
+			return turn_right;
+		} else if (next_direction.element.left == 1) {
+			return turn_left;
+		} else if (next_direction.element.down == 1) {
+			return back;
+		}
+		break;
+
+	case MUKI_DOWN:
+		if (next_direction.element.down == 1) {
+			return go_straight;
+		} else if (next_direction.element.left == 1) {
+			return turn_right;
+		} else if (next_direction.element.right == 1) {
+			return turn_left;
+		} else if (next_direction.element.up == 1) {
+			return back;
+		}
+		break;
+	}
+
+	//ここにたどり着くのは、次行く方向がないか、予期せぬ例外なので、マウスを止める。
+	return stop;
+}
+
+bool adachi::adachi_method(unsigned char target_x, unsigned char target_y) {
+	bool adachi_flag = true;	//途中でミスがあったらfalseに
+	unsigned char now_x, now_y;	//座標一時保存用。見易さのため
+	DIRECTION next_direction, priority_direction;		//次に行く方向を管理
+	unsigned char max_unknown_count, target_unknown_count;		//未探索の壁の数を管理
+	ACTION_TYPE next_action;	//次の行動を管理
+
+	while (adachi_flag) {
+		//フェイルセーフが掛かっていればそこで抜ける
+		if (mouse::get_fail_flag()) {
+			adachi_flag = false;
+			break;
+		}
+
+		mouse::set_distance_m(0);
+
+		//向きを取得
+		mouse::get_direction(&direction_x, &direction_y);
+
+		//座標を更新
+		now_x = mouse::get_x_position() + direction_x;
+		now_y = mouse::get_y_position() + direction_y;
+		mouse::set_position(now_x, now_y);
+
+		//壁情報を更新
+		if (photo::check_wall(MUKI_RIGHT)) {
+			map::create_wall(now_x, now_y, MUKI_RIGHT);
+		}
+		if (photo::check_wall(MUKI_LEFT)) {
+			map::create_wall(now_x, now_y, MUKI_LEFT);
+		}
+		if (photo::check_wall(MUKI_UP)) {
+			map::create_wall(now_x, now_y, MUKI_UP);
+		}
+
+		//壁を見たことを記録
+		map::remember_exist(now_x, now_y, MUKI_UP);
+		map::remember_exist(now_x, now_y, MUKI_DOWN);
+		map::remember_exist(now_x, now_y, MUKI_RIGHT);
+		map::remember_exist(now_x, now_y, MUKI_LEFT);
+
+		//目標の座標にたどり着いたら終了
+		if ((now_x == target_x) && (now_y == target_y)) {
+			break;
+		}
+
+		//歩数マップ作製
+		step::set_step(target_x, target_y);
+
+		//方向と未探索の壁の数をリセット
+		next_direction.all = 0;
+		priority_direction.all = 0;
+		max_unknown_count = 1;	//0をはじくため
+
+		//歩数的に前後左右のマスへ行けるか判別.
+		//行ければ次行く方向の候補に入れる
+		//更に見てない壁の数が多ければpriority_directionの方にも候補として追加
+		if (check_move_by_step(now_x, now_y, MUKI_RIGHT)) {				//右
+			next_direction.element.right = 1;
+			target_unknown_count = count_unknown_wall((now_x + 1), now_y);
+			if (target_unknown_count == max_unknown_count) {
+				priority_direction.element.right = 1;
+			} else if (target_unknown_count >= max_unknown_count) {
+				max_unknown_count = target_unknown_count;
+				priority_direction.all = 0;				//他の方向はいらないのでリセット
+				priority_direction.element.right = 1;
+			}
+		}
+		if (check_move_by_step(now_x, now_y, MUKI_LEFT)) {				//左
+			next_direction.element.left = 1;
+			target_unknown_count = count_unknown_wall((now_x - 1), now_y);
+			if (target_unknown_count == max_unknown_count) {
+				priority_direction.element.left = 1;
+			} else if (target_unknown_count >= max_unknown_count) {
+				max_unknown_count = target_unknown_count;
+				priority_direction.all = 0;				//他の方向はいらないのでリセット
+				priority_direction.element.left = 1;
+			}
+		}
+		if (check_move_by_step(now_x, now_y, MUKI_UP)) {				//上
+			next_direction.element.up = 1;
+			target_unknown_count = count_unknown_wall(now_x, (now_y + 1));
+			if (target_unknown_count == max_unknown_count) {
+				priority_direction.element.up = 1;
+			} else if (target_unknown_count >= max_unknown_count) {
+				max_unknown_count = target_unknown_count;
+				priority_direction.all = 0;				//他の方向はいらないのでリセット
+				priority_direction.element.up = 1;
+			}
+		}
+		if (check_move_by_step(now_x, now_y, MUKI_DOWN)) {				//下
+			next_direction.element.down = 1;
+			target_unknown_count = count_unknown_wall(now_x, (now_y - 1));
+			if (target_unknown_count == max_unknown_count) {
+				priority_direction.element.down = 1;
+			} else if (target_unknown_count >= max_unknown_count) {
+				max_unknown_count = target_unknown_count;
+				priority_direction.all = 0;				//他の方向はいらないのでリセット
+				priority_direction.element.down = 1;
+			}
+		}
+
+		//未探索区間が候補の中にあるなら、次に行く方向はその中から選ぶ
+		if (priority_direction.all != 0) {
+			next_direction.all = priority_direction.all;
+		}
+
+		//next_dirrctionから次行く方向を選び、行動する
+		next_action = get_next_action(next_direction);
+		run_next_action(next_action);
+
+		//もし止まるべきと出たならココで足立法をやめる
+		if (next_action == stop) {
+			adachi_flag = false;
+		}
+
+		//方向更新
+		mouse::set_direction(direction_x, direction_y);
+	}
+
+	if (adachi_flag) {
+		return true;		//足立法完了!!
+	} else {
+		//ここに来るということは足立法が失敗してる
+		motor::sleep_motor();
+		//TODO わかりやすい何かが欲しい
+		my7seg::light(4);
+	}
+
+	return false;
+}
+
+bool adachi::adachi_method_spin(unsigned char target_x,
+		unsigned char target_y) {
+	bool adachi_flag = true;	//途中でミスがあったらfalseに
+	unsigned char now_x, now_y;	//座標一時保存用。見易さのため
+	DIRECTION next_direction, priority_direction;	//次に行く方向を管理
+	unsigned char max_unknown_count, target_unknown_count;	//未探索の壁の数を管理
+	ACTION_TYPE next_action;	//次の行動を管理
+
+	my7seg::turn_off();
+
+	//保存していたマップを読みだす
+	map::input_map_data(&mouse::now_map);
+
+//向きを取得
+	mouse::get_direction(&direction_x, &direction_y);
+
+	control::stop_wall_control();
+	control::start_control();
+
+	mouse::set_fail_flag(false);
+
+	wait::ms(1000);
+
+	gyro::set_gyro_ref();
+	mouse::reset_angle();
+	mouse::set_ideal_velocity(0);
+	mouse::set_ideal_angular_velocity(0);
+	control::reset_delta();
+
+	motor::stanby_motor();
+
+	control::start_control();
+
+	my7seg::count_down(3, 500);
+
+	mouse::set_distance_m(0);
+	control::start_wall_control();
+
+	run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
+
+	while (adachi_flag) {
+//フェイルセーフが掛かっていればそこで抜ける
+		if (mouse::get_fail_flag()) {
+			adachi_flag = false;
+			break;
+		}
+
+		my7seg::light(3);
+
+//座標を更新
+		now_x = mouse::get_x_position() + direction_x;
+		now_y = mouse::get_y_position() + direction_y;
+		mouse::set_position(now_x, now_y);
+//向きも
+		mouse::set_direction(direction_x, direction_y);
+
+//壁情報更新
+		mouse::look_wall(false);
+
+//目標の座標にたどり着いたら終了
+		if ((now_x == target_x) && (now_y == target_y)) {
+			run_next_action(stop);
+			break;
+		}
+
+//歩数マップ作製
+		step::set_step(target_x, target_y);
+
+//方向と未探索の壁の数をリセット
+		next_direction.all = 0;
+		priority_direction.all = 0;
+		max_unknown_count = 1;	//0をはじくため
+
+//歩数的に前後左右のマスへ行けるか判別.
+//行ければ次行く方向の候補に入れる
+//更に見てない壁の数が多ければpriority_directionの方にも候補として追加
+		if (check_move_by_step(now_x, now_y, MUKI_RIGHT)) {			//右
+			next_direction.element.right = 1;
+
+			my7seg::light(1);
+
+			target_unknown_count = count_unknown_wall((now_x + 1), now_y);
+			if (target_unknown_count == max_unknown_count) {
+				priority_direction.element.right = 1;
+			} else if (target_unknown_count >= max_unknown_count) {
+				max_unknown_count = target_unknown_count;
+				priority_direction.all = 0;				//他の方向はいらないのでリセット
+				priority_direction.element.right = 1;
+			}
+
+		}
+		if (check_move_by_step(now_x, now_y, MUKI_LEFT)) {			//左
+
+			my7seg::light(2);
+
+			next_direction.element.left = 1;
+
+			target_unknown_count = count_unknown_wall((now_x - 1), now_y);
+			if (target_unknown_count == max_unknown_count) {
+				priority_direction.element.left = 1;
+			} else if (target_unknown_count >= max_unknown_count) {
+				max_unknown_count = target_unknown_count;
+				priority_direction.all = 0;				//他の方向はいらないのでリセット
+				priority_direction.element.left = 1;
+			}
+
+		}
+		if (check_move_by_step(now_x, now_y, MUKI_UP)) {			//上
+			next_direction.element.up = 1;
+
+			my7seg::light(3);
+
+			target_unknown_count = count_unknown_wall(now_x, (now_y + 1));
+			if (target_unknown_count == max_unknown_count) {
+				priority_direction.element.up = 1;
+			} else if (target_unknown_count >= max_unknown_count) {
+				max_unknown_count = target_unknown_count;
+				priority_direction.all = 0;				//他の方向はいらないのでリセット
+				priority_direction.element.up = 1;
+			}
+
+		}
+		if (check_move_by_step(now_x, now_y, MUKI_DOWN)) {			//下
+			next_direction.element.down = 1;
+
+			my7seg::light(4);
+
+			target_unknown_count = count_unknown_wall(now_x, (now_y - 1));
+			if (target_unknown_count == max_unknown_count) {
+				priority_direction.element.down = 1;
+			} else if (target_unknown_count >= max_unknown_count) {
+				max_unknown_count = target_unknown_count;
+				priority_direction.all = 0;				//他の方向はいらないのでリセット
+				priority_direction.element.down = 1;
+			}
+
+		}
+
+//未探索区間が候補の中にあるなら、次に行く方向はその中から選ぶ
+		if (priority_direction.all != 0) {
+			next_direction.all = priority_direction.all;
+		}
+
+//next_dirrctionから次行く方向を選び、行動する
+		next_action = get_next_action(next_direction);
+		if (MOUSE_MODE == 1) {
+			//TODO 壁キレようの関数を用意する
+			run_next_action(next_action);
+		} else {
+			run_next_action(next_action);
+
+		}
+//もし止まるべきと出たならココで足立法をやめる
+		if (next_action == stop) {
+			adachi_flag = false;
+		}
+
+//方向更新
+		mouse::set_direction(direction_x, direction_y);
+	}
+
+	if (adachi_flag) {
+		//足立法成功なのでマップを保存する
+		map::output_map_data(&mouse::now_map);
+
+		return true;				//足立法完了!!
+
+	} else {
+//ここに来るということは足立法が失敗してる
+		motor::sleep_motor();
+//TODO わかりやすい何かが欲しい
+		mouse::error();
+		myprintf("Adachi method failed!\n\r");
+		if (mouse::get_fail_flag()) {
+			myprintf("fail safe!\n\r");
+		}
+
+		myprintf("now -> (%d,%d)\n\r", mouse::get_x_position(),
+				mouse::get_y_position());
+	}
+
+	return false;
+}
+
+bool adachi::left_hand_method(const uint8_t target_x, const uint8_t target_y) {
+	bool search_flag = true;	//途中でミスがあったらfalseに
+	uint8_t now_x, now_y;	//座標一時保存用。見易さのため
+	ACTION_TYPE next_action;	//次の行動を管理
+
+	my7seg::turn_off();
+
+	//保存していたマップを読みだす
+	map::input_map_data(&mouse::now_map);
+
+	//向きを取得
+	mouse::get_direction(&direction_x, &direction_y);
+
+	control::stop_wall_control();
+	control::stop_control();
+
+
+	wait::ms(1000);
+
+	gyro::set_gyro_ref();
+	mouse::reset_angle();
+	mouse::set_ideal_velocity(0);
+	mouse::set_ideal_angular_velocity(0);
+	control::reset_delta();
+
+	motor::stanby_motor();
+
+	control::start_control();
+
+	my7seg::count_down(3, 500);
+
+	mouse::set_distance_m(0);
+	control::start_wall_control();
+
+	run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
+
+	while (search_flag) {
+		if (photo::check_wall(left) == false)
+			next_action = turn_left;
+		 else if (photo::check_wall(front) == false)
+			next_action = go_straight;
+		 else if (photo::check_wall(right) == false)
+			next_action = turn_right;
+		 else
+			next_action = back;
+
+		run_next_action(next_action);
+
+	}
+
+}
+
+adachi::adachi() {
+}
+
+adachi::~adachi() {
+
 }
 
