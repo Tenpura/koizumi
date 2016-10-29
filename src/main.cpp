@@ -29,9 +29,10 @@ float flog[2][10000] = { 0 };
 void interrupt_timer();			//CONTROL_PERIODごとに割り込む関数
 
 int main(void) {
-
-	for (int16_t i = 0; i < 10000; i++) {
-		//クロックを安定させる？
+	for (int16_t j = 0; j < 100; j++) {
+		for (volatile int16_t i = 0; i < 10000; i++) {
+			//クロックを安定させる？
+		}
 	}
 
 	//初期設定
@@ -49,25 +50,25 @@ int main(void) {
 			my7seg::turn_off();
 			wait::ms(500);
 
-			if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
+			if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0) {
 				break;
 			}
 
 		}
 	}
-/*
-	while(1){
-		myprintf("right %d  ",photo::get_value(right));
-		myprintf("left %d  ",photo::get_value(left));
-		myprintf("f_r %d  ",photo::get_value(front_right));
-		myprintf("f_l %d  ",photo::get_value(front_left));
-		myprintf("front %d  ",photo::get_value(front));
+
+	while (1) {
+		myprintf("right %d  ", photo::get_value(right));
+		myprintf("left %d  ", photo::get_value(left));
+		myprintf("f_r %d  ", photo::get_value(front_right));
+		myprintf("f_l %d  ", photo::get_value(front_left));
+		myprintf("front %d  ", photo::get_value(front));
 		myprintf("\n\r");
 
 		wait::ms(100);
 
 	}
-*/
+
 	mpu6000::init_mpu6000();
 
 	my7seg::count_down(3, 1000);
@@ -85,19 +86,17 @@ int main(void) {
 	mouse::set_ideal_angular_velocity(0);
 	control::reset_delta();
 
-
 	flog[0][0] = -1;
 	mouse::set_distance_m(0);
 	mouse::reset_angle();
 
 	my7seg::light(8);
 
+	//run::spin_turn(180);
 
-	run::spin_turn(90);
+	run::accel_run(0.18 * 2, 0, 0);
 
-	//run::accel_run(0.18*2, 0, 0);
-
-	my7seg::light(2);
+	my7seg::light(5);
 
 	wait::ms(1000);
 
@@ -109,14 +108,13 @@ int main(void) {
 	 }
 	 */
 
-
 	motor::sleep_motor();
 	my7seg::turn_off();
 
 	while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
 	}
 
-	for (int i = 0; i < 1000; i++) {
+	for (int i = 0; i < 2000; i++) {
 		myprintf("%f,%f\n\r", flog[0][i], flog[1][i]);
 	}
 
@@ -135,7 +133,7 @@ void interrupt_timer() {
 	wait_counter++;	//ms(ミリ秒)のカウントを1増加
 	mouse::add_one_count_ms();
 
-	photo::interrupt(true);
+//	photo::interrupt(true);
 
 	gyro::interrupt_gyro();				//gyroの値を取得
 	gyro::cal_angular_velocity();	//gyroから角速度を計算[°/s]
@@ -157,8 +155,8 @@ void interrupt_timer() {
 				i++;
 			}
 		} else if (i < 10000) {
-			flog[0][i] = gyro::get_angular_velocity();
-			flog[1][i] = mouse::get_ideal_angular_velocity();
+			flog[0][i] = encoder::get_velocity();
+			flog[1][i] = mouse::get_ideal_velocity();
 			i++;
 		}
 	}

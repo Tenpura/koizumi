@@ -347,6 +347,7 @@ void run::spin_turn(const float target_degree) {
 		if (angle_degree >= (target_degree - mouse::get_angle_degree())) {
 			break;
 		}
+
 	}
 
 	//等角速度区間
@@ -360,7 +361,7 @@ void run::spin_turn(const float target_degree) {
 						/ (2 * angular_acceleration));
 		//減速に必要な角度が残ってなければ抜ける
 		if (angle_degree >= (target_degree - mouse::get_angle_degree())) {
-						break;
+			break;
 		}
 	}
 
@@ -371,6 +372,8 @@ void run::spin_turn(const float target_degree) {
 		if (ABS(mouse::get_ideal_angular_velocity()) < 0.02) {
 			mouse::set_angular_acceleration(0);
 		}
+
+		my7seg::light(4);
 	}
 
 	mouse::set_angular_acceleration(0);

@@ -876,9 +876,9 @@ photo::~photo() {
 
 //XXX ŠeŽíƒQƒCƒ“
 //controlŠÖ˜A
-const PID gyro_gain = { 10, 0, 0 };
+const PID gyro_gain = { 40, 108, 0 };
 const PID photo_gain = { 0, 0, 0 };
-const PID encoder_gain = { 450, 1000, 0 };
+const PID encoder_gain = { 300, 1000, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta;
 bool control::control_phase = false;
