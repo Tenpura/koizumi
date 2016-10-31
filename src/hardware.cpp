@@ -747,7 +747,7 @@ void photo::interrupt(bool is_light) {
 
 	//XXX 左センサだけ消えてる時との差分をとってない
 	photo::set_ref(left, 0);		//消えてる時をrefにする
-	//photo::set_ref(left, get_ad(left));		//消えてる時をrefにする
+	photo::set_ref(left, get_ad(left));		//消えてる時をrefにする
 	if (is_light) {
 		photo::light(left);
 		for (int i = 0; i < wait_number; i++) {
@@ -910,7 +910,7 @@ photo::~photo() {
 //XXX 各種ゲイン
 //control関連
 const PID gyro_gain = { 40, 108, 0 };
-const PID photo_gain = { 0.000001, 0/*0.000001*/, 0 };
+const PID photo_gain = { 0.0000001, 0/*0.000001*/, 0 };
 const PID encoder_gain = { 300, 1000, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta;
@@ -960,8 +960,9 @@ void control::cal_delta() {
 
 		//XXX 壁制御は壁から離れる場合だけ入れてる
 		if (photo::check_wall(MUKI_RIGHT)) {		//右壁がある
-			photo_right_delta = -1*(parameter::get_ideal_photo(right)
-					- photo::get_value(right))
+			photo_right_delta = -1
+					* (parameter::get_ideal_photo(right)
+							- photo::get_value(right))
 					/ parameter::get_ideal_photo(right)/*規格化*/;
 
 			if (photo_right_delta < 0) {		//壁に近づくようには制御しない。
@@ -1001,7 +1002,7 @@ void control::cal_delta() {
 		}
 	}
 	//TODO　壁制御何かおかしい
-	photo_delta.P = -(photo_right_delta-photo_left_delta);
+	photo_delta.P = -(photo_right_delta * 5 - photo_left_delta);
 	photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
 	//photo_delta.D = (photo_delta.P - before_p_delta) * 1000;
 
