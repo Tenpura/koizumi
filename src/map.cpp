@@ -11,7 +11,7 @@
 MAZE_WALL map::x_maze_wall[MAZE_SIZE], map::y_maze_wall[MAZE_SIZE];
 MAZE_WALL map::x_wall_exist[MAZE_SIZE], map::y_wall_exist[MAZE_SIZE];
 
-//target_wall‚Ìedit_number–Ú‚Éset_number‚ğ‘ã“ü‚·‚éŠÖ”
+//target_wallã®edit_numberç›®ã«set_numberã‚’ä»£å…¥ã™ã‚‹é–¢æ•°
 void map::set_maze_wall(MAZE_WALL* const maze_wall, unsigned char edit_number,
 		bool is_wall) {
 	int8_t set_number;
@@ -122,7 +122,7 @@ void map::set_maze_wall(MAZE_WALL* const maze_wall, unsigned char edit_number,
 }
 unsigned char map::get_maze_wall(MAZE_WALL maze_wall,
 		unsigned char edit_number) {
-	unsigned char maze_check = 0;		//Œ³FALSE
+	unsigned char maze_check = 0;		//å…ƒFALSE
 
 	switch (edit_number) {
 	case 0:
@@ -230,41 +230,41 @@ void map::remember_exist(unsigned char wall_x, unsigned char wall_y,
 		unsigned char muki) {
 	unsigned char set_x = wall_x, set_y = wall_y;
 
-	//xÀ•W•ûŒü‚ğ•ÏX‚·‚é‚Æ‚«
+	//xåº§æ¨™æ–¹å‘ã‚’å¤‰æ›´ã™ã‚‹ã¨ã
 	if ((muki == MUKI_RIGHT) || (muki == MUKI_LEFT)) {
 		if (muki == MUKI_RIGHT) {
 		} else if (muki == MUKI_LEFT) {
-			if (wall_x == 0) {		//ˆê”Ô¶•Ç‚ÍŠÇ—‚µ‚È‚¢
+			if (wall_x == 0) {		//ä¸€ç•ªå·¦å£ã¯ç®¡ç†ã—ãªã„
 				return;
 			} else {
-				set_x = wall_x - 1;	//•K‚¸‰E•Ç‚ğXV‚·‚é‚æ‚¤‚ÉAÀ•W‚ğ•Ï‚¦‚é
+				set_x = wall_x - 1;	//å¿…ãšå³å£ã‚’æ›´æ–°ã™ã‚‹ã‚ˆã†ã«ã€åº§æ¨™ã‚’å¤‰ãˆã‚‹
 			}
 		}
 		if (set_x < MAZE_SIZE) {
-			set_maze_wall(&x_wall_exist[set_y], set_x, true);//x_maze_wall[y]‚Ìx”Ô–Ú‚Ì‰E•Ç‚É1‚ğ‘ã“ü
-		} else {		//“KØ‚Å‚È‚¢’l‚ª“ü‚Á‚Ä‚é
+			set_maze_wall(&x_wall_exist[set_y], set_x, true);//x_maze_wall[y]ã®xç•ªç›®ã®å³å£ã«1ã‚’ä»£å…¥
+		} else {		//é©åˆ‡ã§ãªã„å€¤ãŒå…¥ã£ã¦ã‚‹
 			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("‘¶İ‚µ‚È‚¢xÀ•W‚É•Ç‚Ì‘¶İ‚ğì‚ë‚¤‚Æ‚µ‚Ä‚¢‚Ü‚·\n\r");
-			myprintf("remember_existŠÖ”“à\n\r");
+			myprintf("å­˜åœ¨ã—ãªã„xåº§æ¨™ã«å£ã®å­˜åœ¨ã‚’ä½œã‚ã†ã¨ã—ã¦ã„ã¾ã™\n\r");
+			myprintf("remember_existé–¢æ•°å†…\n\r");
 		}
 
-		//yÀ•W•ûŒü‚ğ•ÏX‚·‚é‚Æ‚«
+		//yåº§æ¨™æ–¹å‘ã‚’å¤‰æ›´ã™ã‚‹ã¨ã
 	} else if ((muki == MUKI_UP) || (muki == MUKI_DOWN)) {
 		if (muki == MUKI_UP) {
 		} else if (muki == MUKI_DOWN) {
-			if (wall_y == 0) {		//ˆê”Ô‰º•Ç‚ÍŠÇ—‚µ‚È‚¢
+			if (wall_y == 0) {		//ä¸€ç•ªä¸‹å£ã¯ç®¡ç†ã—ãªã„
 				return;
 			} else {
-				set_y = wall_y - 1;	//•K‚¸ã•Ç‚ğXV‚·‚é‚æ‚¤‚ÉAÀ•W‚ğ•Ï‚¦‚é
+				set_y = wall_y - 1;	//å¿…ãšä¸Šå£ã‚’æ›´æ–°ã™ã‚‹ã‚ˆã†ã«ã€åº§æ¨™ã‚’å¤‰ãˆã‚‹
 			}
 		}
 		if (set_y < MAZE_SIZE) {
-			set_maze_wall(&y_wall_exist[set_x], set_y, true);//x_maze_wall[y]‚Ìx”Ô–Ú‚Ì‰E•Ç‚É1‚ğ‘ã“ü
-		} else {		//“KØ‚Å‚È‚¢’l‚ª“ü‚Á‚Ä‚é
+			set_maze_wall(&y_wall_exist[set_x], set_y, true);//x_maze_wall[y]ã®xç•ªç›®ã®å³å£ã«1ã‚’ä»£å…¥
+		} else {		//é©åˆ‡ã§ãªã„å€¤ãŒå…¥ã£ã¦ã‚‹
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("‘¶İ‚µ‚È‚¢yÀ•W‚É•Ç‚Ì‘¶İ‚ğì‚ë‚¤‚Æ‚µ‚Ä‚¢‚Ü‚·\n\r");
-			myprintf("remember_existŠÖ”“à\n\r");
+			myprintf("å­˜åœ¨ã—ãªã„yåº§æ¨™ã«å£ã®å­˜åœ¨ã‚’ä½œã‚ã†ã¨ã—ã¦ã„ã¾ã™\n\r");
+			myprintf("remember_existé–¢æ•°å†…\n\r");
 		}
 
 	}
@@ -274,40 +274,40 @@ void map::forget_exist(unsigned char wall_x, unsigned char wall_y,
 		unsigned char muki) {
 	unsigned char set_x = wall_x, set_y = wall_y;
 
-	//xÀ•W•ûŒü‚ğ•ÏX‚·‚é‚Æ‚«
+	//xåº§æ¨™æ–¹å‘ã‚’å¤‰æ›´ã™ã‚‹ã¨ã
 	if ((muki == MUKI_RIGHT) || (muki == MUKI_LEFT)) {
 		if (muki == MUKI_RIGHT) {
 		} else if (muki == MUKI_LEFT) {
-			if (wall_x == 0) {		//ˆê”Ô¶•Ç‚ÍŠÇ—‚µ‚È‚¢
+			if (wall_x == 0) {		//ä¸€ç•ªå·¦å£ã¯ç®¡ç†ã—ãªã„
 				return;
 			} else {
-				set_x = wall_x - 1;	//•K‚¸‰E•Ç‚ğXV‚·‚é‚æ‚¤‚ÉAÀ•W‚ğ•Ï‚¦‚é
+				set_x = wall_x - 1;	//å¿…ãšå³å£ã‚’æ›´æ–°ã™ã‚‹ã‚ˆã†ã«ã€åº§æ¨™ã‚’å¤‰ãˆã‚‹
 			}
 		}
 		if (set_x < MAZE_SIZE) {
-			set_maze_wall(&x_wall_exist[set_y], set_x, false);//x_maze_wall[y]‚Ìx”Ô–Ú‚Ì‰E•Ç‚Éfalse‚ğ‘ã“ü
-		} else {		//“KØ‚Å‚È‚¢’l‚ª“ü‚Á‚Ä‚é
+			set_maze_wall(&x_wall_exist[set_y], set_x, false);//x_maze_wall[y]ã®xç•ªç›®ã®å³å£ã«falseã‚’ä»£å…¥
+		} else {		//é©åˆ‡ã§ãªã„å€¤ãŒå…¥ã£ã¦ã‚‹
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("‘¶İ‚µ‚È‚¢xÀ•W‚Ì•Ç‚Ì‘¶İ‚ğÁ‚»‚¤‚Æ‚µ‚Ä‚¢‚Ü‚·\n\r");
-			myprintf("forget_existŠÖ”“à\n\r");
+			myprintf("å­˜åœ¨ã—ãªã„xåº§æ¨™ã®å£ã®å­˜åœ¨ã‚’æ¶ˆãã†ã¨ã—ã¦ã„ã¾ã™\n\r");
+			myprintf("forget_existé–¢æ•°å†…\n\r");
 		}
 
-		//yÀ•W•ûŒü‚ğ•ÏX‚·‚é‚Æ‚«
+		//yåº§æ¨™æ–¹å‘ã‚’å¤‰æ›´ã™ã‚‹ã¨ã
 	} else if ((muki == MUKI_UP) || (muki == MUKI_DOWN)) {
 		if (muki == MUKI_UP) {
 		} else if (muki == MUKI_DOWN) {
-			if (wall_y == 0) {		//ˆê”Ô‰º•Ç‚ÍŠÇ—‚µ‚È‚¢
+			if (wall_y == 0) {		//ä¸€ç•ªä¸‹å£ã¯ç®¡ç†ã—ãªã„
 				return;
 			} else {
-				set_y = wall_y - 1;	//•K‚¸ã•Ç‚ğXV‚·‚é‚æ‚¤‚ÉAÀ•W‚ğ•Ï‚¦‚é
+				set_y = wall_y - 1;	//å¿…ãšä¸Šå£ã‚’æ›´æ–°ã™ã‚‹ã‚ˆã†ã«ã€åº§æ¨™ã‚’å¤‰ãˆã‚‹
 			}
 		}
 		if (set_y < MAZE_SIZE) {
-			set_maze_wall(&y_wall_exist[set_x], set_y, false);//x_maze_wall[y]‚Ìx”Ô–Ú‚Ìã•Ç‚É1false‘ã“ü
-		} else {		//“KØ‚Å‚È‚¢’l‚ª“ü‚Á‚Ä‚é
+			set_maze_wall(&y_wall_exist[set_x], set_y, false);//x_maze_wall[y]ã®xç•ªç›®ã®ä¸Šå£ã«1falseä»£å…¥
+		} else {		//é©åˆ‡ã§ãªã„å€¤ãŒå…¥ã£ã¦ã‚‹
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("‘¶İ‚µ‚È‚¢yÀ•W‚Ì•Ç‚Ì‘¶İ‚ğÁ‚»‚¤‚Æ‚µ‚Ä‚¢‚Ü‚·\n\r");
-			myprintf("forget_existŠÖ”“à\n\r");
+			myprintf("å­˜åœ¨ã—ãªã„yåº§æ¨™ã®å£ã®å­˜åœ¨ã‚’æ¶ˆãã†ã¨ã—ã¦ã„ã¾ã™\n\r");
+			myprintf("forget_existé–¢æ•°å†…\n\r");
 		}
 
 	}
@@ -317,43 +317,43 @@ bool map::check_exist(unsigned char wall_x, unsigned char wall_y,
 		unsigned char muki) {
 	unsigned char target_x = wall_x, target_y = wall_y;
 
-	//xÀ•W•ûŒü‚ğŒ©‚é‚·‚é‚Æ‚«
+	//xåº§æ¨™æ–¹å‘ã‚’è¦‹ã‚‹ã™ã‚‹ã¨ã
 	if ((muki == MUKI_RIGHT) || (muki == MUKI_LEFT)) {
 		if (muki == MUKI_RIGHT) {
 		} else if (muki == MUKI_LEFT) {
-			if (wall_x == 0) {		//ˆê”Ô¶•Ç‚ÍŠÇ—‚µ‚È‚¢
+			if (wall_x == 0) {		//ä¸€ç•ªå·¦å£ã¯ç®¡ç†ã—ãªã„
 				return true;
 			} else {
-				target_x = wall_x - 1;	//•K‚¸‰E•Ç‚ğŒ©‚é‚æ‚¤‚ÉAÀ•W‚ğ•Ï‚¦‚é
+				target_x = wall_x - 1;	//å¿…ãšå³å£ã‚’è¦‹ã‚‹ã‚ˆã†ã«ã€åº§æ¨™ã‚’å¤‰ãˆã‚‹
 			}
 		}
 		if (target_x < MAZE_SIZE) {
 			return get_maze_wall(x_wall_exist[target_y], target_x);
-		} else {		//“KØ‚Å‚È‚¢’l‚ª“ü‚Á‚Ä‚é
+		} else {		//é©åˆ‡ã§ãªã„å€¤ãŒå…¥ã£ã¦ã‚‹
 			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("‘¶İ‚µ‚È‚¢xÀ•W‚Ì•Ç‚Ì‘¶İ‚ğ“Ç‚à‚¤‚Æ‚µ‚Ä‚¢‚Ü‚·\n\r");
-			myprintf("check_existŠÖ”“à\n\r");
+			myprintf("å­˜åœ¨ã—ãªã„xåº§æ¨™ã®å£ã®å­˜åœ¨ã‚’èª­ã‚‚ã†ã¨ã—ã¦ã„ã¾ã™\n\r");
+			myprintf("check_existé–¢æ•°å†…\n\r");
 			return -1;
 		}
 
-		//yÀ•W•ûŒü‚ğ•ÏX‚·‚é‚Æ‚«
+		//yåº§æ¨™æ–¹å‘ã‚’å¤‰æ›´ã™ã‚‹ã¨ã
 	} else if ((muki == MUKI_UP) || (muki == MUKI_DOWN)) {
 		if (muki == MUKI_UP) {
 		} else if (muki == MUKI_DOWN) {
-			if (wall_y == 0) {		//ˆê”Ô‰º•Ç‚Íí‚É•Ç‚ª‘¶İ
+			if (wall_y == 0) {		//ä¸€ç•ªä¸‹å£ã¯å¸¸ã«å£ãŒå­˜åœ¨
 				return true;
 			} else {
-				target_y = wall_y - 1;	//•K‚¸ã•Ç‚ğXV‚·‚é‚æ‚¤‚ÉAÀ•W‚ğ•Ï‚¦‚é
+				target_y = wall_y - 1;	//å¿…ãšä¸Šå£ã‚’æ›´æ–°ã™ã‚‹ã‚ˆã†ã«ã€åº§æ¨™ã‚’å¤‰ãˆã‚‹
 			}
 		}
 		if (target_y < MAZE_SIZE) {
 			return get_maze_wall(y_wall_exist[target_x], target_y);
-		} else {		//“KØ‚Å‚È‚¢’l‚ª“ü‚Á‚Ä‚é
+		} else {		//é©åˆ‡ã§ãªã„å€¤ãŒå…¥ã£ã¦ã‚‹
 			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("‘¶İ‚µ‚È‚¢yÀ•W‚Ì•Ç‚Ì‘¶İ‚ğ“Ç‚à‚¤‚Æ‚µ‚Ä‚¢‚Ü‚·\n\r");
-			myprintf("check_existŠÖ”“à\n\r");
+			myprintf("å­˜åœ¨ã—ãªã„yåº§æ¨™ã®å£ã®å­˜åœ¨ã‚’èª­ã‚‚ã†ã¨ã—ã¦ã„ã¾ã™\n\r");
+			myprintf("check_existé–¢æ•°å†…\n\r");
 			return -1;
 		}
 	}
@@ -365,40 +365,40 @@ void map::create_wall(unsigned char wall_x, unsigned char wall_y,
 		unsigned char muki) {
 	unsigned char set_x = wall_x, set_y = wall_y;
 
-	//xÀ•W•ûŒü‚ğ•ÏX‚·‚é‚Æ‚«
+	//xåº§æ¨™æ–¹å‘ã‚’å¤‰æ›´ã™ã‚‹ã¨ã
 	if ((muki == MUKI_RIGHT) || (muki == MUKI_LEFT)) {
 		if (muki == MUKI_RIGHT) {
 		} else if (muki == MUKI_LEFT) {
-			if (wall_x == 0) {		//ˆê”Ô¶•Ç‚ÍŠÇ—‚µ‚È‚¢
+			if (wall_x == 0) {		//ä¸€ç•ªå·¦å£ã¯ç®¡ç†ã—ãªã„
 				return;
 			} else {
-				set_x = wall_x - 1;	//•K‚¸‰E•Ç‚ğXV‚·‚é‚æ‚¤‚ÉAÀ•W‚ğ•Ï‚¦‚é
+				set_x = wall_x - 1;	//å¿…ãšå³å£ã‚’æ›´æ–°ã™ã‚‹ã‚ˆã†ã«ã€åº§æ¨™ã‚’å¤‰ãˆã‚‹
 			}
 		}
 		if (set_x < MAZE_SIZE) {
-			set_maze_wall(&x_maze_wall[set_y], set_x, true);//x_maze_wall[y]‚Ìx”Ô–Ú‚Ì‰E•Ç‚É1‚ğ‘ã“ü
-		} else {		//“KØ‚Å‚È‚¢’l‚ª“ü‚Á‚Ä‚é
+			set_maze_wall(&x_maze_wall[set_y], set_x, true);//x_maze_wall[y]ã®xç•ªç›®ã®å³å£ã«1ã‚’ä»£å…¥
+		} else {		//é©åˆ‡ã§ãªã„å€¤ãŒå…¥ã£ã¦ã‚‹
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("‘¶İ‚µ‚È‚¢xÀ•W‚É•Ç‚ğì‚ë‚¤‚Æ‚µ‚Ä‚¢‚Ü‚·\n\r");
-			myprintf("create_wallŠÖ”“à\n\r");
+			myprintf("å­˜åœ¨ã—ãªã„xåº§æ¨™ã«å£ã‚’ä½œã‚ã†ã¨ã—ã¦ã„ã¾ã™\n\r");
+			myprintf("create_wallé–¢æ•°å†…\n\r");
 		}
 
-		//yÀ•W•ûŒü‚ğ•ÏX‚·‚é‚Æ‚«
+		//yåº§æ¨™æ–¹å‘ã‚’å¤‰æ›´ã™ã‚‹ã¨ã
 	} else if ((muki == MUKI_UP) || (muki == MUKI_DOWN)) {
 		if (muki == MUKI_UP) {
 		} else if (muki == MUKI_DOWN) {
-			if (wall_y == 0) {		//ˆê”Ô‰º•Ç‚ÍŠÇ—‚µ‚È‚¢
+			if (wall_y == 0) {		//ä¸€ç•ªä¸‹å£ã¯ç®¡ç†ã—ãªã„
 				return;
 			} else {
-				set_y = wall_y - 1;	//•K‚¸ã•Ç‚ğXV‚·‚é‚æ‚¤‚ÉAÀ•W‚ğ•Ï‚¦‚é
+				set_y = wall_y - 1;	//å¿…ãšä¸Šå£ã‚’æ›´æ–°ã™ã‚‹ã‚ˆã†ã«ã€åº§æ¨™ã‚’å¤‰ãˆã‚‹
 			}
 		}
 		if (set_y < MAZE_SIZE) {
-			set_maze_wall(&y_maze_wall[set_x], set_y, true);//x_maze_wall[y]‚Ìx”Ô–Ú‚Ì‰E•Ç‚É1‚ğ‘ã“ü
-		} else {		//“KØ‚Å‚È‚¢’l‚ª“ü‚Á‚Ä‚é
+			set_maze_wall(&y_maze_wall[set_x], set_y, true);//x_maze_wall[y]ã®xç•ªç›®ã®å³å£ã«1ã‚’ä»£å…¥
+		} else {		//é©åˆ‡ã§ãªã„å€¤ãŒå…¥ã£ã¦ã‚‹
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("‘¶İ‚µ‚È‚¢yÀ•W‚É•Ç‚ğì‚ë‚¤‚Æ‚µ‚Ä‚¢‚Ü‚·\n\r");
-			myprintf("create_wallŠÖ”“à\n\r");
+			myprintf("å­˜åœ¨ã—ãªã„yåº§æ¨™ã«å£ã‚’ä½œã‚ã†ã¨ã—ã¦ã„ã¾ã™\n\r");
+			myprintf("create_wallé–¢æ•°å†…\n\r");
 		}
 
 	}
@@ -408,40 +408,40 @@ void map::destroy_wall(unsigned char wall_x, unsigned char wall_y,
 		unsigned char muki) {
 	unsigned char set_x = wall_x, set_y = wall_y;
 
-	//xÀ•W•ûŒü‚ğ•ÏX‚·‚é‚Æ‚«
+	//xåº§æ¨™æ–¹å‘ã‚’å¤‰æ›´ã™ã‚‹ã¨ã
 	if ((muki == MUKI_RIGHT) || (muki == MUKI_LEFT)) {
 		if (muki == MUKI_RIGHT) {
 		} else if (muki == MUKI_LEFT) {
-			if (wall_x == 0) {		//ˆê”Ô¶•Ç‚ÍŠÇ—‚µ‚È‚¢
+			if (wall_x == 0) {		//ä¸€ç•ªå·¦å£ã¯ç®¡ç†ã—ãªã„
 				return;
 			} else {
-				set_x = wall_x - 1;	//•K‚¸‰E•Ç‚ğXV‚·‚é‚æ‚¤‚ÉAÀ•W‚ğ•Ï‚¦‚é
+				set_x = wall_x - 1;	//å¿…ãšå³å£ã‚’æ›´æ–°ã™ã‚‹ã‚ˆã†ã«ã€åº§æ¨™ã‚’å¤‰ãˆã‚‹
 			}
 		}
 		if (set_x < MAZE_SIZE) {
-			set_maze_wall(&x_maze_wall[set_y], set_x, false);//x_maze_wall[y]‚Ìx”Ô–Ú‚Ì‰E•Ç‚Éfalse‚ğ‘ã“ü
-		} else {		//“KØ‚Å‚È‚¢’l‚ª“ü‚Á‚Ä‚é
+			set_maze_wall(&x_maze_wall[set_y], set_x, false);//x_maze_wall[y]ã®xç•ªç›®ã®å³å£ã«falseã‚’ä»£å…¥
+		} else {		//é©åˆ‡ã§ãªã„å€¤ãŒå…¥ã£ã¦ã‚‹
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("‘¶İ‚µ‚È‚¢xÀ•W‚É•Ç‚ğì‚ë‚¤‚Æ‚µ‚Ä‚¢‚Ü‚·\n\r");
-			myprintf("destroy_wallŠÖ”“à\n\r");
+			myprintf("å­˜åœ¨ã—ãªã„xåº§æ¨™ã«å£ã‚’ä½œã‚ã†ã¨ã—ã¦ã„ã¾ã™\n\r");
+			myprintf("destroy_wallé–¢æ•°å†…\n\r");
 		}
 
-		//yÀ•W•ûŒü‚ğ•ÏX‚·‚é‚Æ‚«
+		//yåº§æ¨™æ–¹å‘ã‚’å¤‰æ›´ã™ã‚‹ã¨ã
 	} else if ((muki == MUKI_UP) || (muki == MUKI_DOWN)) {
 		if (muki == MUKI_UP) {
 		} else if (muki == MUKI_DOWN) {
-			if (wall_y == 0) {		//ˆê”Ô‰º•Ç‚ÍŠÇ—‚µ‚È‚¢
+			if (wall_y == 0) {		//ä¸€ç•ªä¸‹å£ã¯ç®¡ç†ã—ãªã„
 				return;
 			} else {
-				set_y = wall_y - 1;	//•K‚¸ã•Ç‚ğXV‚·‚é‚æ‚¤‚ÉAÀ•W‚ğ•Ï‚¦‚é
+				set_y = wall_y - 1;	//å¿…ãšä¸Šå£ã‚’æ›´æ–°ã™ã‚‹ã‚ˆã†ã«ã€åº§æ¨™ã‚’å¤‰ãˆã‚‹
 			}
 		}
 		if (set_y < MAZE_SIZE) {
-			set_maze_wall(&y_maze_wall[set_x], set_y, false);//x_maze_wall[y]‚Ìx”Ô–Ú‚Ìã•Ç‚É1false‘ã“ü
-		} else {		//“KØ‚Å‚È‚¢’l‚ª“ü‚Á‚Ä‚é
+			set_maze_wall(&y_maze_wall[set_x], set_y, false);//x_maze_wall[y]ã®xç•ªç›®ã®ä¸Šå£ã«1falseä»£å…¥
+		} else {		//é©åˆ‡ã§ãªã„å€¤ãŒå…¥ã£ã¦ã‚‹
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("‘¶İ‚µ‚È‚¢yÀ•W‚É•Ç‚ğì‚ë‚¤‚Æ‚µ‚Ä‚¢‚Ü‚·\n\r");
-			myprintf("destroy_wallŠÖ”“à\n\r");
+			myprintf("å­˜åœ¨ã—ãªã„yåº§æ¨™ã«å£ã‚’ä½œã‚ã†ã¨ã—ã¦ã„ã¾ã™\n\r");
+			myprintf("destroy_wallé–¢æ•°å†…\n\r");
 		}
 
 	}
@@ -451,41 +451,41 @@ bool map::get_wall(unsigned char wall_x, unsigned char wall_y,
 		unsigned char muki) {
 	unsigned char target_x = wall_x, target_y = wall_y;
 
-	//xÀ•W•ûŒü‚ğŒ©‚é‚·‚é‚Æ‚«
+	//xåº§æ¨™æ–¹å‘ã‚’è¦‹ã‚‹ã™ã‚‹ã¨ã
 	if ((muki == MUKI_RIGHT) || (muki == MUKI_LEFT)) {
 		if (muki == MUKI_RIGHT) {
 		} else if (muki == MUKI_LEFT) {
-			if (wall_x == 0) {		//ˆê”Ô¶•Ç‚ÍŠÇ—‚µ‚È‚¢
+			if (wall_x == 0) {		//ä¸€ç•ªå·¦å£ã¯ç®¡ç†ã—ãªã„
 				return true;
 			} else {
-				target_x = wall_x - 1;	//•K‚¸‰E•Ç‚ğŒ©‚é‚æ‚¤‚ÉAÀ•W‚ğ•Ï‚¦‚é
+				target_x = wall_x - 1;	//å¿…ãšå³å£ã‚’è¦‹ã‚‹ã‚ˆã†ã«ã€åº§æ¨™ã‚’å¤‰ãˆã‚‹
 			}
 		}
 		if (target_x < MAZE_SIZE) {
 			return get_maze_wall(x_maze_wall[target_y], target_x);
-		} else {		//“KØ‚Å‚È‚¢’l‚ª“ü‚Á‚Ä‚é
+		} else {		//é©åˆ‡ã§ãªã„å€¤ãŒå…¥ã£ã¦ã‚‹
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("‘¶İ‚µ‚È‚¢xÀ•W‚Ì•Ç‚ğ“Ç‚à‚¤‚Æ‚µ‚Ä‚¢‚Ü‚·\n\r");
-			myprintf("get_wallŠÖ”“à\n\r");
+			myprintf("å­˜åœ¨ã—ãªã„xåº§æ¨™ã®å£ã‚’èª­ã‚‚ã†ã¨ã—ã¦ã„ã¾ã™\n\r");
+			myprintf("get_wallé–¢æ•°å†…\n\r");
 			return -1;
 		}
 
-		//yÀ•W•ûŒü‚ğ•ÏX‚·‚é‚Æ‚«
+		//yåº§æ¨™æ–¹å‘ã‚’å¤‰æ›´ã™ã‚‹ã¨ã
 	} else if ((muki == MUKI_UP) || (muki == MUKI_DOWN)) {
 		if (muki == MUKI_UP) {
 		} else if (muki == MUKI_DOWN) {
-			if (wall_y == 0) {		//ˆê”Ô‰º•Ç‚Íí‚É•Ç‚ª‘¶İ
+			if (wall_y == 0) {		//ä¸€ç•ªä¸‹å£ã¯å¸¸ã«å£ãŒå­˜åœ¨
 				return true;
 			} else {
-				target_y = wall_y - 1;	//•K‚¸ã•Ç‚ğXV‚·‚é‚æ‚¤‚ÉAÀ•W‚ğ•Ï‚¦‚é
+				target_y = wall_y - 1;	//å¿…ãšä¸Šå£ã‚’æ›´æ–°ã™ã‚‹ã‚ˆã†ã«ã€åº§æ¨™ã‚’å¤‰ãˆã‚‹
 			}
 		}
 		if (target_y < MAZE_SIZE) {
 			return get_maze_wall(y_maze_wall[target_x], target_y);
-		} else {		//“KØ‚Å‚È‚¢’l‚ª“ü‚Á‚Ä‚é
+		} else {		//é©åˆ‡ã§ãªã„å€¤ãŒå…¥ã£ã¦ã‚‹
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("‘¶İ‚µ‚È‚¢yÀ•W‚Ì•Ç‚ğ“Ç‚à‚¤‚Æ‚µ‚Ä‚¢‚Ü‚·\n\r");
-			myprintf("get_wallŠÖ”“à\n\r");
+			myprintf("å­˜åœ¨ã—ãªã„yåº§æ¨™ã®å£ã‚’èª­ã‚‚ã†ã¨ã—ã¦ã„ã¾ã™\n\r");
+			myprintf("get_wallé–¢æ•°å†…\n\r");
 			return -1;
 		}
 	}
@@ -494,14 +494,14 @@ bool map::get_wall(unsigned char wall_x, unsigned char wall_y,
 }
 
 void map::reset_wall() {
-	//•Ç‚ğÁ‚·
+	//å£ã‚’æ¶ˆã™
 	for (int i = 0; i < MAZE_SIZE; i++) {
 		x_maze_wall[i].all = 0;
 		y_maze_wall[i].all = 0;
 		x_wall_exist[i].all = 0;
 		y_wall_exist[i].all = 0;
 	}
-	//ŠO•Ç‚Í“ü‚ê‚é
+	//å¤–å£ã¯å…¥ã‚Œã‚‹
 	for (int i = 0; i < MAZE_SIZE; i++) {
 		create_wall(0, i, MUKI_LEFT);
 		remember_exist(0, i, MUKI_LEFT);
@@ -512,48 +512,48 @@ void map::reset_wall() {
 		create_wall(i, MAZE_SIZE - 1, MUKI_UP);
 		remember_exist(i, MAZE_SIZE - 1, MUKI_UP);
 	}
-	//(0C0)‚Í‚í‚©‚Á‚Ä‚é
+	//(0ï¼Œ0)ã¯ã‚ã‹ã£ã¦ã‚‹
 	create_wall(0, 0, MUKI_RIGHT);
 	remember_exist(0, 0, MUKI_RIGHT);
 	destroy_wall(0, 0, MUKI_UP);
 	remember_exist(0, 0, MUKI_UP);
 }
 
-void map::draw_map() {
+void map::draw_map(bool write_step) {
 	signed char tekitou_x = 0, tekitou_y = MAZE_SIZE - 1;
 
 	myprintf("\n-----start draw_map-------\n\r");
 
-	//ã•Ó
+	//ä¸Šè¾º
 	for (tekitou_x = 0; tekitou_x < MAZE_SIZE; tekitou_x++)
 		myprintf("+---");
 	myprintf("+\n\r");
 
-	myprintf("|");	//¶’[‚Ì•Ç
+	myprintf("|");	//å·¦ç«¯ã®å£
 	for (tekitou_x = 0; tekitou_x < MAZE_SIZE - 1; tekitou_x++) {
 
 		//myprintf("%3d", step[tekitou_x][tekitou_y]);
 		myprintf("   ");
 
 		if ((get_wall(tekitou_x, tekitou_y, MUKI_RIGHT) == true)
-				|| (get_wall(tekitou_x + 1, tekitou_y, MUKI_LEFT) == true)) {//¡‘‚¢‚½ƒ}ƒX‚Ì‰E‚Ì•Ç‚ª‚ ‚ê‚Î•Ç‚ğ‘‚­
+				|| (get_wall(tekitou_x + 1, tekitou_y, MUKI_LEFT) == true)) {//ä»Šæ›¸ã„ãŸãƒã‚¹ã®å³ã®å£ãŒã‚ã‚Œã°å£ã‚’æ›¸ã
 			myprintf("|");
 		} else {
-			myprintf(" ");	//‚È‚¯‚ê‚Î•Ç‚Í‘‚©‚È‚¢
+			myprintf(" ");	//ãªã‘ã‚Œã°å£ã¯æ›¸ã‹ãªã„
 		}
 	}
 
 	//myprintf("%3d", step[tekitou_x][tekitou_y]);
 	myprintf("   ");
 
-	myprintf("|\n\r");	//‰E’[‚Ì•Ç
+	myprintf("|\n\r");	//å³ç«¯ã®å£
 
 	for (tekitou_y = MAZE_SIZE - 2; tekitou_y >= 0; tekitou_y--) {
-		//////////////////////////////////////////–À˜H‚Ì•Ç‚Ìs
+		//////////////////////////////////////////è¿·è·¯ã®å£ã®è¡Œ
 		for (tekitou_x = 0; tekitou_x < MAZE_SIZE; tekitou_x++) {
-			myprintf("+");	//’Œ
+			myprintf("+");	//æŸ±
 			if ((get_wall(tekitou_x, tekitou_y, MUKI_UP) == true)
-					|| (get_wall(tekitou_x, tekitou_y + 1, MUKI_DOWN) == true)) {//•Ç‚ª‚ ‚é‚È‚ç
+					|| (get_wall(tekitou_x, tekitou_y + 1, MUKI_DOWN) == true)) {//å£ãŒã‚ã‚‹ãªã‚‰
 				myprintf("---");
 			} else {
 				myprintf("   ");
@@ -561,27 +561,27 @@ void map::draw_map() {
 		}
 		myprintf("+\n\r");
 
-		/////////////////////////////////////////–À˜H‚Ìƒ}ƒX–Ú‚Ìs
-		myprintf("|");	//¶’[‚Ì•Ç
+		/////////////////////////////////////////è¿·è·¯ã®ãƒã‚¹ç›®ã®è¡Œ
+		myprintf("|");	//å·¦ç«¯ã®å£
 		for (tekitou_x = 0; tekitou_x < MAZE_SIZE - 1; tekitou_x++) {
 
 			//myprintf("%3d", step[tekitou_x][tekitou_y]);
 			myprintf("   ");
 
 			if ((get_wall(tekitou_x, tekitou_y, MUKI_RIGHT) == true)
-					|| (get_wall(tekitou_x + 1, tekitou_y, MUKI_LEFT) == true)) {//¡‘‚¢‚½ƒ}ƒX‚Ì‰E‚Ì•Ç‚ª‚ ‚ê‚Î•Ç‚ğ‘‚­
+					|| (get_wall(tekitou_x + 1, tekitou_y, MUKI_LEFT) == true)) {//ä»Šæ›¸ã„ãŸãƒã‚¹ã®å³ã®å£ãŒã‚ã‚Œã°å£ã‚’æ›¸ã
 				myprintf("|");
 			} else {
-				myprintf(" ");	//‚È‚¯‚ê‚Î•Ç‚Í‘‚©‚È‚¢
+				myprintf(" ");	//ãªã‘ã‚Œã°å£ã¯æ›¸ã‹ãªã„
 			}
 		}
 		//myprintf("%3d", step[tekitou_x][tekitou_y]);
 		myprintf("   ");
 
-		myprintf("|\n\r");	//‰E’[‚Ì•Ç
+		myprintf("|\n\r");	//å³ç«¯ã®å£
 	}
 
-	//‰º•Ó
+	//ä¸‹è¾º
 	for (tekitou_x = 0; tekitou_x < MAZE_SIZE; tekitou_x++)
 		myprintf("+---");
 	myprintf("+\n\r");
@@ -592,12 +592,12 @@ void map::draw_map() {
  void map::convert_mapdata(unsigned char (*hiramatu_data)[16]){
  for(char x=0;x<16;x++){
  for(char y=0;y<16;y++){
- if((hiramatu_data[x][y] & 2) == 2){		//“Œ•Ç‚ª‚ ‚ê‚Î
+ if((hiramatu_data[x][y] & 2) == 2){		//æ±å£ãŒã‚ã‚Œã°
  create_wall(x,y,MUKI_RIGHT);
  }else{
  destroy_wall(x,y,MUKI_RIGHT);
  }
- if((hiramatu_data[x][y] & 1) == 1){		//“ì•Ç‚ª‚ ‚ê‚Î
+ if((hiramatu_data[x][y] & 1) == 1){		//å—å£ãŒã‚ã‚Œã°
  create_wall(x,y,MUKI_UP);
  }else{
  destroy_wall(x,y,MUKI_UP);
@@ -608,7 +608,7 @@ void map::draw_map() {
  */
 
 void map::input_map_data(const MAP_DATA *input_data) {
-	//ƒf[ƒ^“ü—Í
+	//ãƒ‡ãƒ¼ã‚¿å…¥åŠ›
 	for (int i = 0; i < MAZE_SIZE; i++) {
 		x_maze_wall[i].all = input_data->x_wall[i].all;
 		y_maze_wall[i].all = input_data->y_wall[i].all;
@@ -618,7 +618,7 @@ void map::input_map_data(const MAP_DATA *input_data) {
 }
 
 void map::output_map_data(MAP_DATA* const output_data) {
-	//ƒf[ƒ^o—Í
+	//ãƒ‡ãƒ¼ã‚¿å‡ºåŠ›
 	for (int i = 0; i < MAZE_SIZE; i++) {
 		output_data->x_wall[i].all = x_maze_wall[i].all;
 		output_data->y_wall[i].all = y_maze_wall[i].all;
@@ -647,11 +647,17 @@ void step::step_reset() {
 }
 
 void step::set_step(unsigned char target_x, unsigned char target_y) {
-	//À•W‚ğŠÇ—‚·‚é‚½‚ß‚Ì”z—ñ
-	unsigned char x_coordinate[965] = { 0 };
-	unsigned char y_coordinate[965] = { 0 };
+	//åº§æ¨™ã‚’ç®¡ç†ã™ã‚‹ãŸã‚ã®é…åˆ—
+	unsigned char x_coordinate[965];
+	unsigned char y_coordinate[965];
 
-	unsigned char x_count = 0, y_count = 0;	//ˆê“I‚ÉÀ•W‚ğ‚à‚Á‚Æ‚­‚æ‚¤
+	//array[x]={0};ã£ã¦ã‚„ã‚‹ã¨ãƒ¡ãƒ¢ãƒªé£Ÿã†ã‚‰ã—ã„ã®ã§Forã§åˆæœŸåŒ–
+	for(int16_t i=0;i<965;i++){
+		x_coordinate[i]=0;
+		y_coordinate[i]=0;
+	}
+
+	unsigned char x_count = 0, y_count = 0;	//ä¸€æ™‚çš„ã«åº§æ¨™ã‚’ã‚‚ã£ã¨ãã‚ˆã†
 	unsigned char head, tail;		//
 
 	step_reset();
@@ -662,24 +668,24 @@ void step::set_step(unsigned char target_x, unsigned char target_y) {
 	head = 1;
 	tail = 0;
 
-	//Q‚ÌÅ‰‚É‚Í–Ú•W‚ÌÀ•W‚ğ“ü‚ê‚Æ‚­
+	//Qã®æœ€åˆã«ã¯ç›®æ¨™ã®åº§æ¨™ã‚’å…¥ã‚Œã¨ã
 	x_coordinate[tail] = target_x;
 	y_coordinate[tail] = target_y;
 
 	while (head != tail) {
-		//À•W‚ğ‘ã“ü
+		//åº§æ¨™ã‚’ä»£å…¥
 		x_count = x_coordinate[tail];
 		y_count = y_coordinate[tail];
 
 		tail++;
 
-		//¶ƒ}ƒX
-		if ((x_count - 1) >= 0) {		//À•W‚ª–À˜H“à(x-1‚ª0ˆÈã)‚É‚ ‚è
-			if ((maze_step[x_count - 1][y_count] == STEP_INIT)) {//•à”‚ğ“ü‚ê‚Ä‚È‚¢i“ü‚Á‚Ä‚é•à”‚ªSTEP_INITj
-				if (map::get_wall(x_count, y_count, MUKI_LEFT) == false) {//Œ³‚Ìƒ}ƒX‚Ì¶•Ç‚ª‚È‚¢‚È‚ç
+		//å·¦ãƒã‚¹
+		if ((x_count - 1) >= 0) {		//åº§æ¨™ãŒè¿·è·¯å†…(x-1ãŒ0ä»¥ä¸Š)ã«ã‚ã‚Š
+			if ((maze_step[x_count - 1][y_count] == STEP_INIT)) {//æ­©æ•°ã‚’å…¥ã‚Œã¦ãªã„ï¼ˆå…¥ã£ã¦ã‚‹æ­©æ•°ãŒSTEP_INITï¼‰
+				if (map::get_wall(x_count, y_count, MUKI_LEFT) == false) {//å…ƒã®ãƒã‚¹ã®å·¦å£ãŒãªã„ãªã‚‰
 					maze_step[x_count - 1][y_count] =
-							maze_step[x_count][y_count] + 1;		//•à”‚ğ‘ã“ü
-					//‚±‚ÌÀ•W‚ğ•Û
+							maze_step[x_count][y_count] + 1;		//æ­©æ•°ã‚’ä»£å…¥
+					//ã“ã®åº§æ¨™ã‚’ä¿æŒ
 					x_coordinate[head] = (x_count - 1);
 					y_coordinate[head] = y_count;
 					head++;
@@ -687,13 +693,13 @@ void step::set_step(unsigned char target_x, unsigned char target_y) {
 			}
 		}
 
-		//‰Eƒ}ƒX
-		if ((x_count + 1) < MAZE_SIZE) {	//À•W‚ª–À˜H“à(x+1‚ªMAZE_SIZE–¢–)‚É‚ ‚è
-			if ((maze_step[x_count + 1][y_count] == STEP_INIT)) {//•à”‚ğ“ü‚ê‚Ä‚È‚¢i“ü‚Á‚Ä‚é•à”‚ªSTEP_INITj
-				if (map::get_wall(x_count, y_count, MUKI_RIGHT) == false) {	//Œ³‚Ìƒ}ƒX‚Ì‰E•Ç‚ª‚È‚¢
+		//å³ãƒã‚¹
+		if ((x_count + 1) < MAZE_SIZE) {	//åº§æ¨™ãŒè¿·è·¯å†…(x+1ãŒMAZE_SIZEæœªæº€)ã«ã‚ã‚Š
+			if ((maze_step[x_count + 1][y_count] == STEP_INIT)) {//æ­©æ•°ã‚’å…¥ã‚Œã¦ãªã„ï¼ˆå…¥ã£ã¦ã‚‹æ­©æ•°ãŒSTEP_INITï¼‰
+				if (map::get_wall(x_count, y_count, MUKI_RIGHT) == false) {	//å…ƒã®ãƒã‚¹ã®å³å£ãŒãªã„
 					maze_step[x_count + 1][y_count] =
-							maze_step[x_count][y_count] + 1;	//•à”‚ğ‘ã“ü
-					//‚±‚ÌÀ•W‚ğ•Û
+							maze_step[x_count][y_count] + 1;	//æ­©æ•°ã‚’ä»£å…¥
+					//ã“ã®åº§æ¨™ã‚’ä¿æŒ
 					x_coordinate[head] = (x_count + 1);
 					y_coordinate[head] = y_count;
 					head++;
@@ -701,13 +707,13 @@ void step::set_step(unsigned char target_x, unsigned char target_y) {
 			}
 		}
 
-		//‰ºƒ}ƒX
-		if ((y_count - 1) >= 0) {		//À•W‚ª–À˜H“à(y-1‚ª0ˆÈã)‚É‚ ‚è
-			if ((maze_step[x_count][y_count - 1] == STEP_INIT)) {//•à”‚ğ“ü‚ê‚Ä‚È‚¢i“ü‚Á‚Ä‚é•à”‚ªSTEP_INITj
-				if (map::get_wall(x_count, y_count, MUKI_DOWN) == false) {//Œ³‚Ìƒ}ƒX‚Ì‰º•Ç‚ª‚È‚¢
+		//ä¸‹ãƒã‚¹
+		if ((y_count - 1) >= 0) {		//åº§æ¨™ãŒè¿·è·¯å†…(y-1ãŒ0ä»¥ä¸Š)ã«ã‚ã‚Š
+			if ((maze_step[x_count][y_count - 1] == STEP_INIT)) {//æ­©æ•°ã‚’å…¥ã‚Œã¦ãªã„ï¼ˆå…¥ã£ã¦ã‚‹æ­©æ•°ãŒSTEP_INITï¼‰
+				if (map::get_wall(x_count, y_count, MUKI_DOWN) == false) {//å…ƒã®ãƒã‚¹ã®ä¸‹å£ãŒãªã„
 					maze_step[x_count][y_count - 1] =
-							maze_step[x_count][y_count] + 1;	//•à”‚ğ‘ã“ü
-					//‚±‚ÌÀ•W‚ğ•Û
+							maze_step[x_count][y_count] + 1;	//æ­©æ•°ã‚’ä»£å…¥
+					//ã“ã®åº§æ¨™ã‚’ä¿æŒ
 					x_coordinate[head] = x_count;
 					y_coordinate[head] = (y_count - 1);
 					head++;
@@ -715,13 +721,13 @@ void step::set_step(unsigned char target_x, unsigned char target_y) {
 			}
 		}
 
-		//ãƒ}ƒX
-		if ((y_count + 1) < MAZE_SIZE) {	//x,y+1‚ÌÀ•W‚ª–À˜H“à(MAZE_SIZE–¢–)‚Å‚ ‚é
-			if ((maze_step[x_count][y_count + 1] == STEP_INIT)) {//•à”‚ğ“ü‚ê‚Ä‚È‚¢i“ü‚Á‚Ä‚é•à”‚ªSTEP_INITj
-				if (map::get_wall(x_count, y_count, MUKI_UP) == false) {//Œ³‚Ìƒ}ƒX‚Ìã•Ç‚ª‚È‚¢
+		//ä¸Šãƒã‚¹
+		if ((y_count + 1) < MAZE_SIZE) {	//x,y+1ã®åº§æ¨™ãŒè¿·è·¯å†…(MAZE_SIZEæœªæº€)ã§ã‚ã‚‹
+			if ((maze_step[x_count][y_count + 1] == STEP_INIT)) {//æ­©æ•°ã‚’å…¥ã‚Œã¦ãªã„ï¼ˆå…¥ã£ã¦ã‚‹æ­©æ•°ãŒSTEP_INITï¼‰
+				if (map::get_wall(x_count, y_count, MUKI_UP) == false) {//å…ƒã®ãƒã‚¹ã®ä¸Šå£ãŒãªã„
 					maze_step[x_count][y_count + 1] =
-							maze_step[x_count][y_count] + 1;	//•à”‚ğ‘ã“ü
-					//‚±‚ÌÀ•W‚ğ•Û
+							maze_step[x_count][y_count] + 1;	//æ­©æ•°ã‚’ä»£å…¥
+					//ã“ã®åº§æ¨™ã‚’ä¿æŒ
 					x_coordinate[head] = x_count;
 					y_coordinate[head] = (y_count + 1);
 					head++;
@@ -729,8 +735,8 @@ void step::set_step(unsigned char target_x, unsigned char target_y) {
 			}
 		}
 
-		if (head > 965) {		//”z—ñ‰z‚¦‚½‚çƒGƒ‰[
-			myprintf("ƒGƒ‰[!\n\radachi::set_step()“à\n\r");
+		if (head > 965) {		//é…åˆ—è¶ŠãˆãŸã‚‰ã‚¨ãƒ©ãƒ¼
+			myprintf("ã‚¨ãƒ©ãƒ¼!\n\radachi::set_step()å†…\n\r");
 			break;
 		}
 
@@ -739,11 +745,18 @@ void step::set_step(unsigned char target_x, unsigned char target_y) {
 }
 
 void step::set_step_by_known(unsigned char target_x, unsigned char target_y) {
-	//À•W‚ğŠÇ—‚·‚é‚½‚ß‚Ì”z—ñ
-	unsigned char x_coordinate[965] = { 0 };
-	unsigned char y_coordinate[965] = { 0 };
+	//åº§æ¨™ã‚’ç®¡ç†ã™ã‚‹ãŸã‚ã®é…åˆ—
+	unsigned char x_coordinate[965];
+	unsigned char y_coordinate[965];
 
-	unsigned char x_count = 0, y_count = 0;	//ˆê“I‚ÉÀ•W‚ğ‚à‚Á‚Æ‚­‚æ‚¤
+	//array[x]={0};ã£ã¦ã‚„ã‚‹ã¨ãƒ¡ãƒ¢ãƒªé£Ÿã†ã‚‰ã—ã„ã®ã§Forã§åˆæœŸåŒ–
+		for(int16_t i=0;i<965;i++){
+			x_coordinate[i]=0;
+			y_coordinate[i]=0;
+		}
+
+
+	unsigned char x_count = 0, y_count = 0;	//ä¸€æ™‚çš„ã«åº§æ¨™ã‚’ã‚‚ã£ã¨ãã‚ˆã†
 	unsigned char head, tail;		//
 
 	step_reset();
@@ -754,26 +767,26 @@ void step::set_step_by_known(unsigned char target_x, unsigned char target_y) {
 	head = 1;
 	tail = 0;
 
-	//Q‚ÌÅ‰‚É‚Í–Ú•W‚ÌÀ•W‚ğ“ü‚ê‚Æ‚­
+	//Qã®æœ€åˆã«ã¯ç›®æ¨™ã®åº§æ¨™ã‚’å…¥ã‚Œã¨ã
 	x_coordinate[tail] = target_x;
 	y_coordinate[tail] = target_y;
 
 	while (head != tail) {
-		//À•W‚ğ‘ã“ü
+		//åº§æ¨™ã‚’ä»£å…¥
 		x_count = x_coordinate[tail];
 		y_count = y_coordinate[tail];
 
 		tail++;
 
-		//¶ƒ}ƒX
-		if ((x_count - 1) >= 0) {		//À•W‚ª–À˜H“à(x-1‚ª0ˆÈã)‚É‚ ‚è
-			if ((maze_step[x_count - 1][y_count] == STEP_INIT)) {//•à”‚ğ“ü‚ê‚Ä‚È‚¢i“ü‚Á‚Ä‚é•à”‚ªSTEP_INITj
-				if (map::get_wall(x_count, y_count, MUKI_LEFT) == false) {//Œ³‚Ìƒ}ƒX‚Ì¶•Ç‚ª‚È‚¢‚È‚ç
+		//å·¦ãƒã‚¹
+		if ((x_count - 1) >= 0) {		//åº§æ¨™ãŒè¿·è·¯å†…(x-1ãŒ0ä»¥ä¸Š)ã«ã‚ã‚Š
+			if ((maze_step[x_count - 1][y_count] == STEP_INIT)) {//æ­©æ•°ã‚’å…¥ã‚Œã¦ãªã„ï¼ˆå…¥ã£ã¦ã‚‹æ­©æ•°ãŒSTEP_INITï¼‰
+				if (map::get_wall(x_count, y_count, MUKI_LEFT) == false) {//å…ƒã®ãƒã‚¹ã®å·¦å£ãŒãªã„ãªã‚‰
 					if (map::check_exist(x_count, y_count,
-					MUKI_LEFT)) {		//¶•Ç‚ğŒ©‚Ä‚¢‚é‚È‚ç
+					MUKI_LEFT)) {		//å·¦å£ã‚’è¦‹ã¦ã„ã‚‹ãªã‚‰
 						maze_step[x_count - 1][y_count] =
-								maze_step[x_count][y_count] + 1;		//•à”‚ğ‘ã“ü
-						//‚±‚ÌÀ•W‚ğ•Û
+								maze_step[x_count][y_count] + 1;		//æ­©æ•°ã‚’ä»£å…¥
+						//ã“ã®åº§æ¨™ã‚’ä¿æŒ
 						x_coordinate[head] = (x_count - 1);
 						y_coordinate[head] = y_count;
 						head++;
@@ -782,15 +795,15 @@ void step::set_step_by_known(unsigned char target_x, unsigned char target_y) {
 			}
 		}
 
-		//‰Eƒ}ƒX
-		if ((x_count + 1) < MAZE_SIZE) {	//À•W‚ª–À˜H“à(x+1‚ªMAZE_SIZE–¢–)‚É‚ ‚è
-			if ((maze_step[x_count + 1][y_count] == STEP_INIT)) {//•à”‚ğ“ü‚ê‚Ä‚È‚¢i“ü‚Á‚Ä‚é•à”‚ªSTEP_INITj
-				if (map::get_wall(x_count, y_count, MUKI_RIGHT) == false) {	//Œ³‚Ìƒ}ƒX‚Ì‰E•Ç‚ª‚È‚¢
+		//å³ãƒã‚¹
+		if ((x_count + 1) < MAZE_SIZE) {	//åº§æ¨™ãŒè¿·è·¯å†…(x+1ãŒMAZE_SIZEæœªæº€)ã«ã‚ã‚Š
+			if ((maze_step[x_count + 1][y_count] == STEP_INIT)) {//æ­©æ•°ã‚’å…¥ã‚Œã¦ãªã„ï¼ˆå…¥ã£ã¦ã‚‹æ­©æ•°ãŒSTEP_INITï¼‰
+				if (map::get_wall(x_count, y_count, MUKI_RIGHT) == false) {	//å…ƒã®ãƒã‚¹ã®å³å£ãŒãªã„
 					if (map::check_exist(x_count, y_count,
-					MUKI_RIGHT)) {	//‰E•Ç‚ğŒ©‚Ä‚¢‚é‚È‚ç
+					MUKI_RIGHT)) {	//å³å£ã‚’è¦‹ã¦ã„ã‚‹ãªã‚‰
 						maze_step[x_count + 1][y_count] =
-								maze_step[x_count][y_count] + 1;	//•à”‚ğ‘ã“ü
-						//‚±‚ÌÀ•W‚ğ•Û
+								maze_step[x_count][y_count] + 1;	//æ­©æ•°ã‚’ä»£å…¥
+						//ã“ã®åº§æ¨™ã‚’ä¿æŒ
 						x_coordinate[head] = (x_count + 1);
 						y_coordinate[head] = y_count;
 						head++;
@@ -799,15 +812,15 @@ void step::set_step_by_known(unsigned char target_x, unsigned char target_y) {
 			}
 		}
 
-		//‰ºƒ}ƒX
-		if ((y_count - 1) >= 0) {		//À•W‚ª–À˜H“à(y-1‚ª0ˆÈã)‚É‚ ‚è
-			if ((maze_step[x_count][y_count - 1] == STEP_INIT)) {//•à”‚ğ“ü‚ê‚Ä‚È‚¢i“ü‚Á‚Ä‚é•à”‚ªSTEP_INITj
-				if (map::get_wall(x_count, y_count, MUKI_DOWN) == false) {//Œ³‚Ìƒ}ƒX‚Ì‰º•Ç‚ª‚È‚¢
+		//ä¸‹ãƒã‚¹
+		if ((y_count - 1) >= 0) {		//åº§æ¨™ãŒè¿·è·¯å†…(y-1ãŒ0ä»¥ä¸Š)ã«ã‚ã‚Š
+			if ((maze_step[x_count][y_count - 1] == STEP_INIT)) {//æ­©æ•°ã‚’å…¥ã‚Œã¦ãªã„ï¼ˆå…¥ã£ã¦ã‚‹æ­©æ•°ãŒSTEP_INITï¼‰
+				if (map::get_wall(x_count, y_count, MUKI_DOWN) == false) {//å…ƒã®ãƒã‚¹ã®ä¸‹å£ãŒãªã„
 					if (map::check_exist(x_count, y_count,
-					MUKI_DOWN)) {		//‰º•Ç‚ªŠù’m‚È‚ç
+					MUKI_DOWN)) {		//ä¸‹å£ãŒæ—¢çŸ¥ãªã‚‰
 						maze_step[x_count][y_count - 1] =
-								maze_step[x_count][y_count] + 1;	//•à”‚ğ‘ã“ü
-						//‚±‚ÌÀ•W‚ğ•Û
+								maze_step[x_count][y_count] + 1;	//æ­©æ•°ã‚’ä»£å…¥
+						//ã“ã®åº§æ¨™ã‚’ä¿æŒ
 						x_coordinate[head] = x_count;
 						y_coordinate[head] = (y_count - 1);
 						head++;
@@ -816,15 +829,15 @@ void step::set_step_by_known(unsigned char target_x, unsigned char target_y) {
 			}
 		}
 
-		//ãƒ}ƒX
-		if ((y_count + 1) < MAZE_SIZE) {	//x,y+1‚ÌÀ•W‚ª–À˜H“à(MAZE_SIZE–¢–)‚Å‚ ‚é
-			if ((maze_step[x_count][y_count + 1] == STEP_INIT)) {//•à”‚ğ“ü‚ê‚Ä‚È‚¢i“ü‚Á‚Ä‚é•à”‚ªSTEP_INITj
-				if (map::get_wall(x_count, y_count, MUKI_UP) == false) {//Œ³‚Ìƒ}ƒX‚Ìã•Ç‚ª‚È‚¢
+		//ä¸Šãƒã‚¹
+		if ((y_count + 1) < MAZE_SIZE) {	//x,y+1ã®åº§æ¨™ãŒè¿·è·¯å†…(MAZE_SIZEæœªæº€)ã§ã‚ã‚‹
+			if ((maze_step[x_count][y_count + 1] == STEP_INIT)) {//æ­©æ•°ã‚’å…¥ã‚Œã¦ãªã„ï¼ˆå…¥ã£ã¦ã‚‹æ­©æ•°ãŒSTEP_INITï¼‰
+				if (map::get_wall(x_count, y_count, MUKI_UP) == false) {//å…ƒã®ãƒã‚¹ã®ä¸Šå£ãŒãªã„
 					if (map::check_exist(x_count, y_count,
-					MUKI_UP)) {		//ã•Ç‚ªŠù’m‚È‚ç
+					MUKI_UP)) {		//ä¸Šå£ãŒæ—¢çŸ¥ãªã‚‰
 						maze_step[x_count][y_count + 1] =
-								maze_step[x_count][y_count] + 1;	//•à”‚ğ‘ã“ü
-						//‚±‚ÌÀ•W‚ğ•Û
+								maze_step[x_count][y_count] + 1;	//æ­©æ•°ã‚’ä»£å…¥
+						//ã“ã®åº§æ¨™ã‚’ä¿æŒ
 						x_coordinate[head] = x_count;
 						y_coordinate[head] = (y_count + 1);
 						head++;
@@ -833,8 +846,8 @@ void step::set_step_by_known(unsigned char target_x, unsigned char target_y) {
 			}
 		}
 
-		if (head > 965) {		//”z—ñ‰z‚¦‚½‚çƒGƒ‰[
-			myprintf("ƒGƒ‰[!\n\radachi::set_step()“à\n\r");
+		if (head > 965) {		//é…åˆ—è¶ŠãˆãŸã‚‰ã‚¨ãƒ©ãƒ¼
+			myprintf("ã‚¨ãƒ©ãƒ¼!\n\radachi::set_step()å†…\n\r");
 			break;
 		}
 
@@ -848,73 +861,73 @@ unsigned int step::get_step(unsigned char target_x, unsigned char target_y) {
 
 void step::close_one_dead_end(unsigned char target_x, unsigned char target_y) {
 	union {
-		unsigned char all;				//ˆêŠ‡
+		unsigned char all;				//ä¸€æ‹¬
 		struct {
-			unsigned char count :4;		//		s‚¯‚È‚¢•ûŒü‚ÌŒÂ”
-			unsigned char up :1;		//ª	x=0,y=1‚Ì•ûŒü
-			unsigned char down :1;		//«	x=0,y=-1‚Ì•ûŒü
-			unsigned char left :1;		//©	x=-1,y=0‚Ì•ûŒü
-			unsigned char right :1;		//¨	x=1,y=0‚Ì•ûŒü
+			unsigned char count :4;		//		è¡Œã‘ãªã„æ–¹å‘ã®å€‹æ•°
+			unsigned char up :1;		//â†‘	x=0,y=1ã®æ–¹å‘
+			unsigned char down :1;		//â†“	x=0,y=-1ã®æ–¹å‘
+			unsigned char left :1;		//â†	x=-1,y=0ã®æ–¹å‘
+			unsigned char right :1;		//â†’	x=1,y=0ã®æ–¹å‘
 		} direction;
 	} dead_end;
 
-	dead_end.all = 0;	//‰Šú‰»
+	dead_end.all = 0;	//åˆæœŸåŒ–
 
-	//¶ƒ}ƒX
-	if ((map::get_wall(target_x, target_y, MUKI_LEFT))) {	//¶•Ç‚ª‚ ‚é‚È‚ç
-		dead_end.direction.left = 1;	//¶ƒtƒ‰ƒO‚ğŒš‚Ä‚é
-		dead_end.direction.count++;		//1‘«‚·
-	} else if ((target_x - 1) >= 0) {		//À•W‚ª–À˜H“à(x-1‚ª0ˆÈã)‚É‚ ‚è
+	//å·¦ãƒã‚¹
+	if ((map::get_wall(target_x, target_y, MUKI_LEFT))) {	//å·¦å£ãŒã‚ã‚‹ãªã‚‰
+		dead_end.direction.left = 1;	//å·¦ãƒ•ãƒ©ã‚°ã‚’å»ºã¦ã‚‹
+		dead_end.direction.count++;		//1è¶³ã™
+	} else if ((target_x - 1) >= 0) {		//åº§æ¨™ãŒè¿·è·¯å†…(x-1ãŒ0ä»¥ä¸Š)ã«ã‚ã‚Š
 		if ((maze_step[target_x - 1][target_y] == STEP_INIT)
-				|| (map::check_exist(target_x, target_y, MUKI_LEFT) == false)) {//¶‚Ìƒ}ƒX‚És‚¯‚È‚¢i“ü‚Á‚Ä‚é•à”‚ª255 ‚Ü‚½‚Í j
-			dead_end.direction.left = 1;	//¶ƒtƒ‰ƒOƒIƒ“
-			dead_end.direction.count++;		//1‘«‚·
+				|| (map::check_exist(target_x, target_y, MUKI_LEFT) == false)) {//å·¦ã®ãƒã‚¹ã«è¡Œã‘ãªã„ï¼ˆå…¥ã£ã¦ã‚‹æ­©æ•°ãŒ255 ã¾ãŸã¯ ï¼‰
+			dead_end.direction.left = 1;	//å·¦ãƒ•ãƒ©ã‚°ã‚ªãƒ³
+			dead_end.direction.count++;		//1è¶³ã™
 		}
 	}
 
-	//‰Eƒ}ƒX
-	if ((map::get_wall(target_x, target_y, MUKI_RIGHT))) {	//‰E•Ç‚ª‚ ‚é‚È‚ç
-		dead_end.direction.right = 1;		//‰Eƒtƒ‰ƒO‚ğŒš‚Ä‚é
-		dead_end.direction.count++;			//1‘«‚·
-	} else if ((target_x + 1) < MAZE_SIZE) {	//À•W‚ª–À˜H“à(x+1‚ªMax_x–¢–)‚É‚ ‚è
+	//å³ãƒã‚¹
+	if ((map::get_wall(target_x, target_y, MUKI_RIGHT))) {	//å³å£ãŒã‚ã‚‹ãªã‚‰
+		dead_end.direction.right = 1;		//å³ãƒ•ãƒ©ã‚°ã‚’å»ºã¦ã‚‹
+		dead_end.direction.count++;			//1è¶³ã™
+	} else if ((target_x + 1) < MAZE_SIZE) {	//åº§æ¨™ãŒè¿·è·¯å†…(x+1ãŒMax_xæœªæº€)ã«ã‚ã‚Š
 		if ((maze_step[target_x + 1][target_y] == STEP_INIT)
-				|| (map::check_exist(target_x, target_y, MUKI_RIGHT) == false)) {//‰E‚Ìƒ}ƒX‚És‚¯‚È‚¢i“ü‚Á‚Ä‚é•à”‚ª255 ‚Ü‚½‚Í •Ç‚ª‚ ‚éj
-			dead_end.direction.right = 1;	//‰Eƒtƒ‰ƒO‚ğŒš‚Ä‚é
-			dead_end.direction.count++;		//1‘«‚·
+				|| (map::check_exist(target_x, target_y, MUKI_RIGHT) == false)) {//å³ã®ãƒã‚¹ã«è¡Œã‘ãªã„ï¼ˆå…¥ã£ã¦ã‚‹æ­©æ•°ãŒ255 ã¾ãŸã¯ å£ãŒã‚ã‚‹ï¼‰
+			dead_end.direction.right = 1;	//å³ãƒ•ãƒ©ã‚°ã‚’å»ºã¦ã‚‹
+			dead_end.direction.count++;		//1è¶³ã™
 		}
 	}
 
-	//‰ºƒ}ƒX
-	if ((map::get_wall(target_x, target_y, MUKI_DOWN))) {	//‰º•Ç‚ª‚ ‚é‚È‚ç
-		dead_end.direction.down = 1;		//‰ºƒtƒ‰ƒO‚ğŒš‚Ä‚é
-		dead_end.direction.count++;			//1‘«‚·
-	} else if ((target_y - 1 >= 0)) {		//À•W‚ª–À˜H“à(y-1‚ª0ˆÈã)‚É‚ ‚è
+	//ä¸‹ãƒã‚¹
+	if ((map::get_wall(target_x, target_y, MUKI_DOWN))) {	//ä¸‹å£ãŒã‚ã‚‹ãªã‚‰
+		dead_end.direction.down = 1;		//ä¸‹ãƒ•ãƒ©ã‚°ã‚’å»ºã¦ã‚‹
+		dead_end.direction.count++;			//1è¶³ã™
+	} else if ((target_y - 1 >= 0)) {		//åº§æ¨™ãŒè¿·è·¯å†…(y-1ãŒ0ä»¥ä¸Š)ã«ã‚ã‚Š
 		if ((maze_step[target_x][target_y - 1] == STEP_INIT)
-				|| (map::check_exist(target_x, target_y, MUKI_DOWN) == false)) {//‰º‚Ìƒ}ƒX‚És‚¯‚È‚¢i“ü‚Á‚Ä‚é•à”‚ª255 ‚Ü‚½‚Í •Ç‚ª‚ ‚éj
-			dead_end.direction.down = 1;	//‰ºƒtƒ‰ƒO‚ğŒš‚Ä‚é
-			dead_end.direction.count++;		//1‘«‚·
+				|| (map::check_exist(target_x, target_y, MUKI_DOWN) == false)) {//ä¸‹ã®ãƒã‚¹ã«è¡Œã‘ãªã„ï¼ˆå…¥ã£ã¦ã‚‹æ­©æ•°ãŒ255 ã¾ãŸã¯ å£ãŒã‚ã‚‹ï¼‰
+			dead_end.direction.down = 1;	//ä¸‹ãƒ•ãƒ©ã‚°ã‚’å»ºã¦ã‚‹
+			dead_end.direction.count++;		//1è¶³ã™
 		}
 	}
 
-	//ãƒ}ƒX
-	if ((map::get_wall(target_x, target_y, MUKI_UP))) {		//ã•Ç‚ª‚ ‚é‚È‚ç
-		dead_end.direction.up = 1;			//ãƒtƒ‰ƒO‚ğŒš‚Ä‚é
-		dead_end.direction.count++;			//1‘«‚·
-	} else if ((target_y + 1 < MAZE_SIZE)) {	//x,y+1‚ÌÀ•W‚ª–À˜H“à(MAX_y–¢–)‚Å‚ ‚é
+	//ä¸Šãƒã‚¹
+	if ((map::get_wall(target_x, target_y, MUKI_UP))) {		//ä¸Šå£ãŒã‚ã‚‹ãªã‚‰
+		dead_end.direction.up = 1;			//ä¸Šãƒ•ãƒ©ã‚°ã‚’å»ºã¦ã‚‹
+		dead_end.direction.count++;			//1è¶³ã™
+	} else if ((target_y + 1 < MAZE_SIZE)) {	//x,y+1ã®åº§æ¨™ãŒè¿·è·¯å†…(MAX_yæœªæº€)ã§ã‚ã‚‹
 		if ((maze_step[target_x][target_y + 1] == STEP_INIT)
-				|| (map::check_exist(target_x, target_y, MUKI_UP) == false)) {//ã‚Ìƒ}ƒX‚És‚¯‚È‚¢i“ü‚Á‚Ä‚é•à”‚ª255@‚Ü‚½‚Í@•Ç‚ª‚ ‚éj
-			dead_end.direction.up = 1;		//ãƒtƒ‰ƒO‚ğŒš‚Ä‚é
-			dead_end.direction.count++;		//1‘«‚·
+				|| (map::check_exist(target_x, target_y, MUKI_UP) == false)) {//ä¸Šã®ãƒã‚¹ã«è¡Œã‘ãªã„ï¼ˆå…¥ã£ã¦ã‚‹æ­©æ•°ãŒ255ã€€ã¾ãŸã¯ã€€å£ãŒã‚ã‚‹ï¼‰
+			dead_end.direction.up = 1;		//ä¸Šãƒ•ãƒ©ã‚°ã‚’å»ºã¦ã‚‹
+			dead_end.direction.count++;		//1è¶³ã™
 		}
 	}
 
-	//‘Ü¬˜H‚ğ‚Ó‚³‚®
-	if (dead_end.direction.count >= 3) {		//s‚¯‚È‚¢•ûŒü‚ª3ˆÈã = ‘Ü¬˜H‚È‚ç
-		if ((target_x == 0) && (target_y == 0)) {		//‚»‚ê‚ªƒXƒ^[ƒg‚È‚ç‰½‚à‚µ‚È‚¢
-		} else if ((target_x == GOAL_x) && (target_y == GOAL_y)) {//‚»‚ê‚ªƒS[ƒ‹‚Å‚à‰½‚à‚µ‚È‚¢
-		} else {							//ã‹LˆÈŠO‚È‚ç‘Ü¬˜H‚ğ’×‚·
-			maze_step[target_x][target_y] = STEP_INIT;	//•à”‚ğ‰Šú‰»
-			//‘Ü¬˜H‚Ì‚ ‚¢‚Ä‚é•ûŒü‚É‚Â‚¢‚Ä‚à‚¤ˆê‰ñ“¯‚¶‚±‚Æ‚ğs‚¤
+	//è¢‹å°è·¯ã‚’ãµã•ã
+	if (dead_end.direction.count >= 3) {		//è¡Œã‘ãªã„æ–¹å‘ãŒ3ä»¥ä¸Š = è¢‹å°è·¯ãªã‚‰
+		if ((target_x == 0) && (target_y == 0)) {		//ãã‚ŒãŒã‚¹ã‚¿ãƒ¼ãƒˆãªã‚‰ä½•ã‚‚ã—ãªã„
+		} else if ((target_x == GOAL_x) && (target_y == GOAL_y)) {//ãã‚ŒãŒã‚´ãƒ¼ãƒ«ã§ã‚‚ä½•ã‚‚ã—ãªã„
+		} else {							//ä¸Šè¨˜ä»¥å¤–ãªã‚‰è¢‹å°è·¯ã‚’æ½°ã™
+			maze_step[target_x][target_y] = STEP_INIT;	//æ­©æ•°ã‚’åˆæœŸåŒ–
+			//è¢‹å°è·¯ã®ã‚ã„ã¦ã‚‹æ–¹å‘ã«ã¤ã„ã¦ã‚‚ã†ä¸€å›åŒã˜ã“ã¨ã‚’è¡Œã†
 			if (dead_end.direction.left == 0) {
 				map::create_wall(target_x, target_y, MUKI_LEFT);
 				map::remember_exist(target_x, target_y, MUKI_LEFT);
@@ -966,14 +979,14 @@ PATH path::path_memory[PATH_MAX];
 
 void path::set_step_for_shortest(unsigned char target_x,
 		unsigned char target_y) {
-	set_step_by_known(target_x, target_y);		//Šù’m‚Ì•Ç‚¾‚¯‚Å•à”ƒ}ƒbƒv‚ğì¬
-	close_dead_end();							//‘Ü¬˜H‚ğ’×‚·
+	set_step_by_known(target_x, target_y);		//æ—¢çŸ¥ã®å£ã ã‘ã§æ­©æ•°ãƒãƒƒãƒ—ã‚’ä½œæˆ
+	close_dead_end();							//è¢‹å°è·¯ã‚’æ½°ã™
 }
 
 void path::displace_path(unsigned int path_number) {
-	//1ŒÂ‚¸‚ç‚·
+	//1å€‹ãšã‚‰ã™
 	for (unsigned int number = path_number;
-			path_memory[number].element.flag == FALSE; number++) {
+			path_memory[number].element.flag == TRUE; number++) {
 		path_memory[number].all = path_memory[number + 1].all;
 	}
 }
@@ -981,38 +994,38 @@ void path::displace_path(unsigned int path_number) {
 void path::improve_path() {
 	unsigned int count = 0;
 
-	while (path_memory[count].element.flag == FALSE) {		//path‚ªI‚í‚ê‚ÎI—¹
+	while (path_memory[count].element.flag == TRUE) {		//pathãŒçµ‚ã‚ã‚Œã°çµ‚äº†
 
-		if (path_memory[count].element.distance >= 1) {		//90mmˆÈã’¼i‚·‚é‚È‚ç
+		if (path_memory[count].element.distance >= 1) {		//90mmä»¥ä¸Šç›´é€²ã™ã‚‹ãªã‚‰
 
-			if (path_memory[count + 1].element.distance >= 1) {	//ƒ^[ƒ“Œã‚à90mmˆÈã’¼i‚·‚é‚È‚ç	‘å‰ñ‚è‚Ìƒ`ƒFƒbƒN‚ğs‚¤
-				path_memory[count].element.turn = 2;				//‘å‰ñ‚èƒ^[ƒ“‚É•ÏX
-				path_memory[count].element.distance -= 1;		//’¼ü‹——£‚ğ90mmŒ¸‚ç‚·
-				path_memory[count + 1].element.distance -= 1;	//’¼ü‹——£‚ğ90mmŒ¸‚ç‚·
+			if (path_memory[count + 1].element.distance >= 1) {	//ã‚¿ãƒ¼ãƒ³å¾Œã‚‚90mmä»¥ä¸Šç›´é€²ã™ã‚‹ãªã‚‰	å¤§å›ã‚Šã®ãƒã‚§ãƒƒã‚¯ã‚’è¡Œã†
+				path_memory[count].element.turn = 2;				//å¤§å›ã‚Šã‚¿ãƒ¼ãƒ³ã«å¤‰æ›´
+				path_memory[count].element.distance -= 1;		//ç›´ç·šè·é›¢ã‚’90mmæ¸›ã‚‰ã™
+				path_memory[count + 1].element.distance -= 1;	//ç›´ç·šè·é›¢ã‚’90mmæ¸›ã‚‰ã™
 
-			} else {										//ƒ^[ƒ“Œã90mm’¼i‚Í‚µ‚È‚¢‚È‚ç
+			} else {										//ã‚¿ãƒ¼ãƒ³å¾Œ90mmç›´é€²ã¯ã—ãªã„ãªã‚‰
 
 				if (path_memory[count].element.muki
-						== path_memory[count + 1].element.muki) {//“¯‚¶•ûŒü‚É‹È‚ª‚é‚È‚ç(Uƒ^[ƒ“)
+						== path_memory[count + 1].element.muki) {//åŒã˜æ–¹å‘ã«æ›²ãŒã‚‹ãªã‚‰(Uã‚¿ãƒ¼ãƒ³)
 
-					if (path_memory[count + 2].element.distance >= 1) {	//Uƒ^[ƒ“Œã90mm’¼i‚·‚é‚È‚ç
-						path_memory[count].element.turn = 3;		//180‹ƒ^[ƒ“‚É•ÏX
-						path_memory[count].element.distance -= 1;//’¼ü‹——£‚ğ90mmŒ¸‚ç‚·
-						path_memory[count + 2].element.distance -= 1;//’¼ü‹——£‚ğ90mmŒ¸‚ç‚·
+					if (path_memory[count + 2].element.distance >= 1) {	//Uã‚¿ãƒ¼ãƒ³å¾Œ90mmç›´é€²ã™ã‚‹ãªã‚‰
+						path_memory[count].element.turn = 3;		//180Â°ã‚¿ãƒ¼ãƒ³ã«å¤‰æ›´
+						path_memory[count].element.distance -= 1;//ç›´ç·šè·é›¢ã‚’90mmæ¸›ã‚‰ã™
+						path_memory[count + 2].element.distance -= 1;//ç›´ç·šè·é›¢ã‚’90mmæ¸›ã‚‰ã™
 
-						//1ŒÂ‚¸‚ç‚·
+						//1å€‹ãšã‚‰ã™
 						displace_path(count + 1);
 
-					} else {									//Uƒ^[ƒ“Œã‚·‚®‹È‚ª‚é‚È‚ç
+					} else {									//Uã‚¿ãƒ¼ãƒ³å¾Œã™ãæ›²ãŒã‚‹ãªã‚‰
 
-						if (path_memory[count + 2].element.flag == FALSE) {	//path‚ªI‚í‚Á‚Ä‚È‚¢‚©ƒ`ƒFƒbƒN@I‚í‚Á‚Ä‚È‚¯‚ê‚Î‹t•ûŒü‚Éƒ^[ƒ“‚Ì‚Í‚¸
-							//ƒiƒiƒ‚Ìˆ—‚È‚Ì‚Å‰½‚à‚µ‚È‚¢
+						if (path_memory[count + 2].element.flag == FALSE) {	//pathãŒçµ‚ã‚ã£ã¦ãªã„ã‹ãƒã‚§ãƒƒã‚¯ã€€çµ‚ã‚ã£ã¦ãªã‘ã‚Œã°é€†æ–¹å‘ã«ã‚¿ãƒ¼ãƒ³ã®ã¯ãš
+							//ãƒŠãƒŠãƒ¡ã®å‡¦ç†ãªã®ã§ä½•ã‚‚ã—ãªã„
 						}
 
 					}
 
-				} else {		//ˆá‚¤•û–@‚É‹È‚ª‚é‚È‚ç
-					//ƒiƒiƒ‚Ìˆ—‚È‚Ì‚Å‰½‚à‚µ‚È‚¢
+				} else {		//é•ã†æ–¹æ³•ã«æ›²ãŒã‚‹ãªã‚‰
+					//ãƒŠãƒŠãƒ¡ã®å‡¦ç†ãªã®ã§ä½•ã‚‚ã—ãªã„
 				}
 
 			}
@@ -1026,253 +1039,254 @@ void path::improve_path() {
 
 void path::improve_advance_path() {
 	unsigned int count = 0;
-	unsigned char temp_distance = 0;	//ˆê“I‚È‹——£•Û‘¶
-	unsigned char naname_flag = FALSE;	//Œ»İ‹@‘Ì‚ªÎ‚ß‚©‚ğ”»’f	ON‚È‚çÎ‚ß‘–s’†
+	unsigned char temp_distance = 0;	//ä¸€æ™‚çš„ãªè·é›¢ä¿å­˜
+	unsigned char naname_flag = FALSE;	//ç¾åœ¨æ©Ÿä½“ãŒæ–œã‚ã‹ã‚’åˆ¤æ–­	ONãªã‚‰æ–œã‚èµ°è¡Œä¸­
 
-	while (path_memory[count].element.flag == FALSE) {		//path‚ªI‚í‚ê‚ÎI—¹
+	while (path_memory[count].element.flag == TRUE) {		//pathãŒçµ‚ã‚ã‚Œã°çµ‚äº†
 
-		if (naname_flag == TRUE) {			//Î‚ß‘–s’†‚È‚ç	ŠmÀ‚É’¼i‹——£(distance)‚ª0‚Ì‚Í‚¸
+		if (naname_flag == TRUE) {			//æ–œã‚èµ°è¡Œä¸­ãªã‚‰	ç¢ºå®Ÿã«ç›´é€²è·é›¢(distance)ãŒ0ã®ã¯ãš
 
-			if (path_memory[count + 1].element.distance >= 1) {	//Ÿ‚Ìƒ^[ƒ“Œã90mmˆÈã’¼i(Î‚ßI‚í‚è)
+			if (path_memory[count + 1].element.distance >= 1) {	//æ¬¡ã®ã‚¿ãƒ¼ãƒ³å¾Œ90mmä»¥ä¸Šç›´é€²(æ–œã‚çµ‚ã‚ã‚Š)
 
-				path_memory[count].element.turn = 4;				//45‹ƒ^[ƒ“‚É•ÏX
-				path_memory[count + 1].element.distance -= 1;	//’¼ü‹——£‚ğ90mmŒ¸‚ç‚·
+				path_memory[count].element.turn = 4;				//45Â°ã‚¿ãƒ¼ãƒ³ã«å¤‰æ›´
+				path_memory[count + 1].element.distance -= 1;	//ç›´ç·šè·é›¢ã‚’90mmæ¸›ã‚‰ã™
 				naname_flag = FALSE;
-				count++;												//”z—ñ‚ğŸ‚Ö
+				count++;												//é…åˆ—ã‚’æ¬¡ã¸
 
-			} else if (path_memory[count + 2].element.distance >= 1) {//Ÿ‚ÌŸ‚Ìƒ^[ƒ“Œã90mmˆÈã’¼i(Î‚ßI‚í‚è)
+			} else if (path_memory[count + 2].element.distance >= 1) {//æ¬¡ã®æ¬¡ã®ã‚¿ãƒ¼ãƒ³å¾Œ90mmä»¥ä¸Šç›´é€²(æ–œã‚çµ‚ã‚ã‚Š)
 
 				if (path_memory[count].element.muki
-						== path_memory[count + 1].element.muki) {	//“¯‚¶•ûŒü‚Ì2‰ñƒ^[ƒ“
+						== path_memory[count + 1].element.muki) {	//åŒã˜æ–¹å‘ã®2å›ã‚¿ãƒ¼ãƒ³
 
-					path_memory[count].element.turn = 5;			//135‹ƒ^[ƒ“‚É•ÏX
-					displace_path(count + 1);							//ˆêŒÂ‚¸‚ç‚·
-					path_memory[count + 1].element.distance -= 1;//ƒ^[ƒ“Œã‚Ì’¼ü‹——£‚ğ90mmŒ¸‚ç‚·
+					path_memory[count].element.turn = 7;//XXX 5? 7?			//135Â°ã‚¿ãƒ¼ãƒ³ã«å¤‰æ›´
+					displace_path(count + 1);							//ä¸€å€‹ãšã‚‰ã™
+					path_memory[count + 1].element.distance -= 1;//ã‚¿ãƒ¼ãƒ³å¾Œã®ç›´ç·šè·é›¢ã‚’90mmæ¸›ã‚‰ã™
 					naname_flag = FALSE;
-					count++;										//”z—ñ‚ğŸ‚Ö
+					count++;										//é…åˆ—ã‚’æ¬¡ã¸
 
-				} else {										//ŒğŒİ‚Ìƒ^[ƒ“(ƒMƒUƒMƒU)
+				} else {										//äº¤äº’ã®ã‚¿ãƒ¼ãƒ³(ã‚®ã‚¶ã‚®ã‚¶)
 
-					path_memory[count].element.distance += 1;	//Î‚ß‚Ì’¼ü‹——£‚ğ1‘‚â‚·
-					temp_distance = path_memory[count].element.distance;//‹——£‚ğˆê“I‚É‚Á‚Ä‚¨‚­
-					displace_path(count);							//ˆêŒÂ‚¸‚ç‚·
-					path_memory[count].element.distance = temp_distance;//‹——£‚ğ“ü‚ê‚È‚¨‚·
+					path_memory[count].element.distance += 1;	//æ–œã‚ã®ç›´ç·šè·é›¢ã‚’1å¢—ã‚„ã™
+					temp_distance = path_memory[count].element.distance;//è·é›¢ã‚’ä¸€æ™‚çš„ã«æŒã£ã¦ãŠã
+					displace_path(count);							//ä¸€å€‹ãšã‚‰ã™
+					path_memory[count].element.distance = temp_distance;//è·é›¢ã‚’å…¥ã‚ŒãªãŠã™
 
 				}
 
-			} else {											//‚Ü‚¾‚Ü‚¾Î‚ß‚Í‘±‚­‚È‚ç
+			} else {											//ã¾ã ã¾ã æ–œã‚ã¯ç¶šããªã‚‰
 
 				if (path_memory[count].element.muki
-						== path_memory[count + 1].element.muki) {//“¯‚¶•ûŒü‚Ì2‰ñƒ^[ƒ“	ƒR‚Ìš
+						== path_memory[count + 1].element.muki) {//åŒã˜æ–¹å‘ã®2å›ã‚¿ãƒ¼ãƒ³	ã‚³ã®å­—
 
-					path_memory[count].element.turn = 6;		//Î‚ß90‹ƒ^[ƒ“‚É•ÏX
-					displace_path(count + 1);							//ˆêŒÂ‚¸‚ç‚·
-					count++;										//”z—ñ‚ğŸ‚Ö
+					path_memory[count].element.turn = 8; //XXX 6? 8?		//æ–œã‚90Â°ã‚¿ãƒ¼ãƒ³ã«å¤‰æ›´
+					displace_path(count + 1);							//ä¸€å€‹ãšã‚‰ã™
+					count++;										//é…åˆ—ã‚’æ¬¡ã¸
 
-				} else {									//ˆá‚¤•ûŒü‚Ì2‰ñƒ^[ƒ“	ƒMƒUƒMƒU
+				} else {									//é•ã†æ–¹å‘ã®2å›ã‚¿ãƒ¼ãƒ³	ã‚®ã‚¶ã‚®ã‚¶
 
-					path_memory[count].element.distance += 1;	//Î‚ß‚Ì’¼ü‹——£‚ğ1‘‚â‚·
-					temp_distance = path_memory[count].element.distance;//‹——£‚ğˆê“I‚É‚Á‚Ä‚¨‚­
-					displace_path(count);							//ˆêŒÂ‚¸‚ç‚·
-					path_memory[count].element.distance = temp_distance;//‹——£‚ğ“ü‚ê‚È‚¨‚·
+					path_memory[count].element.distance += 1;	//æ–œã‚ã®ç›´ç·šè·é›¢ã‚’1å¢—ã‚„ã™
+					temp_distance = path_memory[count].element.distance;//è·é›¢ã‚’ä¸€æ™‚çš„ã«æŒã£ã¦ãŠã
+					displace_path(count);							//ä¸€å€‹ãšã‚‰ã™
+					path_memory[count].element.distance = temp_distance;//è·é›¢ã‚’å…¥ã‚ŒãªãŠã™
 
 				}
 			}
 
-		} else {										//Î‚ß‚¶‚á‚È‚¯‚ê‚Î
+		} else {										//æ–œã‚ã˜ã‚ƒãªã‘ã‚Œã°
 
-			if (path_memory[count + 1].element.distance >= 1) {	//ƒ^[ƒ“Œã‚à90mmˆÈã’¼i‚·‚é‚È‚ç	‘å‰ñ‚è‚Ìƒ`ƒFƒbƒN‚ğs‚¤
+			if (path_memory[count + 1].element.distance >= 1) {	//ã‚¿ãƒ¼ãƒ³å¾Œã‚‚90mmä»¥ä¸Šç›´é€²ã™ã‚‹ãªã‚‰	å¤§å›ã‚Šã®ãƒã‚§ãƒƒã‚¯ã‚’è¡Œã†
 
-				if ((count != 0) || (path_memory[0].element.distance > 1)) {//‰‚Á’[‚Ìƒ^[ƒ“‚¶‚á‚È‚¯‚ê‚Î
+				if ((count != 0) || (path_memory[0].element.distance > 1)) {//åˆã£ç«¯ã®ã‚¿ãƒ¼ãƒ³ã˜ã‚ƒãªã‘ã‚Œã°
 
-					path_memory[count].element.turn = 2;			//‘å‰ñ‚èƒ^[ƒ“‚É•ÏX
-					path_memory[count].element.distance -= 1;	//’¼ü‹——£‚ğ90mmŒ¸‚ç‚·
-					path_memory[count + 1].element.distance -= 1;//’¼ü‹——£‚ğ90mmŒ¸‚ç‚·
+					path_memory[count].element.turn = 2;			//å¤§å›ã‚Šã‚¿ãƒ¼ãƒ³ã«å¤‰æ›´
+					path_memory[count].element.distance -= 1;	//ç›´ç·šè·é›¢ã‚’90mmæ¸›ã‚‰ã™
+					path_memory[count + 1].element.distance -= 1;//ç›´ç·šè·é›¢ã‚’90mmæ¸›ã‚‰ã™
 
 				}
 
-			} else {										//ƒ^[ƒ“Œã90mm’¼i‚Í‚µ‚È‚¢‚È‚ç
+			} else {										//ã‚¿ãƒ¼ãƒ³å¾Œ90mmç›´é€²ã¯ã—ãªã„ãªã‚‰
 
 				if (path_memory[count].element.muki
-						== path_memory[count + 1].element.muki) {//“¯‚¶•ûŒü‚É‹È‚ª‚é‚È‚ç(Uƒ^[ƒ“)
+						== path_memory[count + 1].element.muki) {//åŒã˜æ–¹å‘ã«æ›²ãŒã‚‹ãªã‚‰(Uã‚¿ãƒ¼ãƒ³)
 
-					if (path_memory[count + 2].element.distance >= 1) {	//Uƒ^[ƒ“Œã90mm’¼i‚·‚é‚È‚ç
+					if (path_memory[count + 2].element.distance >= 1) {	//Uã‚¿ãƒ¼ãƒ³å¾Œ90mmç›´é€²ã™ã‚‹ãªã‚‰
 
-						path_memory[count].element.turn = 3;		//180‹ƒ^[ƒ“‚É•ÏX
-						path_memory[count].element.distance -= 1;//’¼ü‹——£‚ğ90mmŒ¸‚ç‚·
-						path_memory[count + 2].element.distance -= 1;//’¼ü‹——£‚ğ90mmŒ¸‚ç‚·
-						displace_path(count + 1);						//ˆêŒÂ‚¸‚ç‚·
+						path_memory[count].element.turn = 3;		//180Â°ã‚¿ãƒ¼ãƒ³ã«å¤‰æ›´
+						path_memory[count].element.distance -= 1;//ç›´ç·šè·é›¢ã‚’90mmæ¸›ã‚‰ã™
+						path_memory[count + 2].element.distance -= 1;//ç›´ç·šè·é›¢ã‚’90mmæ¸›ã‚‰ã™
+						displace_path(count + 1);						//ä¸€å€‹ãšã‚‰ã™
 
-					} else {									//Uƒ^[ƒ“Œã‚·‚®‹È‚ª‚é‚È‚ç
+					} else {									//Uã‚¿ãƒ¼ãƒ³å¾Œã™ãæ›²ãŒã‚‹ãªã‚‰
 
-						if (path_memory[count + 2].all != 0) {//path‚ªI‚í‚Á‚Ä‚È‚¢‚©ƒ`ƒFƒbƒN@I‚í‚Á‚Ä‚È‚¯‚ê‚Î‹t•ûŒü‚Éƒ^[ƒ“‚Ì‚Í‚¸
+						if (path_memory[count + 2].all != 0) {//pathãŒçµ‚ã‚ã£ã¦ãªã„ã‹ãƒã‚§ãƒƒã‚¯ã€€çµ‚ã‚ã£ã¦ãªã‘ã‚Œã°é€†æ–¹å‘ã«ã‚¿ãƒ¼ãƒ³ã®ã¯ãš
 
-							path_memory[count].element.turn = 5;	//135‹ƒ^[ƒ“‚É•ÏX
-							path_memory[count].element.distance -= 1;//’¼ü‹——£‚ğ90mmŒ¸‚ç‚·
-							displace_path(count + 1);					//ˆêŒÂ‚¸‚ç‚·
+							path_memory[count].element.turn = 6; //XXX 5? 6?	//135Â°ã‚¿ãƒ¼ãƒ³ã«å¤‰æ›´
+							path_memory[count].element.distance -= 1;//ç›´ç·šè·é›¢ã‚’90mmæ¸›ã‚‰ã™
+							displace_path(count + 1);					//ä¸€å€‹ãšã‚‰ã™
 							naname_flag = TRUE;
 
 						}
 
 					}
 
-				} else {		//ˆá‚¤•û–@‚É‹È‚ª‚é‚È‚ç
+				} else {		//é•ã†æ–¹æ³•ã«æ›²ãŒã‚‹ãªã‚‰
 
-					path_memory[count].element.turn = 4;			//45‹ƒ^[ƒ“‚É•ÏX
-					path_memory[count].element.distance -= 1;	//’¼ü‹——£‚ğ90mmŒ¸‚ç‚·
+					path_memory[count].element.turn = 4;			//45Â°ã‚¿ãƒ¼ãƒ³ã«å¤‰æ›´
+					path_memory[count].element.distance -= 1;	//ç›´ç·šè·é›¢ã‚’90mmæ¸›ã‚‰ã™
 					naname_flag = TRUE;
 
 				}
 
 			}
-			count++;		//”z—ñ‚ğŸ‚Ö
+			count++;		//é…åˆ—ã‚’æ¬¡ã¸
 		}
 	}
 
 }
 
 void path::create_path() {
-	signed char path_x, path_y;							//ˆÊ’uŠÇ——p
-	signed char path_direction_x, path_direction_y;		//•ûŒüŠÇ——p
-	signed char straight_flag;			//’¼ü‚Å‚«‚é‚©‚Ç‚¤‚©”»•Ê—pƒtƒ‰ƒO
-	SAVE_DIRECTION save_direction;				//Ÿ‚És‚­ƒ}ƒX‚Ì•ûŒü‚ğ•Û‘¶
-	unsigned int count = 0;	//”‚ğ”‚¦‚é‚¾‚¯‚Ì•Ï”
+	signed char path_x, path_y;							//ä½ç½®ç®¡ç†ç”¨
+	signed char path_direction_x, path_direction_y;		//æ–¹å‘ç®¡ç†ç”¨
+	signed char straight_flag;			//ç›´ç·šã§ãã‚‹ã‹ã©ã†ã‹åˆ¤åˆ¥ç”¨ãƒ•ãƒ©ã‚°
+	SAVE_DIRECTION save_direction;				//æ¬¡ã«è¡Œããƒã‚¹ã®æ–¹å‘ã‚’ä¿å­˜
+	unsigned int count = 0;	//æ•°ã‚’æ•°ãˆã‚‹ã ã‘ã®å¤‰æ•°
 
-	set_step_for_shortest(GOAL_x, GOAL_y);
+	set_step_by_known(GOAL_x, GOAL_y);
 
 	path_reset();
 
-	path_direction_x = 0;	//•ûŒü‚ğ‰Šú‰»
+	path_direction_x = 0;	//æ–¹å‘ã‚’åˆæœŸåŒ–
 	path_direction_y = 1;
 
-	path_x = 0;		//ˆÊ’u‚ğ‰Šú‰»
+	path_x = 0;		//ä½ç½®ã‚’åˆæœŸåŒ–
 	path_y = 0;
 
-	straight_flag = FALSE;	//ƒtƒ‰ƒO‚ÍÜ‚Á‚Ä‚¨‚­
+	straight_flag = FALSE;	//ãƒ•ãƒ©ã‚°ã¯æŠ˜ã£ã¦ãŠã
 
-	path_memory[count].element.distance += 1;	//Å‰‚Í•K‚¸”¼‹æ‰æ’¼i‚·‚é
+	path_memory[count].element.distance += 1;	//æœ€åˆã¯å¿…ãšåŠåŒºç”»ç›´é€²ã™ã‚‹
+	path_memory[count].element.flag = TRUE;		//æœ€åˆã ã—ç¶šè¡Œãƒ•ãƒ©ã‚°ã‚’å»ºã¦ã‚‹
 
 	while (1) {
 
-		save_direction.all = 0;		//Ÿ‚És‚­•ûŒü‰Šú‰»
-		straight_flag = FALSE;	//ƒtƒ‰ƒO‚ÍÜ‚Á‚Ä‚¨‚­
+		save_direction.all = 0;		//æ¬¡ã«è¡Œãæ–¹å‘åˆæœŸåŒ–
+		straight_flag = FALSE;	//ãƒ•ãƒ©ã‚°ã¯æŠ˜ã£ã¦ãŠã
 
-		path_x += path_direction_x; 		//ˆÊ’uC³
+		path_x += path_direction_x; 		//ä½ç½®ä¿®æ­£
 		path_y += path_direction_y;
 
 		if ((path_x == GOAL_x) && (path_y == GOAL_y))
-			break;	//GOAL‚É‚½‚Ç‚è’…‚¢‚½‚çI—¹
+			break;	//GOALã«ãŸã©ã‚Šç€ã„ãŸã‚‰çµ‚äº†
 
-		//¶
-		if ((path_x - 1) >= 0) {		//path_x-1,path_y‚ÌÀ•W‚ª–À˜H“à(0ˆÈã)‚Å‚ ‚é
+		//å·¦
+		if ((path_x - 1) >= 0) {		//path_x-1,path_yã®åº§æ¨™ãŒè¿·è·¯å†…(0ä»¥ä¸Š)ã§ã‚ã‚‹
 			if (get_step(path_x - 1, path_y)
-					== (get_step(path_x, path_y) - 1)) {		//1•à,•à”‚Ì¬‚³‚¢‚Ù‚¤‚Ö
-				if ((map::get_wall(path_x, path_y, MUKI_LEFT) == false)) {//•Ç‚ª‚È‚¢‚È‚ç
-					save_direction.element.left = 1;		//Ÿ‚Éi‚Ş•ûŒü‚Ì‘I‘ğˆ‚É’Ç‰Á
-					if ((path_direction_x == -1) && (path_direction_y == 0)) {//¶‚ğŒü‚¢‚Ä‚é‚Æ‚«i’¼i‚Å‚«‚é‚Æ‚«j
-						straight_flag = TRUE;	//’¼iƒtƒ‰ƒO‚ğ‚½‚Ä‚é
+					== (get_step(path_x, path_y) - 1)) {		//1æ­©,æ­©æ•°ã®å°ã•ã„ã»ã†ã¸
+				if ((map::get_wall(path_x, path_y, MUKI_LEFT) == false)) {//å£ãŒãªã„ãªã‚‰
+					save_direction.element.left = 1;		//æ¬¡ã«é€²ã‚€æ–¹å‘ã®é¸æŠè‚¢ã«è¿½åŠ 
+					if ((path_direction_x == -1) && (path_direction_y == 0)) {//å·¦ã‚’å‘ã„ã¦ã‚‹ã¨ãï¼ˆç›´é€²ã§ãã‚‹ã¨ãï¼‰
+						straight_flag = TRUE;	//ç›´é€²ãƒ•ãƒ©ã‚°ã‚’ãŸã¦ã‚‹
 					}
 				}
 			}
 
 		}
 
-		//‰E
-		if ((path_x + 1) < MAZE_SIZE) {	//path_x+1,path_y‚ÌÀ•W‚ª–À˜H“à‚Å‚ ‚é
+		//å³
+		if ((path_x + 1) < MAZE_SIZE) {	//path_x+1,path_yã®åº§æ¨™ãŒè¿·è·¯å†…ã§ã‚ã‚‹
 			if (get_step(path_x + 1, path_y)
-					== (get_step(path_x, path_y) - 1)) {			//•à”‚Ì¬‚³‚¢‚Ù‚¤‚Ö
-				if ((map::get_wall(path_x, path_y, MUKI_RIGHT) == false)) {	//•Ç‚ª‚È‚¢‚È‚ç
-					save_direction.element.right = 1;		//Ÿ‚Éi‚Ş•ûŒü‚Ì‘I‘ğˆ‚É’Ç‰Á
-					if ((path_direction_x == 1) && (path_direction_y == 0)) {//‰E‚ğŒü‚¢‚Ä‚é‚Æ‚«i’¼i‚Å‚«‚é‚Æ‚«j
-						straight_flag = TRUE;	//’¼iƒtƒ‰ƒO‚ğ‚½‚Ä‚é
+					== (get_step(path_x, path_y) - 1)) {			//æ­©æ•°ã®å°ã•ã„ã»ã†ã¸
+				if ((map::get_wall(path_x, path_y, MUKI_RIGHT) == false)) {	//å£ãŒãªã„ãªã‚‰
+					save_direction.element.right = 1;		//æ¬¡ã«é€²ã‚€æ–¹å‘ã®é¸æŠè‚¢ã«è¿½åŠ 
+					if ((path_direction_x == 1) && (path_direction_y == 0)) {//å³ã‚’å‘ã„ã¦ã‚‹ã¨ãï¼ˆç›´é€²ã§ãã‚‹ã¨ãï¼‰
+						straight_flag = TRUE;	//ç›´é€²ãƒ•ãƒ©ã‚°ã‚’ãŸã¦ã‚‹
 					}
 				}
 			}
 		}
 
-		//‰º
-		if ((path_y - 1) >= 0) {		//path_x,path_y-1‚ÌÀ•W‚ª–À˜H“à(0ˆÈã)‚Å‚ ‚é
+		//ä¸‹
+		if ((path_y - 1) >= 0) {		//path_x,path_y-1ã®åº§æ¨™ãŒè¿·è·¯å†…(0ä»¥ä¸Š)ã§ã‚ã‚‹
 			if (get_step(path_x, path_y - 1)
-					== (get_step(path_x, path_y) - 1)) {			//•à”‚Ì¬‚³‚¢‚Ù‚¤‚Ö
-				if ((map::get_wall(path_x, path_y, MUKI_DOWN) == false)) {//•Ç‚ª‚È‚¢‚È‚ç
-					save_direction.element.down = 1;		//Ÿ‚Éi‚Ş•ûŒü‚Ì‘I‘ğˆ‚É’Ç‰Á
-					if ((path_direction_x == 0) && (path_direction_y == -1)) {//‰º‚ğŒü‚¢‚Ä‚é‚Æ‚«i’¼i‚Å‚«‚é‚Æ‚«j
-						straight_flag = TRUE;	//’¼iƒtƒ‰ƒO‚ğ‚½‚Ä‚é
+					== (get_step(path_x, path_y) - 1)) {			//æ­©æ•°ã®å°ã•ã„ã»ã†ã¸
+				if ((map::get_wall(path_x, path_y, MUKI_DOWN) == false)) {//å£ãŒãªã„ãªã‚‰
+					save_direction.element.down = 1;		//æ¬¡ã«é€²ã‚€æ–¹å‘ã®é¸æŠè‚¢ã«è¿½åŠ 
+					if ((path_direction_x == 0) && (path_direction_y == -1)) {//ä¸‹ã‚’å‘ã„ã¦ã‚‹ã¨ãï¼ˆç›´é€²ã§ãã‚‹ã¨ãï¼‰
+						straight_flag = TRUE;	//ç›´é€²ãƒ•ãƒ©ã‚°ã‚’ãŸã¦ã‚‹
 					}
 				}
 			}
 		}
 
-		//ã
-		if ((path_y + 1) < MAZE_SIZE) {	//path_x,path_y+1‚ÌÀ•W‚ª–À˜H“à(16ˆÈ‰º)‚Å‚ ‚é
+		//ä¸Š
+		if ((path_y + 1) < MAZE_SIZE) {	//path_x,path_y+1ã®åº§æ¨™ãŒè¿·è·¯å†…(16ä»¥ä¸‹)ã§ã‚ã‚‹
 			if (get_step(path_x, path_y + 1)
-					== (get_step(path_x, path_y) - 1)) {			//•à”‚Ì¬‚³‚¢‚Ù‚¤‚Ö
-				if ((map::get_wall(path_x, path_y, MUKI_UP) == false)) {//•Ç‚ª‚È‚¢‚È‚ç
-					save_direction.element.up = 1;		//Ÿ‚Éi‚Ş•ûŒü‚Ì‘I‘ğˆ‚É’Ç‰Á
-					if ((path_direction_x == 0) && (path_direction_y == 1)) {//ã‚ğŒü‚¢‚Ä‚é‚Æ‚«i’¼i‚Å‚«‚é‚Æ‚«j
-						straight_flag = TRUE;	//’¼iƒtƒ‰ƒO‚ğ‚½‚Ä‚é
+					== (get_step(path_x, path_y) - 1)) {			//æ­©æ•°ã®å°ã•ã„ã»ã†ã¸
+				if ((map::get_wall(path_x, path_y, MUKI_UP) == false)) {//å£ãŒãªã„ãªã‚‰
+					save_direction.element.up = 1;		//æ¬¡ã«é€²ã‚€æ–¹å‘ã®é¸æŠè‚¢ã«è¿½åŠ 
+					if ((path_direction_x == 0) && (path_direction_y == 1)) {//ä¸Šã‚’å‘ã„ã¦ã‚‹ã¨ãï¼ˆç›´é€²ã§ãã‚‹ã¨ãï¼‰
+						straight_flag = TRUE;	//ç›´é€²ãƒ•ãƒ©ã‚°ã‚’ãŸã¦ã‚‹
 					}
 				}
 			}
 		}
 
-		if (straight_flag == TRUE) {			//’¼i‚Å‚«‚é‚È‚ç
-			path_memory[count].element.distance += 2;	//180mm’¼i‚ğ’Ç‰Á
+		if (straight_flag == TRUE) {			//ç›´é€²ã§ãã‚‹ãªã‚‰
+			path_memory[count].element.distance += 2;	//180mmç›´é€²ã‚’è¿½åŠ 
 
-		} else {								//ƒ^[ƒ“‚·‚é‚È‚ç
-			path_memory[count].element.turn = 1;	//¬‰ñ‚èƒ^[ƒ“
-			if (path_direction_x == 0) {						//ã‚©‰ºŒü‚«‚Ì‚Æ‚«
-				//‰E‚És‚«‚½‚¢
+		} else {								//ã‚¿ãƒ¼ãƒ³ã™ã‚‹ãªã‚‰
+			path_memory[count].element.turn = 1;	//å°å›ã‚Šã‚¿ãƒ¼ãƒ³
+			if (path_direction_x == 0) {						//ä¸Šã‹ä¸‹å‘ãã®ã¨ã
+				//å³ã«è¡ŒããŸã„
 				if (save_direction.element.right == 1) {
-					if (path_direction_y == 1) {	//ã‚ğŒü‚¢‚Ä‚é
-						//‰EŒü‚«ƒ^[ƒ“
+					if (path_direction_y == 1) {	//ä¸Šã‚’å‘ã„ã¦ã‚‹
+						//å³å‘ãã‚¿ãƒ¼ãƒ³
 						path_memory[count].element.muki = MUKI_RIGHT;
 						direction_turn(&path_direction_x, &path_direction_y,
 						MUKI_RIGHT);
-					} else {					//‰º‚ğŒü‚¢‚Ä‚é
-						//¶Œü‚«ƒ^[ƒ“
+					} else {					//ä¸‹ã‚’å‘ã„ã¦ã‚‹
+						//å·¦å‘ãã‚¿ãƒ¼ãƒ³
 						path_memory[count].element.muki = MUKI_LEFT;
 						direction_turn(&path_direction_x, &path_direction_y,
 						MUKI_LEFT);
 					}
-					//¶‚És‚«‚½‚¢
+					//å·¦ã«è¡ŒããŸã„
 				} else {
-					if (path_direction_y == -1) {	//‰º‚ğŒü‚¢‚Ä‚é
-						//‰EŒü‚«ƒ^[ƒ“
+					if (path_direction_y == -1) {	//ä¸‹ã‚’å‘ã„ã¦ã‚‹
+						//å³å‘ãã‚¿ãƒ¼ãƒ³
 						path_memory[count].element.muki = MUKI_RIGHT;
 						direction_turn(&path_direction_x, &path_direction_y,
 						MUKI_RIGHT);
-					} else {					//ã‚ğŒü‚¢‚Ä‚é
-						//¶Œü‚«ƒ^[ƒ“
+					} else {					//ä¸Šã‚’å‘ã„ã¦ã‚‹
+						//å·¦å‘ãã‚¿ãƒ¼ãƒ³
 						path_memory[count].element.muki = MUKI_LEFT;
 						direction_turn(&path_direction_x, &path_direction_y,
 						MUKI_LEFT);
 					}
 				}
 
-			} else {											//‰E‚©¶Œü‚«‚Ì‚Æ‚«
-				//ã‚És‚«‚½‚¢
+			} else {											//å³ã‹å·¦å‘ãã®ã¨ã
+				//ä¸Šã«è¡ŒããŸã„
 				if (save_direction.element.up == 1) {
-					if (path_direction_x == -1) {	//¶‚ğŒü‚¢‚Ä‚é
-						//‰EŒü‚«ƒ^[ƒ“
+					if (path_direction_x == -1) {	//å·¦ã‚’å‘ã„ã¦ã‚‹
+						//å³å‘ãã‚¿ãƒ¼ãƒ³
 						path_memory[count].element.muki = MUKI_RIGHT;
 						direction_turn(&path_direction_x, &path_direction_y,
 						MUKI_RIGHT);
-					} else {					//‰E‚ğŒü‚¢‚Ä‚é
-						//¶Œü‚«ƒ^[ƒ“
+					} else {					//å³ã‚’å‘ã„ã¦ã‚‹
+						//å·¦å‘ãã‚¿ãƒ¼ãƒ³
 						path_memory[count].element.muki = MUKI_LEFT;
 						direction_turn(&path_direction_x, &path_direction_y,
 						MUKI_LEFT);
 					}
-					//‰º‚És‚«‚½‚¢
+					//ä¸‹ã«è¡ŒããŸã„
 				} else {
-					if (path_direction_x == 1) {	//‰E‚ğŒü‚¢‚Ä‚é
-						//‰EŒü‚«ƒ^[ƒ“
+					if (path_direction_x == 1) {	//å³ã‚’å‘ã„ã¦ã‚‹
+						//å³å‘ãã‚¿ãƒ¼ãƒ³
 						path_memory[count].element.muki = MUKI_RIGHT;
 						direction_turn(&path_direction_x, &path_direction_y,
 						MUKI_RIGHT);
-					} else {					//¶‚ğŒü‚¢‚Ä‚é
-						//¶Œü‚«ƒ^[ƒ“
+					} else {					//å·¦ã‚’å‘ã„ã¦ã‚‹
+						//å·¦å‘ãã‚¿ãƒ¼ãƒ³
 						path_memory[count].element.muki = MUKI_LEFT;
 						direction_turn(&path_direction_x, &path_direction_y,
 						MUKI_LEFT);
@@ -1281,12 +1295,13 @@ void path::create_path() {
 			}
 
 			count++;
+			path_memory[count].element.flag = TRUE;		//ãƒ‘ã‚¹ãŒç¶šãã®ãªã‚‰ç¶šè¡Œãƒ•ãƒ©ã‚°ã‚’å»ºã¦ã‚‹
 		}
 
 	}
 
-	path_memory[count].element.distance += 1;	//90mm’¼i‚ğ’Ç‰Á	ƒS[ƒ‹‚É“ü‚è‚«‚é‚½‚ß
-	path_memory[count].element.flag = TRUE;		//I—¹ƒtƒ‰ƒO‚ğŒš‚Ä‚Ä‚¨‚­
+	path_memory[count].element.distance += 1;	//90mmç›´é€²ã‚’è¿½åŠ 	ã‚´ãƒ¼ãƒ«ã«å…¥ã‚Šãã‚‹ãŸã‚
+	path_memory[count].element.flag = TRUE;		//çµ‚äº†ãƒ•ãƒ©ã‚°ã‚’å»ºã¦ã¦ãŠã
 
 }
 
@@ -1299,6 +1314,23 @@ void path::create_path_naname() {
 	create_path();
 	improve_advance_path();
 }
+
+void path::draw_path() {
+	myprintf("path-start \n\r");
+
+	for (int i = 0; path_memory[i].element.flag == TRUE; i++) {
+		myprintf("distance -> %d \n\r", path_memory[i].element.distance);
+		myprintf("turn -> %d ", path_memory[i].element.turn);
+		if (path_memory[i].element.muki == MUKI_RIGHT) {
+			myprintf("R\n\r");
+		} else if (path_memory[i].element.muki == MUKI_LEFT) {
+			myprintf("L\n\r");
+		}
+	}
+	myprintf("path-end \n\r");
+
+}
+
 
 void path::path_reset() {
 	unsigned int reset_count;
@@ -1328,15 +1360,14 @@ unsigned char path::get_path_turn_muki(unsigned int index_number) {
 
 void direction_turn(signed char *direction_x, signed char *direction_y,
 		unsigned char direction_turn_muki) {
-	signed char temp_direction_x = (*direction_x);	//‘¼‚ÌêŠ‚É•Û‘¶‚µ‚È‚¢‚Æ•ÏŠ·“r’†‚ÅQÆ‚·‚é‰H–Ú‚É‚È‚é
+	signed char temp_direction_x = (*direction_x);	//ä»–ã®å ´æ‰€ã«ä¿å­˜ã—ãªã„ã¨å¤‰æ›é€”ä¸­ã§å‚ç…§ã™ã‚‹ç¾½ç›®ã«ãªã‚‹
 	signed char temp_direction_y = (*direction_y);
 	if (direction_turn_muki == MUKI_LEFT) {
-		*direction_x = (temp_direction_x) * 0 + (temp_direction_y) * (-1);//‰ñ“]s—ñ‚ÌƒÆ=90‚ÌŒvZ
-		*direction_y = (temp_direction_x) * 1 + (temp_direction_y) * 0;	//‰ñ“]s—ñ‚ÌƒÆ=90‚ÌŒvZ
+		*direction_x = (temp_direction_x) * 0 + (temp_direction_y) * (-1);//å›è»¢è¡Œåˆ—ã®Î¸=90ã®è¨ˆç®—
+		*direction_y = (temp_direction_x) * 1 + (temp_direction_y) * 0;	//å›è»¢è¡Œåˆ—ã®Î¸=90ã®è¨ˆç®—
 	} else {
-		*direction_x = (temp_direction_x) * 0 + (temp_direction_y) * 1;	//‰ñ“]s—ñ‚ÌƒÆ=-90‚ÌŒvZ
-		*direction_y = (temp_direction_x) * (-1) + (temp_direction_y) * 0;//‰ñ“]s—ñ‚ÌƒÆ=-90‚ÌŒvZ
+		*direction_x = (temp_direction_x) * 0 + (temp_direction_y) * 1;	//å›è»¢è¡Œåˆ—ã®Î¸=-90ã®è¨ˆç®—
+		*direction_y = (temp_direction_x) * (-1) + (temp_direction_y) * 0;//å›è»¢è¡Œåˆ—ã®Î¸=-90ã®è¨ˆç®—
 	}
 
 }
-

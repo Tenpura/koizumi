@@ -745,7 +745,7 @@ void photo::interrupt(bool is_light) {
 	photo::set_ad(right, get_ad(right) - get_ref(right));		//·•ª‚ğ‘ã“ü
 	photo::turn_off(right);
 
-	//XXX ¶ƒZƒ“ƒT‚¾‚¯Á‚¦‚Ä‚é‚Æ‚Ì·•ª‚ğ‚Æ‚Á‚Ä‚È‚¢
+
 	photo::set_ref(left, 0);		//Á‚¦‚Ä‚é‚ğref‚É‚·‚é
 	photo::set_ref(left, get_ad(left));		//Á‚¦‚Ä‚é‚ğref‚É‚·‚é
 	if (is_light) {
