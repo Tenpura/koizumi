@@ -692,7 +692,7 @@ void photo::turn_off_all() {
 
 void photo::set_ad(PHOTO_TYPE sensor_type, int16_t set_value) {
 
-	static const int16_t PHOTO_AVERAGE_TIME = 5;	//いくつの移動平均をとるか
+	static const int16_t PHOTO_AVERAGE_TIME = 20;	//いくつの移動平均をとるか
 	static int16_t buf[element_count][PHOTO_AVERAGE_TIME] = { 0 };
 
 	int16_t sum = 0;
@@ -744,7 +744,6 @@ void photo::interrupt(bool is_light) {
 	}
 	photo::set_ad(right, get_ad(right) - get_ref(right));		//差分を代入
 	photo::turn_off(right);
-
 
 	photo::set_ref(left, 0);		//消えてる時をrefにする
 	photo::set_ref(left, get_ad(left));		//消えてる時をrefにする
@@ -910,7 +909,7 @@ photo::~photo() {
 //XXX 各種ゲイン
 //control関連
 const PID gyro_gain = { 40, 108, 0 };
-const PID photo_gain = { 0.0000001, 0/*0.000001*/, 0 };
+const PID photo_gain = { 1, 0.01, 0 };
 const PID encoder_gain = { 300, 1000, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta;
@@ -940,7 +939,7 @@ float control::cross_delta_gain(SEN_TYPE sensor) {
 
 void control::cal_delta() {
 	float before_p_delta;
-	float photo_right_delta, photo_left_delta;
+	float photo_right_delta=0, photo_left_delta=0;
 
 	//エンコーダーのΔ計算
 	before_p_delta = encoder_delta.P;	//積分用
@@ -956,42 +955,69 @@ void control::cal_delta() {
 		photo_left_delta = 0;
 		photo_right_delta = 0;
 
-	} else {
+	}
+	//else {
 
+		if(control::get_wall_control_phase()){
+			my7seg::turn_off();
+		}
+
+		int16_t def = 0;
 		//XXX 壁制御は壁から離れる場合だけ入れてる
+		//XXX　壁の偏差がおかしい、0か42949672960.000000しか取るない
+
 		if (photo::check_wall(MUKI_RIGHT)) {		//右壁がある
-			photo_right_delta = -1
-					* (parameter::get_ideal_photo(right)
-							- photo::get_value(right))
-					/ parameter::get_ideal_photo(right)/*規格化*/;
+			def = ABS(
+					photo::get_value(PHOTO_TYPE::right)
+							- parameter::get_ideal_photo(PHOTO_TYPE::right));
+			if (def > 10) {
 
-			if (photo_right_delta < 0) {		//壁に近づくようには制御しない。
-				photo_right_delta = 0;
-			}
-
-			if (photo::check_wall(MUKI_LEFT)) {		//両壁がある
-				photo_left_delta = (parameter::get_ideal_photo(front_left)
-						- photo::get_value(front_left))
-						/ parameter::get_ideal_photo(front_left)/*規格化*/;
-
-				if (photo_left_delta > 0) {		//壁に近づくようには制御しない。
-					photo_left_delta = 0;
+				if(control::get_wall_control_phase()){
+					my7seg::light(2);
 				}
 
-			} else {
-				//片方のときは、壁のある方を2倍かけることで疑似的に両壁アリと同じ制御量にする
-				photo_left_delta = 0;
-				photo_right_delta = (2 * photo_right_delta);
+				photo_right_delta = -1.0
+						* (parameter::get_ideal_photo(right)
+								- photo::get_value(right));
+//						/ parameter::get_ideal_photo(right)/*規格化*/;
+/*
+				if (photo_right_delta < 0) {		//壁に近づくようには制御しない。
+					photo_right_delta = 0;
+				}
+*/
+
+				if (photo::check_wall(MUKI_LEFT)) {		//両壁がある
+					photo_left_delta = (parameter::get_ideal_photo(front_left)
+							- photo::get_value(front_left));
+//							/ parameter::get_ideal_photo(front_left)/*規格化*/;
+/*
+					if (photo_left_delta > 0) {		//壁に近づくようには制御しない。
+						photo_left_delta = 0;
+					}
+*/
+				} else {
+					//片方のときは、壁のある方を2倍かけることで疑似的に両壁アリと同じ制御量にする
+					photo_left_delta = 0;
+					photo_right_delta = (2 * photo_right_delta);
+				}
 			}
+
 		} else {			//右がない
+
 			photo_right_delta = 0;
 			if (photo::check_wall(MUKI_LEFT)) {		//左だけある
-				photo_left_delta = 2
-						* (parameter::get_ideal_photo(front_left)
-								- photo::get_value(front_left));
+				def = ABS(
+						photo::get_value(PHOTO_TYPE::left)
+								- parameter::get_ideal_photo(PHOTO_TYPE::left));
+				if (def > 10) {
 
-				if (photo_left_delta > 0) {		//壁に近づくようには制御しない。
-					photo_left_delta = 0;
+					photo_left_delta = 2
+							* (parameter::get_ideal_photo(front_left)
+									- photo::get_value(front_left));
+
+					if (photo_left_delta > 0) {		//壁に近づくようには制御しない。
+						photo_left_delta = 0;
+					}
 				}
 
 			} else {
@@ -999,10 +1025,14 @@ void control::cal_delta() {
 				photo_left_delta = 0;
 				photo_right_delta = 0;
 			}
+
 		}
-	}
+
+//	}
+
+
 	//TODO　壁制御何かおかしい
-	photo_delta.P = -(photo_right_delta * 5 - photo_left_delta);
+	photo_delta.P = -(photo_right_delta - photo_left_delta);
 	photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
 	//photo_delta.D = (photo_delta.P - before_p_delta) * 1000;
 
@@ -1013,8 +1043,8 @@ void control::cal_delta() {
 	gyro_delta.I += (gyro_delta.P * CONTORL_PERIOD);
 	//gyro_delta.D = (gyro_delta.P - before_p_delta) * 1000;
 
-	if (photo_delta.P != 0 && get_wall_control_phase())
-		gyro_delta.I = 0;		//壁制御かけるときはGyroのIは使わない
+	if (photo_delta.P != 0 && get_wall_control_phase())	gyro_delta.I = 0;		//壁制御かけるときはGyroのIは使わない
+	else photo_delta.I=0;
 
 }
 

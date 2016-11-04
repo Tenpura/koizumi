@@ -128,7 +128,7 @@ int main(void) {
 	mouse::set_position(0, 0);
 	mouse::set_direction(MUKI_UP);
 
-	adachi::left_hand_method(GOAL_x, GOAL_y);
+//	adachi::left_hand_method(GOAL_x, GOAL_y);
 //	adachi::adachi_method_spin(GOAL_x, GOAL_y);
 
 	//run::spin_turn(180);
@@ -140,7 +140,7 @@ int main(void) {
 
 	control::start_wall_control();
 	flog[0][0] = -1;
-	run::accel_run(0.09 * 4, 0, 0);
+	run::accel_run(0.09 * 8, 0, 0);
 	my7seg::light(5);
 
 	wait::ms(1000);
@@ -188,15 +188,15 @@ void interrupt_timer() {
 
 //	control::fail_safe();
 
-	static uint16_t i = 0;
+	static volatile uint16_t i = 0;
 	if (motor::isEnable()) {
 		if (i == 0) {
 			if (flog[0][0] == -1) {
 				i++;
 			}
 		} else if (i < 10000) {
-			flog[0][i] = encoder::get_velocity();
-			flog[1][i] = mouse::get_ideal_velocity();
+			flog[0][i] = control::photo_delta.P;//encoder::get_velocity();
+			flog[1][i] = control::photo_delta.I;//mouse::get_ideal_velocity();
 			i++;
 		}
 	}

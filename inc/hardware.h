@@ -118,6 +118,22 @@ public:
 
 };
 
+class accelmeter : public mpu6000{
+private:
+	static const float ACCEL_PERIOD;		//加速度計の制御周期[s]
+	static const float REF_TIME;			//加速度計のリファレンスとる時間[s]
+
+	static float accel;		//前後方向の加速度 [m/ss]
+
+	accelmeter();
+
+public:
+	static void interrupt();
+	static int16_t get_accel();
+
+
+};
+
 class gyro : public mpu6000{
 private:
 	static const float GYRO_PERIOD;			//ジャイロの制御周期[s]
