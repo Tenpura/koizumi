@@ -139,6 +139,7 @@ int main(void) {
 	my7seg::count_down(3,500);
 
 	control::start_wall_control();
+//	run::accel_run(0.09, SEARCH_VELOCITY, 0);
 	flog[0][0] = -1;
 	run::accel_run(0.09 * 8, 0, 0);
 	my7seg::light(5);
@@ -198,6 +199,8 @@ void interrupt_timer() {
 			flog[0][i] = control::photo_delta.P;//encoder::get_velocity();
 			flog[1][i] = control::photo_delta.I;//mouse::get_ideal_velocity();
 			i++;
+			GPIO_ResetBits(GPIOA,GPIO_Pin_14);
+
 		}
 	}
 
