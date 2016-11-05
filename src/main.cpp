@@ -83,6 +83,9 @@ int main(void) {
 		myprintf("f_r %d  ", photo::get_value(front_right));
 		myprintf("f_l %d  ", photo::get_value(front_left));
 		myprintf("front %d  ", photo::get_value(front));
+
+
+		myprintf("=  %f",static_cast<float>(parameter::get_ideal_photo(right)- static_cast<float> (photo::get_value(right))));
 		myprintf("\n\r");
 
 		wait::ms(100);
@@ -115,17 +118,17 @@ int main(void) {
 	mouse::set_direction(MUKI_UP);
 
 	my7seg::count_down(3,500);
-	mouse::run_init(true,false);
+	mouse::run_init(true,true);
 
 
 	my7seg::turn_off();
 
 //	adachi::left_hand_method(GOAL_x, GOAL_y);
-//	adachi::adachi_method_spin(GOAL_x, GOAL_y);
+	adachi::adachi_method_spin(GOAL_x, GOAL_y);
 
 
 	flog[0][0] = -1;
-	run::accel_run(0.09 * 2, 0, 0);
+	run::accel_run(0.09 * 6, 0, 0);
 	//run::spin_turn(360);
 	my7seg::light(5);
 
@@ -182,8 +185,8 @@ void interrupt_timer() {
 				i++;
 			}
 		} else if (i < 10000) {
-			flog[0][i] = encoder::get_velocity();//gyro::get_angular_velocity();//encoder::get_velocity();
-			flog[1][i] = mouse::get_ideal_velocity();//mouse::get_ideal_angular_velocity();
+			flog[0][i] = control::photo_delta.P;//mouse::get_ideal_angular_velocity();//encoder::get_velocity();
+			flog[1][i] = photo::get_value(right);//gyro::get_angular_velocity();//mouse::get_ideal_velocity();
 			i++;
 			GPIO_ResetBits(GPIOA,GPIO_Pin_14);
 

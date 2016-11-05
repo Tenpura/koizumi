@@ -587,7 +587,7 @@ gyro::~gyro() {
 }
 
 //encoder関連
-const uint32_t encoder::MOVING_AVERAGE = 50;
+const uint32_t encoder::MOVING_AVERAGE = 70;
 const uint32_t encoder::MEDIAN = 32762;
 float encoder::left_velocity, encoder::right_velocity, encoder::velocity;
 
@@ -626,7 +626,9 @@ void encoder::interrupt_encoder() {
 float encoder::get_velocity() {
 
 	//松井さん方式　http://matsui-mouse.blogspot.jp/2014/03/blog-post_26.html
-	return (velocity + accelmeter::get_accel() * accelmeter::AVERAGE_COUNT / 2);
+	return (velocity
+			+ accelmeter::get_accel() * accelmeter::AVERAGE_COUNT
+					* accelmeter::ACCEL_PERIOD / 2);
 }
 
 encoder::encoder() {
@@ -958,9 +960,9 @@ photo::~photo() {
 
 //XXX 各種ゲイン
 //control関連
-const PID gyro_gain = {0};//{ 10, 100, 0 };
+const PID gyro_gain = { 30, 150, 0 };
 const PID photo_gain = { 0.1, 0, 0 };
-const PID encoder_gain = { 100, 0, 0 };
+const PID encoder_gain = { 500, 1500, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta;
 bool control::control_phase = false;
@@ -1001,26 +1003,32 @@ void control::cal_delta() {
 	before_p_delta = photo_delta.P;
 
 	float delta = 0;
+	float ideal = 0, actual = 0;//uint16 - uint16 の計算はマイナスになったときオーバーフローするからfloat変数を経由する
+
 	if (photo::check_wall(right) && control::get_wall_control_phase()) {
-		delta = static_cast<float>(parameter::get_ideal_photo(right)
-				- photo::get_value(right));		//理想値との差分
-		//中央付近だけ制御
+
+		ideal = static_cast<float>(parameter::get_ideal_photo(right));
+		actual = static_cast<float>(photo::get_value(right));
+		delta = actual - ideal;		//理想値との差分
+		//中央付近は制御しない
 		if (ABS(delta) > 30) {
-			my7seg::light(5);
 			photo_right_delta = delta;
 
-		} else {
-			my7seg::turn_off();
 		}
 
 	}
-	/*
-	 if (photo::check_wall(front_left) && control::get_wall_control_phase()) {
-	 photo_left_delta = parameter::get_ideal_photo(front_left)
-	 - photo::get_value(front_left);
 
-	 }
-	 */
+	if (photo::check_wall(front_left) && control::get_wall_control_phase()) {
+
+		ideal = static_cast<float>(parameter::get_ideal_photo(front_left));
+		actual = static_cast<float>(photo::get_value(front_left));
+		delta = actual - ideal;		//理想値との差分
+		//中央付近は制御しない
+		if (ABS(delta) > 30) {
+			photo_left_delta = delta;
+		}
+	}
+
 	//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
 	if (mouse::get_ideal_velocity() < (SEARCH_VELOCITY * 0.5)) {
 		photo_left_delta = 0;
@@ -1030,8 +1038,6 @@ void control::cal_delta() {
 
 	//TODO　壁制御何かおかしい
 	photo_delta.P = (photo_right_delta - photo_left_delta);
-	if (photo_delta.P > 40000000)
-		photo_delta.P = 0;
 	//photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
 	//photo_delta.D = (photo_delta.P - before_p_delta) * 1000;
 

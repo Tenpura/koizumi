@@ -119,8 +119,11 @@ public:
 };
 
 class accelmeter : public mpu6000{
-private:
+public:
+	static const uint8_t AVERAGE_COUNT;		//加速度計の平均取る回数[回]
 	static const float ACCEL_PERIOD;		//加速度計の制御周期[s]
+
+private:
 	static const float REF_TIME;			//加速度計のリファレンスとる時間[s]
 
 	static float accel_ad;		//前後方向の加速度の生値
@@ -133,7 +136,6 @@ private:
 	accelmeter();
 
 public:
-	static const uint8_t AVERAGE_COUNT;		//加速度計の平均取る回数[回]
 
 	static void interrupt();
 	static void set_accel_ref();

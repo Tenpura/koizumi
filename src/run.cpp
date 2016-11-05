@@ -1044,27 +1044,9 @@ bool adachi::adachi_method_spin(unsigned char target_x,
 //Œü‚«‚ðŽæ“¾
 	mouse::get_direction(&direction_x, &direction_y);
 
-	control::stop_wall_control();
-	control::start_control();
-
-	mouse::set_fail_flag(false);
-
-	wait::ms(1000);
-
-	gyro::set_gyro_ref();
-	mouse::reset_angle();
-	mouse::set_ideal_velocity(0);
-	mouse::set_ideal_angular_velocity(0);
-	control::reset_delta();
-
-	motor::stanby_motor();
-
-	control::start_control();
+	mouse::run_init(true,true);
 
 	my7seg::count_down(3, 500);
-
-	mouse::set_distance_m(0);
-	control::start_wall_control();
 
 	run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
 
@@ -1225,26 +1207,10 @@ bool adachi::left_hand_method(const uint8_t target_x, const uint8_t target_y) {
 	//Œü‚«‚ðŽæ“¾
 	mouse::get_direction(&direction_x, &direction_y);
 
-	control::stop_wall_control();
-	control::stop_control();
-
-
-	wait::ms(1000);
-
-	gyro::set_gyro_ref();
-	mouse::reset_angle();
-	mouse::set_ideal_velocity(0);
-	mouse::set_ideal_angular_velocity(0);
-	control::reset_delta();
-
-	motor::stanby_motor();
-
-	control::start_control();
+	mouse::run_init(true,true);
 
 	my7seg::count_down(3, 500);
 
-	mouse::set_distance_m(0);
-	control::start_wall_control();
 
 	run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
 
