@@ -123,13 +123,24 @@ private:
 	static const float ACCEL_PERIOD;		//加速度計の制御周期[s]
 	static const float REF_TIME;			//加速度計のリファレンスとる時間[s]
 
+	static float accel_ad;		//前後方向の加速度の生値
+	static float accel_ref;
 	static float accel;		//前後方向の加速度 [m/ss]
+
+	static float get_accel_ref();
+	static float get_accel_ad();
 
 	accelmeter();
 
 public:
+	static const uint8_t AVERAGE_COUNT;		//加速度計の平均取る回数[回]
+
 	static void interrupt();
-	static int16_t get_accel();
+	static void set_accel_ref();
+	static void cal_accel();	//生値を加速度に変換[m/ss]
+
+	static float get_accel();
+
 
 
 };

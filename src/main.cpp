@@ -75,6 +75,7 @@ int main(void) {
 
 	}
 */
+	mpu6000::init_mpu6000();
 
 	while (1) {
 		myprintf("right %d  ", photo::get_value(right));
@@ -94,7 +95,6 @@ int main(void) {
 	}
 
 
-	mpu6000::init_mpu6000();
 
 	my7seg::count_down(3, 1000);
 
@@ -105,43 +105,28 @@ int main(void) {
 		my7seg::blink(8,100,1);
 	}
 
+	my7seg::turn_off();
 
 	map::reset_wall();
 	map::output_map_data(&mouse::now_map);
 	map::input_map_data(&mouse::now_map);
 
-	motor::stanby_motor();
-	control::start_control();
-
-	mouse::set_acceleration(0);
-	mouse::set_ideal_velocity(0);
-	mouse::set_angular_acceleration(0);
-	mouse::set_ideal_angular_velocity(0);
-
-	control::reset_delta();
-
-	mouse::set_distance_m(0);
-	mouse::reset_angle();
-
-	my7seg::light(8);
-
 	mouse::set_position(0, 0);
 	mouse::set_direction(MUKI_UP);
+
+	my7seg::count_down(3,500);
+	mouse::run_init(true,false);
+
+
+	my7seg::turn_off();
 
 //	adachi::left_hand_method(GOAL_x, GOAL_y);
 //	adachi::adachi_method_spin(GOAL_x, GOAL_y);
 
-	//run::spin_turn(180);
-	//run::accel_run(0.09 * 2, 0, 0);
-	//run::spin_turn(180);
 
-	//run::spin_turn(-180);
-	my7seg::count_down(3,500);
-
-	control::start_wall_control();
-//	run::accel_run(0.09, SEARCH_VELOCITY, 0);
 	flog[0][0] = -1;
-	run::accel_run(0.09 * 8, 0, 0);
+	run::accel_run(0.09 * 2, 0, 0);
+	//run::spin_turn(360);
 	my7seg::light(5);
 
 	wait::ms(1000);
@@ -180,6 +165,7 @@ void interrupt_timer() {
 	gyro::cal_angular_velocity();	//gyroÇ©ÇÁäpë¨ìxÇåvéZ[Åã/s]
 	gyro::cal_angle();				//gyroÇ©ÇÁäpìxÇåvéZ
 
+	accelmeter::interrupt();
 	encoder::interrupt_encoder();
 
 	mouse::interrupt();
@@ -196,8 +182,8 @@ void interrupt_timer() {
 				i++;
 			}
 		} else if (i < 10000) {
-			flog[0][i] = control::photo_delta.P;//encoder::get_velocity();
-			flog[1][i] = control::photo_delta.I;//mouse::get_ideal_velocity();
+			flog[0][i] = encoder::get_velocity();//gyro::get_angular_velocity();//encoder::get_velocity();
+			flog[1][i] = mouse::get_ideal_velocity();//mouse::get_ideal_angular_velocity();
 			i++;
 			GPIO_ResetBits(GPIOA,GPIO_Pin_14);
 

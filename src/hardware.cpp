@@ -438,6 +438,55 @@ mpu6000::mpu6000() {
 mpu6000::~mpu6000() {
 
 }
+
+const float accelmeter::ACCEL_PERIOD = CONTORL_PERIOD;		//加速度計の制御周期[s]
+const float accelmeter::REF_TIME = 1;			//加速度計のリファレンスとる時間[s]
+const uint8_t accelmeter::AVERAGE_COUNT = 20;			//加速度計の平均回数[回]
+float accelmeter::accel_ad, accelmeter::accel_ref;
+float accelmeter::accel;
+
+void accelmeter::interrupt() {
+	static float buff[AVERAGE_COUNT] = { 0 };	//データを保存しておく配列
+	float sum = 0;
+
+	for (uint8_t i = 0; (i + 1) < AVERAGE_COUNT; i++) {
+		buff[i + 1] = buff[i];	//配列を1つずらす
+		sum += buff[i + 1];			//ついでに加算する
+	}
+
+	//配列の最初に入れる
+	buff[0] = mpu6000::get_mpu_value(sen_accel, axis_y);	//加速度のy方向
+
+	sum += buff[0];
+
+	accel_ad = sum / AVERAGE_COUNT;
+
+	accel = (accel_ad - accel_ref) / ACCEL_SENSITIVITY / 9.8;//加速度[g]を[m/ss]に直すため重力加速度で割る
+
+}
+
+float accelmeter::get_accel_ref() {
+	float accel_sum = 0;
+	int32_t i;
+	for (i = 0; i < static_cast<int32_t>(REF_TIME / ACCEL_PERIOD); i++) {
+		accel_sum += get_accel_ad();
+		wait::ms(1);
+	}
+	return (accel_sum / (i + 1));
+}
+
+float accelmeter::get_accel_ad() {
+	return accel_ad;
+}
+
+void accelmeter::set_accel_ref() {
+	accel_ref = get_accel_ref();
+}
+
+float accelmeter::get_accel() {
+	return accel;
+}
+
 int16_t gyro::gyro_value;
 float gyro::default_angle;
 float gyro::angle, gyro::gyro_ref;
@@ -576,7 +625,8 @@ void encoder::interrupt_encoder() {
 
 float encoder::get_velocity() {
 
-	return velocity;
+	//松井さん方式　http://matsui-mouse.blogspot.jp/2014/03/blog-post_26.html
+	return (velocity + accelmeter::get_accel() * accelmeter::AVERAGE_COUNT / 2);
 }
 
 encoder::encoder() {
@@ -908,9 +958,9 @@ photo::~photo() {
 
 //XXX 各種ゲイン
 //control関連
-const PID gyro_gain = { 40, 108, 0 };
-const PID photo_gain = { 1, 0.01, 0 };
-const PID encoder_gain = { 300, 1000, 0 };
+const PID gyro_gain = {0};//{ 10, 100, 0 };
+const PID photo_gain = { 0.1, 0, 0 };
+const PID encoder_gain = { 100, 0, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta;
 bool control::control_phase = false;
@@ -950,26 +1000,39 @@ void control::cal_delta() {
 	//センサーのΔ計算
 	before_p_delta = photo_delta.P;
 
+	float delta = 0;
+	if (photo::check_wall(right) && control::get_wall_control_phase()) {
+		delta = static_cast<float>(parameter::get_ideal_photo(right)
+				- photo::get_value(right));		//理想値との差分
+		//中央付近だけ制御
+		if (ABS(delta) > 30) {
+			my7seg::light(5);
+			photo_right_delta = delta;
+
+		} else {
+			my7seg::turn_off();
+		}
+
+	}
+	/*
+	 if (photo::check_wall(front_left) && control::get_wall_control_phase()) {
+	 photo_left_delta = parameter::get_ideal_photo(front_left)
+	 - photo::get_value(front_left);
+
+	 }
+	 */
 	//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
-	if (mouse::get_ideal_velocity() <= (SEARCH_VELOCITY * 0.5)) {
+	if (mouse::get_ideal_velocity() < (SEARCH_VELOCITY * 0.5)) {
 		photo_left_delta = 0;
 		photo_right_delta = 0;
 
 	}
 
-	if (photo::check_wall(right) && control::get_wall_control_phase()) {
-		photo_right_delta = parameter::get_ideal_photo(right)
-				- photo::get_value(right);
-	}
-
-	if (photo::check_wall(front_left) && control::get_wall_control_phase()) {
-		photo_left_delta = parameter::get_ideal_photo(front_left)
-				- photo::get_value(front_left);
-	}
-
 	//TODO　壁制御何かおかしい
 	photo_delta.P = (photo_right_delta - photo_left_delta);
-	photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
+	if (photo_delta.P > 40000000)
+		photo_delta.P = 0;
+	//photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
 	//photo_delta.D = (photo_delta.P - before_p_delta) * 1000;
 
 	//ジャイロのΔ計算

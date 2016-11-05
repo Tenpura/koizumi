@@ -191,6 +191,32 @@ void mouse::interrupt() {
 
 }
 
+void mouse::run_init(bool posture_ctrl, bool wall_ctrl){
+
+	motor::sleep_motor();
+
+	//制御を切る
+	control::stop_wall_control();
+	control::stop_control();
+
+	//フェイルセーフを初期化
+	mouse::set_fail_flag(false);
+
+	accelmeter::set_accel_ref();
+	gyro::set_gyro_ref();
+	mouse::reset_angle();
+	mouse::set_distance_m(0);
+	mouse::set_ideal_velocity(0);
+	mouse::set_ideal_angular_velocity(0);
+	control::reset_delta();
+
+	if(posture_ctrl) control::start_control();
+	if(wall_ctrl) control::start_wall_control();
+
+	motor::stanby_motor();
+
+}
+
 void mouse::look_wall(bool comb_ignore) {
 	//壁を見て、壁が存在するなら壁を作り、ないなら壊す。見たことも記録
 	//マウスの向きや座標も内部できちんと考える

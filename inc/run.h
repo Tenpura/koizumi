@@ -91,6 +91,8 @@ public:
 
 	static void interrupt();	//割り込み関数内で実行するよう
 
+	static void run_init(bool posture_ctrl, bool wall_ctrl);		//走る直前に実行するやつ
+
 
 	//壁を見て、壁が存在するなら壁を作り、ないなら壊す。見たことも記録
 	//マウスの向きや座標も内部できちんと考える

@@ -41,6 +41,7 @@ static const uint16_t buf_count = 100;	//バッファ式ログのバッファ数。
 #define	M_DRIVER_ORM	1	//モータードライバーの抵抗[Ω]
 #define M_SUM_ORM	5.5		//上2つの合算抵抗[Ω]
 
+#define ACCEL_SENSITIVITY	2048	//加速度計の感度[count/g] これで測定値を割ると加速度
 #define GYRO_SENSITIVITY	16.4		//Gyroの感度[count/(degree/s)]　これで測定値を割ると角速度になる
 //#define GYRO_CONST	1.53		//gyroの定数[degree/V/ms]パラメーターの1つ
 //XXX左右分ける必要があるかも？
