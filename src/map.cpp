@@ -532,8 +532,8 @@ void map::draw_map(bool write_step) {
 	myprintf("|");	//左端の壁
 	for (tekitou_x = 0; tekitou_x < MAZE_SIZE - 1; tekitou_x++) {
 
-		//myprintf("%3d", step[tekitou_x][tekitou_y]);
-		myprintf("   ");
+		if(write_step) myprintf("%3d", step::get_step(tekitou_x,tekitou_y));
+		else myprintf("   ");
 
 		if ((get_wall(tekitou_x, tekitou_y, MUKI_RIGHT) == true)
 				|| (get_wall(tekitou_x + 1, tekitou_y, MUKI_LEFT) == true)) {//今書いたマスの右の壁があれば壁を書く
@@ -543,8 +543,8 @@ void map::draw_map(bool write_step) {
 		}
 	}
 
-	//myprintf("%3d", step[tekitou_x][tekitou_y]);
-	myprintf("   ");
+	if(write_step) myprintf("%3d", step::get_step(tekitou_x,tekitou_y));
+	else myprintf("   ");
 
 	myprintf("|\n\r");	//右端の壁
 
@@ -565,8 +565,8 @@ void map::draw_map(bool write_step) {
 		myprintf("|");	//左端の壁
 		for (tekitou_x = 0; tekitou_x < MAZE_SIZE - 1; tekitou_x++) {
 
-			//myprintf("%3d", step[tekitou_x][tekitou_y]);
-			myprintf("   ");
+			if(write_step) myprintf("%3d", step::get_step(tekitou_x,tekitou_y));
+			else myprintf("   ");
 
 			if ((get_wall(tekitou_x, tekitou_y, MUKI_RIGHT) == true)
 					|| (get_wall(tekitou_x + 1, tekitou_y, MUKI_LEFT) == true)) {//今書いたマスの右の壁があれば壁を書く
@@ -575,8 +575,8 @@ void map::draw_map(bool write_step) {
 				myprintf(" ");	//なければ壁は書かない
 			}
 		}
-		//myprintf("%3d", step[tekitou_x][tekitou_y]);
-		myprintf("   ");
+		if(write_step) myprintf("%3d", step::get_step(tekitou_x,tekitou_y));
+		else myprintf("   ");
 
 		myprintf("|\n\r");	//右端の壁
 	}

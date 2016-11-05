@@ -15,6 +15,7 @@
 #include "ad_convert.h"
 #include "user.h"
 #include "run.h"
+#include "map.h"
 
 int main(void);
 
@@ -117,6 +118,7 @@ int main(void) {
 	mouse::set_position(0, 0);
 	mouse::set_direction(MUKI_UP);
 
+
 	my7seg::count_down(3,500);
 	mouse::run_init(true,true);
 
@@ -124,7 +126,7 @@ int main(void) {
 	my7seg::turn_off();
 
 //	adachi::left_hand_method(GOAL_x, GOAL_y);
-	adachi::adachi_method_spin(GOAL_x, GOAL_y);
+	adachi::adachi_method_spin(GOAL_x, GOAL_y,false);
 
 
 	flog[0][0] = -1;

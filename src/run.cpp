@@ -191,7 +191,7 @@ void mouse::interrupt() {
 
 }
 
-void mouse::run_init(bool posture_ctrl, bool wall_ctrl){
+void mouse::run_init(bool posture_ctrl, bool wall_ctrl) {
 
 	motor::sleep_motor();
 
@@ -210,8 +210,10 @@ void mouse::run_init(bool posture_ctrl, bool wall_ctrl){
 	mouse::set_ideal_angular_velocity(0);
 	control::reset_delta();
 
-	if(posture_ctrl) control::start_control();
-	if(wall_ctrl) control::start_wall_control();
+	if (posture_ctrl)
+		control::start_control();
+	if (wall_ctrl)
+		control::start_wall_control();
 
 	motor::stanby_motor();
 
@@ -679,7 +681,8 @@ void run::spin_turn(const float target_degree) {
 	mouse::set_distance_m(0);
 
 	//もともと壁制御かかってたなら復活させる
-	if(wall_flag) control::start_wall_control();
+	if (wall_flag)
+		control::start_wall_control();
 }
 
 run::run() {
@@ -1028,8 +1031,8 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y) {
 	return false;
 }
 
-bool adachi::adachi_method_spin(unsigned char target_x,
-		unsigned char target_y) {
+bool adachi::adachi_method_spin(unsigned char target_x, unsigned char target_y,
+		bool is_FULUKAWA) {
 	bool adachi_flag = true;	//途中でミスがあったらfalseに
 	unsigned char now_x, now_y;	//座標一時保存用。見易さのため
 	DIRECTION next_direction, priority_direction;	//次に行く方向を管理
@@ -1044,7 +1047,7 @@ bool adachi::adachi_method_spin(unsigned char target_x,
 //向きを取得
 	mouse::get_direction(&direction_x, &direction_y);
 
-	mouse::run_init(true,true);
+	mouse::run_init(true, true);
 
 	my7seg::count_down(3, 500);
 
@@ -1089,12 +1092,10 @@ bool adachi::adachi_method_spin(unsigned char target_x,
 		if (check_move_by_step(now_x, now_y, MUKI_RIGHT)) {			//右
 			next_direction.element.right = 1;
 
-			my7seg::light(1);
-
 			target_unknown_count = count_unknown_wall((now_x + 1), now_y);
 			if (target_unknown_count == max_unknown_count) {
 				priority_direction.element.right = 1;
-			} else if (target_unknown_count >= max_unknown_count) {
+			} else if (target_unknown_count > max_unknown_count) {
 				max_unknown_count = target_unknown_count;
 				priority_direction.all = 0;				//他の方向はいらないのでリセット
 				priority_direction.element.right = 1;
@@ -1103,14 +1104,12 @@ bool adachi::adachi_method_spin(unsigned char target_x,
 		}
 		if (check_move_by_step(now_x, now_y, MUKI_LEFT)) {			//左
 
-			my7seg::light(2);
-
 			next_direction.element.left = 1;
 
 			target_unknown_count = count_unknown_wall((now_x - 1), now_y);
 			if (target_unknown_count == max_unknown_count) {
 				priority_direction.element.left = 1;
-			} else if (target_unknown_count >= max_unknown_count) {
+			} else if (target_unknown_count > max_unknown_count) {
 				max_unknown_count = target_unknown_count;
 				priority_direction.all = 0;				//他の方向はいらないのでリセット
 				priority_direction.element.left = 1;
@@ -1120,12 +1119,10 @@ bool adachi::adachi_method_spin(unsigned char target_x,
 		if (check_move_by_step(now_x, now_y, MUKI_UP)) {			//上
 			next_direction.element.up = 1;
 
-			my7seg::light(3);
-
 			target_unknown_count = count_unknown_wall(now_x, (now_y + 1));
 			if (target_unknown_count == max_unknown_count) {
 				priority_direction.element.up = 1;
-			} else if (target_unknown_count >= max_unknown_count) {
+			} else if (target_unknown_count > max_unknown_count) {
 				max_unknown_count = target_unknown_count;
 				priority_direction.all = 0;				//他の方向はいらないのでリセット
 				priority_direction.element.up = 1;
@@ -1135,12 +1132,10 @@ bool adachi::adachi_method_spin(unsigned char target_x,
 		if (check_move_by_step(now_x, now_y, MUKI_DOWN)) {			//下
 			next_direction.element.down = 1;
 
-			my7seg::light(4);
-
 			target_unknown_count = count_unknown_wall(now_x, (now_y - 1));
 			if (target_unknown_count == max_unknown_count) {
 				priority_direction.element.down = 1;
-			} else if (target_unknown_count >= max_unknown_count) {
+			} else if (target_unknown_count > max_unknown_count) {
 				max_unknown_count = target_unknown_count;
 				priority_direction.all = 0;				//他の方向はいらないのでリセット
 				priority_direction.element.down = 1;
@@ -1149,20 +1144,16 @@ bool adachi::adachi_method_spin(unsigned char target_x,
 		}
 
 //未探索区間が候補の中にあるなら、次に行く方向はその中から選ぶ
-		if (priority_direction.all != 0) {
+		if ((priority_direction.all != 0) && is_FULUKAWA) {
 			next_direction.all = priority_direction.all;
 		}
 
 //next_dirrctionから次行く方向を選び、行動する
 		next_action = get_next_action(next_direction);
-		if (MOUSE_MODE == 1) {
-			//TODO 壁キレようの関数を用意する
-			run_next_action(next_action);
-		} else {
-			run_next_action(next_action);
+		//TODO 壁キレようの関数を用意する
+		run_next_action(next_action);
 
-		}
-//もし止まるべきと出たならココで足立法をやめる
+		//もし止まるべきと出たならココで足立法をやめる
 		if (next_action == stop) {
 			adachi_flag = false;
 		}
@@ -1174,7 +1165,6 @@ bool adachi::adachi_method_spin(unsigned char target_x,
 	if (adachi_flag) {
 		//足立法成功なのでマップを保存する
 		map::output_map_data(&mouse::now_map);
-
 		return true;				//足立法完了!!
 
 	} else {
@@ -1207,21 +1197,20 @@ bool adachi::left_hand_method(const uint8_t target_x, const uint8_t target_y) {
 	//向きを取得
 	mouse::get_direction(&direction_x, &direction_y);
 
-	mouse::run_init(true,true);
+	mouse::run_init(true, true);
 
 	my7seg::count_down(3, 500);
-
 
 	run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
 
 	while (search_flag) {
 		if (photo::check_wall(left) == false)
 			next_action = turn_left;
-		 else if (photo::check_wall(front) == false)
+		else if (photo::check_wall(front) == false)
 			next_action = go_straight;
-		 else if (photo::check_wall(right) == false)
+		else if (photo::check_wall(right) == false)
 			next_action = turn_right;
-		 else
+		else
 			next_action = back;
 
 		run_next_action(next_action);

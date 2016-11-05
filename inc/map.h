@@ -43,7 +43,7 @@ public:
 
 	static void reset_wall();		//壁情報と見たかどうかをすべてリセット
 
-	void draw_map(bool write_step);//myprintfで迷路を描画
+	static void draw_map(bool write_step);//myprintfで迷路を描画
 	void convert_mapdata(unsigned char (*hiramatu_data)[16]);//平松先輩のマップデータ形式をノノホ式に変換
 
 	static void input_map_data(const MAP_DATA* input_data);//外部に保存したデータの入力

@@ -146,7 +146,7 @@ private:
 
 public:
 	static bool adachi_method(const unsigned char target_x, const unsigned char target_y);
-	static bool adachi_method_spin(unsigned char target_x,unsigned char target_y);
+	static bool adachi_method_spin(unsigned char target_x,unsigned char target_y, bool is_FULUKAWA);
 
 	static bool left_hand_method(const uint8_t target_x, const uint8_t target_y);
 	~adachi();
