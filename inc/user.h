@@ -15,10 +15,25 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+//TODO テンプレートできゅーを実装する
+/*
+template <class T>
+class queue{
+private:
+	uint16_t head,tail;
+	T *data;
 
+public:
+	T& dequeue();					//きゅーから値を出す
+	void enqueue(T set_value);		//きゅーに値を入れる
 
-//Errorのときはこの関数に飛ばす
-void my_error();
+	queue(uint16_t size);
+	queue(uint16_t size1, uint16_t size2);
+
+	~queue();
+
+};
+*/
 
 //角度変換関数
 float degree(float radian);		//ラジアン	->	度数		-π≦θ≦π

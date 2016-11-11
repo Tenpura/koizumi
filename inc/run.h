@@ -100,6 +100,9 @@ public:
 	//マウスの向きや座標も内部できちんと考える
 	static void look_wall(bool comb_ignore);	//壁を見る関数
 
+	//壁があるか確認用の関数
+	static void velify_wall();
+
 	static void error();	//フェイルセーフとか、かかった時に、ここに飛びますよ
 
 	~mouse();

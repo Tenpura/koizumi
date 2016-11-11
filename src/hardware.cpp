@@ -9,6 +9,25 @@
 
 //自作7セグ関連
 
+void my7seg::light(const my7seg::DIRECTION muki) {
+
+	switch (muki) {
+	case front:
+		GPIO_ResetBits(GPIOH, GPIO_Pin_0);	//LED9
+		break;
+
+	case left:
+		GPIO_ResetBits(GPIOC, GPIO_Pin_14);	//LED5
+		GPIO_ResetBits(GPIOC, GPIO_Pin_15);	//LED6
+		break;
+
+	case right:
+		GPIO_ResetBits(GPIOB, GPIO_Pin_12);	//LED3
+		GPIO_ResetBits(GPIOH, GPIO_Pin_1);	//LED4
+		break;
+	}
+}
+
 void my7seg::light(const unsigned char number) {
 
 	//7セグで表示できるわけねえだろ！
@@ -640,6 +659,8 @@ encoder::~encoder() {
 
 }
 
+int16_t photo::ave_buf[PHOTO_TYPE::element_count][GAP_AVE_COUNT] = { 0 };
+float photo::diff_buf[PHOTO_TYPE::element_count][GAP_AVE_COUNT] = { 0 };
 signed int photo::right_ad, photo::left_ad, photo::front_right_ad,
 		photo::front_left_ad, photo::front_ad;
 signed int photo::right_ref, photo::left_ref, photo::front_right_ref,
@@ -749,38 +770,55 @@ void photo::set_ad(PHOTO_TYPE sensor_type, int16_t set_value) {
 	static const int16_t PHOTO_AVERAGE_TIME = 10;	//いくつの移動平均をとるか
 	static int16_t buf[element_count][PHOTO_AVERAGE_TIME] = { 0 };
 
-	int16_t sum = 0;
+	int16_t sum = 0, ave_sum = 0;
 
 	for (uint8_t i = 0; (i + 1) < PHOTO_AVERAGE_TIME; i++) {
 		buf[sensor_type][i + 1] = buf[sensor_type][i];	//配列を1つずらす
 		sum += buf[sensor_type][i + 1];			//ついでに加算する
+
+		if (i < GAP_AVE_COUNT) {		//配列の要素外にアクセスしないように
+			ave_buf[sensor_type][i + 1] = ave_buf[sensor_type][i];	//配列を1つずらす
+			diff_buf[sensor_type][i + 1] = diff_buf[sensor_type][i];//配列を1つずらす
+			ave_sum += ave_buf[sensor_type][i + 1];			//ついでに加算する
+		}
 	}
 
 	//配列の最初に入れる
 	buf[sensor_type][0] = set_value;	//count*[rad/count]/[sec]*[m]
 	sum += set_value;
 
+	int16_t now_val = sum / PHOTO_AVERAGE_TIME; 	//見やすさのため名前を付ける
+
+	ave_buf[sensor_type][0] = now_val;
+	ave_sum += now_val;
+
+	//移動平均をとったセンサ値と、それのさらに平均をとったものとの差分を記録
+	//この値は平均を2回取るので、平均区間の真ん中あたりが強調される＝少し前の真値のようなものと考えることができる
+	//その差分なので、おおよそノイズの影響を除去した傾きが分かると信じてる
+	diff_buf[sensor_type][0] = static_cast<float>(ave_sum) / GAP_AVE_COUNT
+			- static_cast<float>(now_val);
+
 	switch (sensor_type) {
 	case right:
-		right_ad = sum / PHOTO_AVERAGE_TIME;
+		right_ad = now_val;
 		break;
 
 	case left:
-		left_ad = sum / PHOTO_AVERAGE_TIME;
+		left_ad = now_val;
 		break;
 
 	case front_right:
-		front_right_ad = sum / PHOTO_AVERAGE_TIME;
+		front_right_ad = now_val;
 		;
 		break;
 
 	case front_left:
-		front_left_ad = sum / PHOTO_AVERAGE_TIME;
+		front_left_ad = now_val;
 		;
 		break;
 
 	case front:
-		front_ad = sum / PHOTO_AVERAGE_TIME;
+		front_ad = now_val;
 		;
 		break;
 	}
@@ -918,9 +956,7 @@ bool photo::check_wall(unsigned char muki) {
 		return false;
 
 	case MUKI_LEFT:
-		//XXX leftは安定しないからFrontLeftでみる
-		if (photo::get_value(front_left)
-				>= parameter::get_min_wall_photo(front_left)) {
+		if (photo::get_value(left) >= parameter::get_min_wall_photo(left)) {
 			return true;
 		}
 		return false;
@@ -942,6 +978,20 @@ bool photo::check_wall(unsigned char muki) {
 bool photo::check_wall(PHOTO_TYPE type) {
 
 	return (photo::get_value(type) >= parameter::get_min_wall_photo(type));
+
+}
+
+bool photo::check_wall_gap(PHOTO_TYPE type) {
+	//壁の切れ目ならtrue
+	uint8_t count = 0;	//負（センサ値が下がってる）の数を数える
+	for (uint8_t i = 0; i < GAP_AVE_COUNT; i++) {
+		if (diff_buf[type][i] < 0)
+			count++;
+	}
+	if (count < GAP_AVE_COUNT * 0.9)
+		return false;
+
+	return true;
 
 }
 
@@ -1007,25 +1057,30 @@ void control::cal_delta() {
 		if (ABS(delta) > 30) {
 			photo_right_delta = delta;
 		}
-		if (delta < 0)
-			photo_right_delta = 0;	//近づく方向には制御しない
+		//壁の切れ目では制御を切る
+		if(photo::check_wall_gap(right)){
+			photo_right_delta = 0;
+		}
+//		if (delta < 0)
+//			photo_right_delta = 0;	//近づく方向には制御しない
 
 	}
 
 	if (photo::check_wall(left) && control::get_wall_control_phase()) {
 
-		ideal = static_cast<float>(parameter::get_ideal_photo(front_left));
-		actual = static_cast<float>(photo::get_value(front_left));
+		ideal = static_cast<float>(parameter::get_ideal_photo(left));
+		actual = static_cast<float>(photo::get_value(left));
 		delta = actual - ideal;		//理想値との差分
 		//中央付近は制御しない
 		if (ABS(delta) > 30) {
 			photo_left_delta = delta;
-			//左の制御が弱いので右ないときは2倍にする
-			if (photo_right_delta == 0)
-				photo_left_delta = delta * 2;
 		}
-		if (delta < 0)
-			photo_left_delta = 0;	//近づく方向には制御しない
+		//壁の切れ目では制御を切る
+		if(photo::check_wall_gap(left)){
+			photo_right_delta = 0;
+		}
+		//	if (delta < 0)
+		//		photo_left_delta = 0;	//近づく方向には制御しない
 	}
 
 	//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
@@ -1035,7 +1090,7 @@ void control::cal_delta() {
 
 	}
 
-	//TODO　壁制御何かおかしい
+
 	photo_delta.P = (photo_right_delta - photo_left_delta);
 	//photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
 	//photo_delta.D = (photo_delta.P - before_p_delta) * 1000;

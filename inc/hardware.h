@@ -16,13 +16,15 @@
 #include "parameter.h"
 #include"run.h"
 
-
-
-
 //自作7セグ関連
 class my7seg {
 private:
 public:
+	enum DIRECTION {
+		front, back, right, left
+	};
+
+	static void light(const my7seg::DIRECTION direction);//up,right,leftを指定すると上辺、右辺、左辺が光る
 	static void light(const unsigned char number);		//つける
 	static void turn_off();		//消す
 
@@ -39,19 +41,17 @@ public:
 
 };
 
-
 //motor関連
 extern const uint16_t MAX_PERIOD;
-enum MOTOR_SIDE{
-		motor_left=0,
-		motor_right=1
+enum MOTOR_SIDE {
+	motor_left = 0, motor_right = 1
 };
 
 class motor {
 private:
 
 	static signed short get_duty_left();	//左モーターのDuty取得
-	static signed short get_duty_right();//右モーターのDuty取得
+	static signed short get_duty_right();	//右モーターのDuty取得
 
 	static const char MAX_DUTY;	 	//Dutyの最大値［％］
 	static const char MAX_COUNT;	//Dutyの最大値［％］
@@ -61,19 +61,17 @@ private:
 	motor();
 
 public:
-	static signed char right_duty,left_duty;		//duty[％]
+	static signed char right_duty, left_duty;		//duty[％]
 
 	static void set_duty(const MOTOR_SIDE side, const float set_duty);//モーターのDuty決定
 
-	static void sleep_motor();//モータードライバをスリープ状態に
-	static void stanby_motor();//モータードライバをスタンバイ状態に
+	static void sleep_motor();		//モータードライバをスリープ状態に
+	static void stanby_motor();		//モータードライバをスタンバイ状態に
 
 	static bool isEnable();		//motorが起動しているかどうか
 
 	~motor();
 };
-
-
 
 //gyro関連
 //時計回りが正
@@ -81,7 +79,7 @@ public:
 typedef enum {
 	axis_x = 0, axis_y = 1, axis_z = 2
 } AXIS_t;
-class mpu6000{
+class mpu6000 {
 private:
 	//レジスター定義
 	static const uint16_t GYRO_XOUT_H;
@@ -97,7 +95,6 @@ private:
 	static const uint16_t ACCEL_ZOUT_H;
 	static const uint16_t ACCEL_ZOUT_L;
 
-
 	static SPI_TypeDef* use_SPI;	//使うSPIのタイプ
 	static GPIO_TypeDef* cs_GPIOx;	//csをたたくIOピンのタイプ		ex)GPIOA
 	const static uint16_t cs_GPIO_Pin;	//csをたたくIOピンの番号
@@ -105,8 +102,8 @@ private:
 protected:
 public:
 	static uint16_t read_spi(uint16_t read_reg);		//SPI通信でregレジスタから読みだす
-	static void write_spi(uint16_t reg, uint16_t data);		//SPI通信でregレジスタにdataを書き込む
-	static int16_t get_mpu_value(SEN_TYPE sen, AXIS_t axis);		//senセンサーのaxis軸方向のデータを読む
+	static void write_spi(uint16_t reg, uint16_t data);	//SPI通信でregレジスタにdataを書き込む
+	static int16_t get_mpu_value(SEN_TYPE sen, AXIS_t axis);//senセンサーのaxis軸方向のデータを読む
 
 	mpu6000();
 
@@ -115,10 +112,9 @@ public:
 
 	~mpu6000();
 
-
 };
 
-class accelmeter : public mpu6000{
+class accelmeter: public mpu6000 {
 public:
 	static const uint8_t AVERAGE_COUNT;		//加速度計の平均取る回数[回]
 	static const float ACCEL_PERIOD;		//加速度計の制御周期[s]
@@ -143,31 +139,28 @@ public:
 
 	static float get_accel();
 
-
-
 };
 
-class gyro : public mpu6000{
+class gyro: public mpu6000 {
 private:
 	static const float GYRO_PERIOD;			//ジャイロの制御周期[s]
 	static const float REF_TIME;			//ジャイロのリファレンスとる時間[s]
 
 	static int16_t gyro_value;
 	static float default_angle;				//最小二乗法で補正をかけてない角度
-	static float angle,gyro_ref;
+	static float angle, gyro_ref;
 	static float angular_velocity;
 
 	static float get_gyro_ref();
-	static void set_least_square_slope();//最小二乗法をまわして補正項を計算
+	static void set_least_square_slope();				//最小二乗法をまわして補正項を計算
 
-	static void cal_angular_velocity();//角速度計算[rad/s]
-	static void cal_angle();//角度計算[rad]
-
+	static void cal_angular_velocity();				//角速度計算[rad/s]
+	static void cal_angle();				//角度計算[rad]
 
 	gyro();
 
 public:
-	static float least_square_slope;//補正項の傾き
+	static float least_square_slope;				//補正項の傾き
 
 	static void interrupt();		//割り込み内で呼ばれる
 	static int16_t get_gyro();
@@ -181,7 +174,6 @@ public:
 
 };
 
-
 //encoder
 class encoder {
 private:
@@ -191,40 +183,44 @@ private:
 	encoder();
 
 public:
-	static float right_velocity,left_velocity,velocity;
+	static float right_velocity, left_velocity, velocity;
 
 	static void interrupt();		//モーターのEncoderの値計算
-	static float get_velocity();//左右の平均(重心速度)のEncoder取得[m/s]　 移動平均取ってることに注意！
+	static float get_velocity();	//左右の平均(重心速度)のEncoder取得[m/s]　 移動平均取ってることに注意！
 
 	~encoder();
 };
 
 //光学センサー関連
+#define GAP_AVE_COUNT 10	//壁の切れ目対策にいくつの平均をとるか
 class photo {
 private:
 
-	static signed int right_ad, left_ad, front_right_ad, front_left_ad,front_ad;
-	static signed int right_ref, left_ref, front_right_ref, front_left_ref,front_ref;
+	static int16_t ave_buf[element_count][GAP_AVE_COUNT];	//センサー値（平均取ったやつ）のバッファ　壁の切れ目チェックとかで使う
+	static float diff_buf[element_count][GAP_AVE_COUNT];	//今のセンサー値とave_bufの差　壁の切れ目チェックとかで使う
+
+	static signed int right_ad, left_ad, front_right_ad, front_left_ad,
+			front_ad;
+	static signed int right_ref, left_ref, front_right_ref, front_left_ref,
+			front_ref;
 	static bool light_flag;		//赤外線LEDを光らせてセンサー値を読むかどうかのフラグ
 
-	static void switch_led(PHOTO_TYPE sensor_type, bool is_light);		//LEDをつけたり消したり
 
+	static void switch_led(PHOTO_TYPE sensor_type, bool is_light);//LEDをつけたり消したり
 
 	static int16_t get_ref(PHOTO_TYPE sensor_type);	//OFFのときのAD値を返す
-	static void set_ref(PHOTO_TYPE sensor_type, int16_t set_value);		//refの値を代入
+	static void set_ref(PHOTO_TYPE sensor_type, int16_t set_value);	//refの値を代入
 
 	photo();
 
 public:
 
 	static uint16_t get_ad(PHOTO_TYPE sensor_type);			//??_adの値を取得
-	static void set_ad(PHOTO_TYPE sensor_type, int16_t set_value);		//??_adに値を代入
-
+	static void set_ad(PHOTO_TYPE sensor_type, int16_t set_value);	//??_adに値を代入
 
 	static void light(PHOTO_TYPE sensor_type);
 	static void turn_off(PHOTO_TYPE sensor_type);
 	static void turn_off_all();		//すべて消す
-
 
 	//割り込み内で行う処理
 	static void interrupt(bool is_light);
@@ -234,14 +230,11 @@ public:
 	//TODO この関数はマウスclassにあるべきかも
 	static bool check_wall(unsigned char muki);
 	static bool check_wall(PHOTO_TYPE type);
-
-
+	static bool check_wall_gap(PHOTO_TYPE type);	//diff_gapに保存されてる値の正負を考え、9割以上が負（センサ値が下がってる）と、壁の切れ目だからtrue
 
 	~photo();
 
 };
-
-
 
 //それぞれのセンサから制御をかけるクラス
 
@@ -255,45 +248,43 @@ typedef struct {
 class control {
 private:
 	//TODO D項はいらないらしいハセシュン曰く
-	static float cross_delta_gain(SEN_TYPE sensor);//P_GAIN*P_DELTA+・・・を行う
+	static float cross_delta_gain(SEN_TYPE sensor);		//P_GAIN*P_DELTA+・・・を行う
 
-	static bool wall_control_flag;//壁制御をかけてればtrue、切ってればfalse。
-	static bool control_phase;//姿勢制御をかけてるか否か。かけていればtrue
+	static bool wall_control_flag;		//壁制御をかけてればtrue、切ってればfalse。
+	static bool control_phase;		//姿勢制御をかけてるか否か。かけていればtrue
 
-	static float control_velocity();//速度に関するPID制御(エンコーダーのみ)。戻り値はDuty？
+	static float control_velocity();		//速度に関するPID制御(エンコーダーのみ)。戻り値はDuty？
 	static float control_angular_velocity();//速度に関するPID制御(エンコーダーのみ)。戻り値はDuty？
 
-	static float get_feedback(const signed char right_or_left);//FBを掛けた後のDutyを返す。PID制御。
+	static float get_feedback(const signed char right_or_left);	//FBを掛けた後のDutyを返す。PID制御。
 	static float get_feedforward(const signed char right_or_left);//FFを掛けた後のDutyを返す。
 
-	static bool is_FF_CONTROL,is_FB_CONTROL;	//FFとFBの制御かけるかどうか。かけるならTrue
+	static bool is_FF_CONTROL, is_FB_CONTROL;	//FFとFBの制御かけるかどうか。かけるならTrue
 
 	control();
 
 public:
-	static PID gyro_delta,photo_delta,encoder_delta;//各種Δ
+	static PID gyro_delta, photo_delta, encoder_delta;	//各種Δ
 
-	static void cal_delta();//割り込み関数内で、偏差を計算する
+	static void cal_delta();	//割り込み関数内で、偏差を計算する
 
-	static void posture_control();//FF,FB制御をかける。set_dutyまで行う。
+	static void posture_control();	//FF,FB制御をかける。set_dutyまで行う。
 
-	static void start_wall_control();//壁制御をかける
-	static void stop_wall_control();//壁制御を切る
+	static void start_wall_control();	//壁制御をかける
+	static void stop_wall_control();	//壁制御を切る
 
-	static void start_control();//制御をかける
-	static void stop_control();//制御をとめる
+	static void start_control();	//制御をかける
+	static void stop_control();	//制御をとめる
 
-	static bool get_control_phase();//制御がかかっているかを取得。かかっていればtrue
-	static bool get_wall_control_phase();//制御がかかっているかを取得。かかっていればtrue
+	static bool get_control_phase();	//制御がかかっているかを取得。かかっていればtrue
+	static bool get_wall_control_phase();	//制御がかかっているかを取得。かかっていればtrue
 
 	static void reset_delta();
 	static void reset_delta(SEN_TYPE type);	//特定のセンサーの偏差だけ0にする
 
-
-	static void fail_safe();//Iゲインが一定以上いったらモーターを止める
+	static void fail_safe();	//Iゲインが一定以上いったらモーターを止める
 
 	~control();
 };
-
 
 #endif /* HARDWARE_H_ */

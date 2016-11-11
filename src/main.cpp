@@ -86,6 +86,7 @@ int main(void) {
 		myprintf("front %d  ", photo::get_value(front));
 		myprintf("\n\r");
 
+
 		wait::ms(100);
 
 		if (photo::get_value(front)
@@ -119,9 +120,15 @@ int main(void) {
 
 	flog[0][0] = -1;
 	//control::stop_wall_control();
-	//run::accel_run(0.09 * 5, 0, 0);
 
-	//run::spin_turn(360);
+	run::accel_run(0.045, SEARCH_VELOCITY, 0);
+	run::accel_run(0.09, SEARCH_VELOCITY, 0);
+	flog[0][0] = -1;
+	control::stop_wall_control();
+	run::accel_run(0.09*3, 0, 0);
+
+	run::spin_turn(180);
+	wait::ms(1000);
 	//run::accel_run(0.045, SEARCH_VELOCITY, 0);
 	//run::slalom(small, MUKI_LEFT, 0);
 	//run::accel_run(0.045, 0, 0);
@@ -134,6 +141,7 @@ int main(void) {
 
 	while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
 	}
+	//map::draw_map(false);
 
 	for (int i = 0; i < 2000; i++) {
 		myprintf("%f,%f\n\r", flog[0][i], flog[1][i]);
@@ -175,8 +183,8 @@ void interrupt_timer() {
 				i++;
 			}
 		} else if (i < 10000) {
-			flog[0][i] = mouse::get_ideal_angular_velocity();//photo::get_value(left);
-			flog[1][i] = gyro::get_angular_velocity();//photo::get_value(front_left);
+			flog[0][i] = mouse::get_distance_m();
+			flog[1][i] = photo::get_value(left);
 			i++;
 			GPIO_ResetBits(GPIOA, GPIO_Pin_14);
 

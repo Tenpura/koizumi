@@ -493,6 +493,14 @@ void mouse::look_wall(bool comb_ignore) {
 
 }
 
+void mouse::velify_wall(){
+	my7seg::turn_off();
+	if(photo::check_wall(front)) my7seg::light(my7seg::front);
+	if(photo::check_wall(right)) my7seg::light(my7seg::right);
+	if(photo::check_wall(left)) my7seg::light(my7seg::left);
+
+}
+
 void mouse::error() {
 	//TODO エラー処理は必要に応じて書くこと
 	while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
@@ -866,7 +874,6 @@ unsigned int adachi::count_unknown_wall(unsigned char target_x,
 }
 
 void adachi::run_next_action(ACTION_TYPE next_action) {
-	//TODO 超信地になってる。いつかスラロームになおすこと
 	switch (next_action) {
 	case go_straight:
 		//1区間直進
@@ -903,7 +910,6 @@ void adachi::run_next_action(ACTION_TYPE next_action) {
 }
 
 void adachi::run_next_action_by_spin(ACTION_TYPE next_action) {
-	//TODO 超信地になってる。いつかスラロームになおすこと
 	switch (next_action) {
 	case go_straight:
 		//1区間直進
@@ -1232,6 +1238,7 @@ bool adachi::adachi_method_spin(unsigned char target_x, unsigned char target_y,
 		mouse::set_direction(direction_x, direction_y);
 
 //壁情報更新
+		mouse::velify_wall();
 		mouse::look_wall(false);
 
 //目標の座標にたどり着いたら終了

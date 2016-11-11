@@ -7,17 +7,7 @@
 
 #include"user.h"
 
-void my_error() {
-	//motor::sleep_motor();		//motorを止める
-	/*
-	 while ((SWITCH_RIGHT == OFF) && (SWITCH_LEFT == OFF)) {	//スイッチが押されてなければ待機
-	 my7seg::light_error();
-	 wait_ms(100);
-	 my7seg::turn_off();
-	 wait_ms(100);
-	 }
-	 */
-}
+
 
 float degree(float radian) {
 	return (radian * 180 / PI());
