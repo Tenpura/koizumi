@@ -11,9 +11,10 @@
 #include"define.h"
 
 //パラメータ
-//TODO メートルにしたい
 
-#define tire_R (7.0 * 0.001)	//タイヤの半径　[m]
+#define tire_R (7.45 * 0.001)	//タイヤの半径　[m]
+
+//TODO メートルにしたい
 #define TREAD_W	44		//トレッド幅[mm]
 
 
@@ -41,7 +42,12 @@ private:
 	const static unsigned int ideal_photo[2][5];			//ideal_photo[クラシックorハーフ][光学センサの向き]
 	const static int16_t min_wall_photo[2][5];			//壁がある時の最小値[クラシックorハーフ][光学センサの向き]
 	const static TRAPEZOID straight_run[RUN_MODE_NUMBER];
-	const static INIT_SLALOM right_slalom[RUN_MODE_NUMBER], left_slalom[RUN_MODE_NUMBER];
+
+	//クラシック用パラメータ
+	const static INIT_SLALOM right_slalom[slalom_type_count][RUN_MODE_NUMBER], left_slalom[slalom_type_count][RUN_MODE_NUMBER];
+
+	//ハーフ用パラメータ
+	const static INIT_SLALOM right_slalom_half[slalom_type_count][RUN_MODE_NUMBER], left_slalom_half[slalom_type_count][RUN_MODE_NUMBER];
 
 
 public:
@@ -52,7 +58,8 @@ public:
 	static float get_run_max_velocity(const unsigned char select_mode);
 	static float get_run_de_acceleration(const unsigned char select_mode);
 
-	static float get_slalom_para( const SLALOM_ELEMENT slalom_element, const int8_t right_or_left, const uint8_t select_mode);
+	static float get_slalom(const SLALOM_TYPE slalom_type, const SLALOM_ELEMENT slalom_element,
+				const signed char right_or_left, const unsigned char select_mode);
 
 };
 

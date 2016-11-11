@@ -8,5 +8,5 @@
 #include "c++_convert_c.h"
 
 void interrupt_control(){
-	encoder::interrupt_encoder();
+	encoder::interrupt();
 }

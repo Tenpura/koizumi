@@ -160,20 +160,21 @@ private:
 	static float get_gyro_ref();
 	static void set_least_square_slope();//最小二乗法をまわして補正項を計算
 
+	static void cal_angular_velocity();//角速度計算[rad/s]
+	static void cal_angle();//角度計算[rad]
+
+
 	gyro();
 
 public:
 	static float least_square_slope;//補正項の傾き
 
-	static void interrupt_gyro();
+	static void interrupt();		//割り込み内で呼ばれる
 	static int16_t get_gyro();
 	static void set_gyro_ref();
 
 	static void reset_angle();
-	static void cal_angle();//角度計算[rad]
 	static float get_angle();
-
-	static void cal_angular_velocity();//角速度計算[rad/s]
 	static float get_angular_velocity();
 
 	~gyro();
@@ -184,7 +185,7 @@ public:
 //encoder
 class encoder {
 private:
-	const static uint32_t MOVING_AVERAGE;	//移動平均をとる時間　単位は制御周期
+	const static uint8_t MOVING_AVERAGE;	//移動平均をとる時間　単位は制御周期
 	const static uint32_t MEDIAN;		//カウントの中央値
 
 	encoder();
@@ -192,7 +193,7 @@ private:
 public:
 	static float right_velocity,left_velocity,velocity;
 
-	static void interrupt_encoder();		//モーターのEncoderの値計算
+	static void interrupt();		//モーターのEncoderの値計算
 	static float get_velocity();//左右の平均(重心速度)のEncoder取得[m/s]　 移動平均取ってることに注意！
 
 	~encoder();
@@ -208,8 +209,6 @@ private:
 
 	static void switch_led(PHOTO_TYPE sensor_type, bool is_light);		//LEDをつけたり消したり
 
-	static uint16_t get_ad(PHOTO_TYPE sensor_type);			//??_adの値を取得
-	static void set_ad(PHOTO_TYPE sensor_type, int16_t set_value);		//??_adに値を代入
 
 	static int16_t get_ref(PHOTO_TYPE sensor_type);	//OFFのときのAD値を返す
 	static void set_ref(PHOTO_TYPE sensor_type, int16_t set_value);		//refの値を代入
@@ -217,6 +216,10 @@ private:
 	photo();
 
 public:
+
+	static uint16_t get_ad(PHOTO_TYPE sensor_type);			//??_adの値を取得
+	static void set_ad(PHOTO_TYPE sensor_type, int16_t set_value);		//??_adに値を代入
+
 
 	static void light(PHOTO_TYPE sensor_type);
 	static void turn_off(PHOTO_TYPE sensor_type);
@@ -284,6 +287,8 @@ public:
 	static bool get_wall_control_phase();//制御がかかっているかを取得。かかっていればtrue
 
 	static void reset_delta();
+	static void reset_delta(SEN_TYPE type);	//特定のセンサーの偏差だけ0にする
+
 
 	static void fail_safe();//Iゲインが一定以上いったらモーターを止める
 

@@ -195,14 +195,14 @@ void motor::set_duty(const MOTOR_SIDE side, const float set_duty) {
 			TIM_OC2Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH2
 
 		} else if (set_duty > 0) {				//正のときは正転
-			TIM_OC2Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH2
-			TIM_OC_InitStructure.TIM_Pulse = 0;		//電位差を作るため、片方は0に
 			TIM_OC1Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH1
+			TIM_OC_InitStructure.TIM_Pulse = 0;		//電位差を作るため、片方は0に
+			TIM_OC2Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH2
 
 		} else {									//負のときは逆転
-			TIM_OC1Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH1
-			TIM_OC_InitStructure.TIM_Pulse = 0;		//電位差を作るため、片方は0に
 			TIM_OC2Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH2
+			TIM_OC_InitStructure.TIM_Pulse = 0;		//電位差を作るため、片方は0に
+			TIM_OC1Init(TIM4, &TIM_OC_InitStructure);		//TIM4のCH1
 
 		}
 
@@ -495,8 +495,10 @@ float gyro::least_square_slope = 0;
 const float gyro::GYRO_PERIOD = CONTORL_PERIOD;		//制御周期[s]
 const float gyro::REF_TIME = 2;							//リファレンスとる時間[s]
 
-void gyro::interrupt_gyro() {
+void gyro::interrupt() {
 	gyro_value = -mpu6000::get_mpu_value(sen_gyro, axis_z);	//Z方向のジャイロを見る。時計回り正
+	gyro::cal_angular_velocity();	//gyroから角速度を計算[°/s]
+	gyro::cal_angle();				//gyroから角度を計算
 
 }
 
@@ -587,11 +589,11 @@ gyro::~gyro() {
 }
 
 //encoder関連
-const uint32_t encoder::MOVING_AVERAGE = 70;
+const uint8_t encoder::MOVING_AVERAGE = 70;
 const uint32_t encoder::MEDIAN = 32762;
 float encoder::left_velocity, encoder::right_velocity, encoder::velocity;
 
-void encoder::interrupt_encoder() {
+void encoder::interrupt() {
 	static float data_r[MOVING_AVERAGE] = { 0 };	//データを保存しておく配列
 	float sum_r = 0;
 	static float data_l[MOVING_AVERAGE] = { 0 };	//データを保存しておく配列
@@ -744,7 +746,7 @@ void photo::turn_off_all() {
 
 void photo::set_ad(PHOTO_TYPE sensor_type, int16_t set_value) {
 
-	static const int16_t PHOTO_AVERAGE_TIME = 20;	//いくつの移動平均をとるか
+	static const int16_t PHOTO_AVERAGE_TIME = 10;	//いくつの移動平均をとるか
 	static int16_t buf[element_count][PHOTO_AVERAGE_TIME] = { 0 };
 
 	int16_t sum = 0;
@@ -789,34 +791,30 @@ void photo::interrupt(bool is_light) {
 	photo::turn_off_all();
 
 	photo::set_ref(right, get_ad(right));		//消えてる時をrefにする
+	photo::set_ref(left, get_ad(left));		//消えてる時をrefにする
+	photo::set_ref(front_right, get_ad(front_right));		//消えてる時をrefにする
+	photo::set_ref(front_left, get_ad(front_left));		//消えてる時をrefにする
+	photo::set_ref(front, get_ad(front));		//消えてる時をrefにする
+
+	//左右の発光は回路的に同時におこるので、同時に左右の値をとる
 	if (is_light) {
 		photo::light(right);
-		for (int i = 0; i < wait_number; i++) {
+		photo::light(left);
+		for (int i = 0; i < wait_number * 2; i++) {
 		}
 	}
 	photo::set_ad(right, get_ad(right) - get_ref(right));		//差分を代入
+	photo::set_ad(left, get_ad(left) - get_ref(left));		//差分を代入
 	photo::turn_off(right);
 
-	photo::set_ref(left, 0);		//消えてる時をrefにする
-	photo::set_ref(left, get_ad(left));		//消えてる時をrefにする
-	if (is_light) {
-		photo::light(left);
-		for (int i = 0; i < wait_number; i++) {
-		}
-	}
-	photo::set_ad(left, get_ad(left) - get_ref(left));		//差分を代入
-	photo::turn_off(left);
-
-	photo::set_ref(front_right, get_ad(front_right));		//消えてる時をrefにする
 	if (is_light) {
 		photo::light(front_right);
-		for (int i = 0; i < wait_number * 2; i++) {
+		for (int i = 0; i < wait_number; i++) {
 		}
 	}
 	photo::set_ad(front_right, get_ad(front_right) - get_ref(front_right));	//差分を代入
 	photo::turn_off(front_right);
 
-	photo::set_ref(front_left, get_ad(front_left));		//消えてる時をrefにする
 	if (is_light) {
 		photo::light(front_left);
 		for (int i = 0; i < wait_number; i++) {
@@ -825,7 +823,6 @@ void photo::interrupt(bool is_light) {
 	photo::set_ad(front_left, get_ad(front_left) - get_ref(front_left));//差分を代入
 	photo::turn_off(front_left);
 
-	photo::set_ref(front, get_ad(front));		//消えてる時をrefにする
 	if (is_light) {
 		photo::light(front);
 		for (int i = 0; i < wait_number; i++) {
@@ -943,12 +940,8 @@ bool photo::check_wall(unsigned char muki) {
 }
 
 bool photo::check_wall(PHOTO_TYPE type) {
-	//XXX leftは安定しないからFrontLeftでみる
-	if (type == left)
-		return (photo::get_value(front_left)
-				>= parameter::get_min_wall_photo(front_left));
-	else
-		return (photo::get_value(type) >= parameter::get_min_wall_photo(type));
+
+	return (photo::get_value(type) >= parameter::get_min_wall_photo(type));
 
 }
 
@@ -961,7 +954,7 @@ photo::~photo() {
 //XXX 各種ゲイン
 //control関連
 const PID gyro_gain = { 30, 150, 0 };
-const PID photo_gain = { 0.1, 0, 0 };
+const PID photo_gain = { 0.5, 0, 0 };
 const PID encoder_gain = { 500, 1500, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta;
@@ -1013,12 +1006,13 @@ void control::cal_delta() {
 		//中央付近は制御しない
 		if (ABS(delta) > 30) {
 			photo_right_delta = delta;
-
 		}
+		if (delta < 0)
+			photo_right_delta = 0;	//近づく方向には制御しない
 
 	}
 
-	if (photo::check_wall(front_left) && control::get_wall_control_phase()) {
+	if (photo::check_wall(left) && control::get_wall_control_phase()) {
 
 		ideal = static_cast<float>(parameter::get_ideal_photo(front_left));
 		actual = static_cast<float>(photo::get_value(front_left));
@@ -1026,7 +1020,12 @@ void control::cal_delta() {
 		//中央付近は制御しない
 		if (ABS(delta) > 30) {
 			photo_left_delta = delta;
+			//左の制御が弱いので右ないときは2倍にする
+			if (photo_right_delta == 0)
+				photo_left_delta = delta * 2;
 		}
+		if (delta < 0)
+			photo_left_delta = 0;	//近づく方向には制御しない
 	}
 
 	//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
@@ -1139,16 +1138,37 @@ bool control::get_wall_control_phase() {
 }
 
 void control::reset_delta() {
-	gyro_delta.P = 0;
-	gyro_delta.I = 0;
-	gyro_delta.D = 0;
-	photo_delta.P = 0;
-	photo_delta.I = 0;
-	photo_delta.D = 0;
-	encoder_delta.P = 0;
-	encoder_delta.I = 0;
-	encoder_delta.D = 0;
+	reset_delta(sen_gyro);
+	reset_delta(sen_photo);
+	reset_delta(sen_encoder);
 
+}
+
+void control::reset_delta(SEN_TYPE type) {
+
+	switch (type) {
+	case sen_gyro:
+		gyro_delta.P = 0;
+		gyro_delta.I = 0;
+		gyro_delta.D = 0;
+		break;
+
+	case sen_photo:
+		photo_delta.P = 0;
+		photo_delta.I = 0;
+		photo_delta.D = 0;
+		break;
+
+	case sen_encoder:
+		encoder_delta.P = 0;
+		encoder_delta.I = 0;
+		encoder_delta.D = 0;
+		break;
+
+	case sen_accel:
+		//現在は偏差がないため。
+		break;
+	}
 }
 
 void control::fail_safe() {

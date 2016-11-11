@@ -59,23 +59,23 @@ int main(void) {
 		}
 	}
 
-/*
-	while(1){
-		if(photo::check_wall(right)) GPIO_ResetBits(GPIOH, GPIO_Pin_1);	//Pin‚ð1‚É
-		else GPIO_SetBits(GPIOH, GPIO_Pin_1);	//Pin‚ð1‚É
+	/*
+	 while(1){
+	 if(photo::check_wall(right)) GPIO_ResetBits(GPIOH, GPIO_Pin_1);	//Pin‚ð1‚É
+	 else GPIO_SetBits(GPIOH, GPIO_Pin_1);	//Pin‚ð1‚É
 
-		if(photo::check_wall(front)) GPIO_ResetBits(GPIOC, GPIO_Pin_2);	//Pin‚ð1‚É
-		else GPIO_SetBits(GPIOC, GPIO_Pin_2);	//Pin‚ð1‚É
+	 if(photo::check_wall(front)) GPIO_ResetBits(GPIOC, GPIO_Pin_2);	//Pin‚ð1‚É
+	 else GPIO_SetBits(GPIOC, GPIO_Pin_2);	//Pin‚ð1‚É
 
-		if(photo::check_wall(left)) GPIO_ResetBits(GPIOC, GPIO_Pin_15);	//Pin‚ð1‚É
-		else GPIO_SetBits(GPIOC, GPIO_Pin_15);	//Pin‚ð1‚É
+	 if(photo::check_wall(left)) GPIO_ResetBits(GPIOC, GPIO_Pin_15);	//Pin‚ð1‚É
+	 else GPIO_SetBits(GPIOC, GPIO_Pin_15);	//Pin‚ð1‚É
 
-		wait::ms(10);
+	 wait::ms(10);
 
 
 
-	}
-*/
+	 }
+	 */
 	mpu6000::init_mpu6000();
 
 	while (1) {
@@ -84,30 +84,22 @@ int main(void) {
 		myprintf("f_r %d  ", photo::get_value(front_right));
 		myprintf("f_l %d  ", photo::get_value(front_left));
 		myprintf("front %d  ", photo::get_value(front));
-
-
-		myprintf("=  %f",static_cast<float>(parameter::get_ideal_photo(right)- static_cast<float> (photo::get_value(right))));
 		myprintf("\n\r");
 
 		wait::ms(100);
 
-		if(photo::get_value(front)>(parameter::get_min_wall_photo(front)*1.5)){
-				break;
-			}
-
+		if (photo::get_value(front)
+				> (parameter::get_min_wall_photo(front) * 1.5)) {
+			break;
+		}
 
 	}
-
-
 
 	my7seg::count_down(3, 1000);
 
-
-
-
-	while(photo::get_value(front)<(parameter::get_min_wall_photo(front)*1.5)){
-		my7seg::blink(8,100,1);
-	}
+//	while(photo::get_value(front)<(parameter::get_min_wall_photo(front)*1.5)){
+//		my7seg::blink(8,100,1);
+//	}
 
 	my7seg::turn_off();
 
@@ -118,24 +110,24 @@ int main(void) {
 	mouse::set_position(0, 0);
 	mouse::set_direction(MUKI_UP);
 
-
-	my7seg::count_down(3,500);
-	mouse::run_init(true,true);
-
-
-	my7seg::turn_off();
-
-//	adachi::left_hand_method(GOAL_x, GOAL_y);
+	mouse::set_direction(MUKI_UP);
+	//adachi::left_hand_method(GOAL_x, GOAL_y);
 	adachi::adachi_method_spin(GOAL_x, GOAL_y,false);
 
+	my7seg::count_down(3, 500);
+	mouse::run_init(true, true);
 
 	flog[0][0] = -1;
-	run::accel_run(0.09 * 6, 0, 0);
+	//control::stop_wall_control();
+	//run::accel_run(0.09 * 5, 0, 0);
+
 	//run::spin_turn(360);
+	//run::accel_run(0.045, SEARCH_VELOCITY, 0);
+	//run::slalom(small, MUKI_LEFT, 0);
+	//run::accel_run(0.045, 0, 0);
 	my7seg::light(5);
 
 	wait::ms(1000);
-
 
 	motor::sleep_motor();
 	my7seg::turn_off();
@@ -159,19 +151,15 @@ int main(void) {
 }
 
 void interrupt_timer() {
-	GPIO_SetBits(GPIOA,GPIO_Pin_14);
+	GPIO_SetBits(GPIOA, GPIO_Pin_14);
 
 	wait_counter++;	//ms(ƒ~ƒŠ•b)‚ÌƒJƒEƒ“ƒg‚ð1‘‰Á
 	mouse::add_one_count_ms();
 
 	photo::interrupt(true);
-
-	gyro::interrupt_gyro();				//gyro‚Ì’l‚ðŽæ“¾
-	gyro::cal_angular_velocity();	//gyro‚©‚çŠp‘¬“x‚ðŒvŽZ[‹/s]
-	gyro::cal_angle();				//gyro‚©‚çŠp“x‚ðŒvŽZ
-
+	gyro::interrupt();
 	accelmeter::interrupt();
-	encoder::interrupt_encoder();
+	encoder::interrupt();
 
 	mouse::interrupt();
 
@@ -187,16 +175,15 @@ void interrupt_timer() {
 				i++;
 			}
 		} else if (i < 10000) {
-			flog[0][i] = control::photo_delta.P;//mouse::get_ideal_angular_velocity();//encoder::get_velocity();
-			flog[1][i] = photo::get_value(right);//gyro::get_angular_velocity();//mouse::get_ideal_velocity();
+			flog[0][i] = mouse::get_ideal_angular_velocity();//photo::get_value(left);
+			flog[1][i] = gyro::get_angular_velocity();//photo::get_value(front_left);
 			i++;
-			GPIO_ResetBits(GPIOA,GPIO_Pin_14);
+			GPIO_ResetBits(GPIOA, GPIO_Pin_14);
 
 		}
 	}
 
-
-	GPIO_ResetBits(GPIOA,GPIO_Pin_14);
+	GPIO_ResetBits(GPIOA, GPIO_Pin_14);
 
 }
 
