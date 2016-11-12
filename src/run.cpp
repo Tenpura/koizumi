@@ -522,9 +522,10 @@ mouse::~mouse() {
 
 }
 
-//XXX 壁キレの距離
+//XXX 壁キレの距離[m]
 // right left front_right front_left front
-uint8_t run::WALL_EAGE_DISTANCE[PHOTO_TYPE::element_count] = { 0, 0, 0, 0, 0 };
+float run::WALL_EAGE_DISTANCE[PHOTO_TYPE::element_count] = { 0.032, 0.024, 0, 0,
+		0 };
 
 void run::accel_run(const float distance_m, const float end_velocity,
 		const unsigned char select_mode) {
@@ -592,8 +593,15 @@ void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 
 	float target_distance = check_distance;
 	bool wall_eage_flag = true;
-	bool wall_eage_right = false, wall_eage_left = false;	//壁があるかないかフラグ
-	int8_t cnt[PHOTO_TYPE::element_count] = { 0 };	//WALL_GAPが反応した数
+	int16_t wall_eage[PHOTO_TYPE::element_count];	//この値を下回ったら壁キレ
+
+	//min_wallとideal_wallの平均が壁キレ
+	wall_eage[PHOTO_TYPE::right] = (parameter::get_min_wall_photo(
+			PHOTO_TYPE::right)
+			+ parameter::get_min_wall_photo(PHOTO_TYPE::right)) / 2;
+	wall_eage[PHOTO_TYPE::left] = (parameter::get_min_wall_photo(
+			PHOTO_TYPE::left) + parameter::get_min_wall_photo(PHOTO_TYPE::left))
+			/ 2;
 
 	//チェック距離までは普通に走る
 	accel_run(distance_m - check_distance, end_velocity, select_mode);
@@ -605,29 +613,23 @@ void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 		}
 
 		if (wall_eage_flag) {
-			cnt[PHOTO_TYPE::right] = 0;
-			cnt[PHOTO_TYPE::left] = 0;
-			//WALL_GAPを検知したらカウントを増やしていく
-			for (int8_t i = 0; i < GAP_AVE_COUNT; i++) {
-				if (photo::gap_buf[PHOTO_TYPE::right][i] == GAP_AVE_COUNT)
-					cnt[PHOTO_TYPE::right]++;
-				else
-					cnt[PHOTO_TYPE::right]--;
-
-				if (photo::gap_buf[PHOTO_TYPE::left][i] == GAP_AVE_COUNT)
-					cnt[PHOTO_TYPE::left]++;
-				else
-					cnt[PHOTO_TYPE::left]--;
-
+			//センサー値の大きさで壁キレを判断するので壁のある時だけを考える
+			if (photo::check_wall(PHOTO_TYPE::left)) {
+				if (photo::get_value(PHOTO_TYPE::left)
+						< wall_eage[PHOTO_TYPE::left]) {
+					target_distance = WALL_EAGE_DISTANCE[PHOTO_TYPE::left];
+					mouse::set_distance_m(0);
+					wall_eage_flag = false;
+				}
 			}
-			if (cnt[PHOTO_TYPE::right] == EAGE_CHECK_TIME) {	//壁が切れたら
-				target_distance = WALL_EAGE_DISTANCE[PHOTO_TYPE::right];//距離を更新
-				wall_eage_flag = false;
-			}
-
-			if (cnt[PHOTO_TYPE::left] == EAGE_CHECK_TIME) {	//壁が切れたら
-				target_distance = WALL_EAGE_DISTANCE[PHOTO_TYPE::left];	//距離を更新
-				wall_eage_flag = false;
+			//センサー値の大きさで壁キレを判断するので壁のある時だけを考える
+			if (photo::check_wall(PHOTO_TYPE::right)) {
+				if (photo::get_value(PHOTO_TYPE::right)
+						< wall_eage[PHOTO_TYPE::right]) {
+					target_distance = WALL_EAGE_DISTANCE[PHOTO_TYPE::right];
+					mouse::set_distance_m(0);
+					wall_eage_flag = false;
+				}
 			}
 
 		}
@@ -640,7 +642,7 @@ void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 
 void run::slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
 		const uint8_t select_mode) {
-	//スラロームのパラメーター取得
+//スラロームのパラメーター取得
 	float distance = parameter::get_slalom(slalom_type, before_distance,
 			right_or_left, select_mode);
 	float slalom_velocity = parameter::get_slalom(slalom_type, velocity,
@@ -668,7 +670,7 @@ void run::slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
 	mouse::set_distance_m(0);
 	accel_run(distance, slalom_velocity, select_mode);
 
-	//mouse::slalom_flag = true;
+//mouse::slalom_flag = true;
 	control::stop_wall_control();
 
 //時計回りが正
@@ -692,8 +694,8 @@ void run::slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
 		}
 	}
 
-	//減速時にも同様の角度がずれると予想されるから
-	//追従遅れで生じた加速区間の角度の理想と現実の差を記録しておく
+//減速時にも同様の角度がずれると予想されるから
+//追従遅れで生じた加速区間の角度の理想と現実の差を記録しておく
 	float def_angle = (clothoid_angle_degree - ABS(degree(gyro::get_angle())));
 
 //等角速度
@@ -752,8 +754,8 @@ void run::slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
 			right_or_left, select_mode);
 	accel_run(distance, slalom_velocity, select_mode);
 
-	//mouse::slalom_flag = false;
-	//gyro::reset_angle();
+//mouse::slalom_flag = false;
+//gyro::reset_angle();
 	control::reset_delta(sen_gyro);
 
 }
@@ -766,7 +768,7 @@ void run::spin_turn(const float target_degree) {
 
 	control::stop_wall_control();
 
-	//時計回りが正
+//時計回りが正
 	if (target_degree < 0) {
 		angular_acceleration = -ABS(angular_acceleration);
 	}
@@ -774,7 +776,7 @@ void run::spin_turn(const float target_degree) {
 	mouse::reset_angle();
 	mouse::set_ideal_angular_velocity(0);
 
-	//角加速区間
+//角加速区間
 	mouse::set_angular_acceleration(angular_acceleration);
 	while (ABS(mouse::get_ideal_angular_velocity()) < max_angular_velocity) {
 		//減速に必要な角度を計算
@@ -789,7 +791,7 @@ void run::spin_turn(const float target_degree) {
 
 	}
 
-	//等角速度区間
+//等角速度区間
 	mouse::set_angular_acceleration(0);
 	angle_degree = target_degree - angle_degree;
 	while (1) {
@@ -804,7 +806,7 @@ void run::spin_turn(const float target_degree) {
 		}
 	}
 
-	//角減速区間
+//角減速区間
 	mouse::set_angular_acceleration(-angular_acceleration);
 	while (ABS(mouse::get_angle_degree()) < ABS(target_degree)) {
 		//この条件付けないと、先に角速度が0になった場合いつまでたってもループを抜けない
@@ -818,7 +820,7 @@ void run::spin_turn(const float target_degree) {
 	mouse::set_ideal_angular_velocity(0);
 	mouse::set_distance_m(0);
 
-	//もともと壁制御かかってたなら復活させる
+//もともと壁制御かかってたなら復活させる
 	if (wall_flag)
 		control::start_wall_control();
 }
@@ -914,7 +916,7 @@ unsigned int adachi::count_unknown_wall(unsigned char target_x,
 		unsigned char target_y) {
 	unsigned int unknown_count = 0;
 
-	//各方向について探索済みか調べる.未探索ならカウントアップ
+//各方向について探索済みか調べる.未探索ならカウントアップ
 	if ((map::check_exist(target_x, target_y, MUKI_RIGHT)) == false) {
 		unknown_count++;
 	}
@@ -936,6 +938,7 @@ void adachi::run_next_action(ACTION_TYPE next_action) {
 	case go_straight:
 		//1区間直進
 		run::accel_run((0.09 * MOUSE_MODE), SEARCH_VELOCITY, 0);
+		//run::accel_run_wall_eage((0.09 * MOUSE_MODE), SEARCH_VELOCITY, 0,(0.09 * MOUSE_MODE));
 		break;
 
 	case turn_right:
@@ -1095,7 +1098,7 @@ ACTION_TYPE adachi::get_next_action(DIRECTION next_direction,
 		break;
 	}
 
-	//ここにたどり着くのは、次行く方向がないか、予期せぬ例外なので、マウスを止める。
+//ここにたどり着くのは、次行く方向がないか、予期せぬ例外なので、マウスを止める。
 	return stop;
 }
 
@@ -1109,7 +1112,7 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 
 	my7seg::turn_off();
 
-	//保存していたマップを読みだす
+//保存していたマップを読みだす
 	map::input_map_data(&mouse::now_map);
 
 //向きを取得
@@ -1264,7 +1267,7 @@ bool adachi::adachi_method_spin(unsigned char target_x, unsigned char target_y,
 
 	my7seg::turn_off();
 
-	//保存していたマップを読みだす
+//保存していたマップを読みだす
 	map::input_map_data(&mouse::now_map);
 
 //向きを取得
@@ -1417,10 +1420,10 @@ bool adachi::left_hand_method(const uint8_t target_x, const uint8_t target_y) {
 
 	my7seg::turn_off();
 
-	//保存していたマップを読みだす
+//保存していたマップを読みだす
 	map::input_map_data(&mouse::now_map);
 
-	//向きを取得
+//向きを取得
 	mouse::get_direction(&direction_x, &direction_y);
 
 	mouse::run_init(true, true);

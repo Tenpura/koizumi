@@ -112,7 +112,8 @@ public:
 class run {
 private:
 	run();
-	static uint8_t WALL_EAGE_DISTANCE[PHOTO_TYPE::element_count];
+public:
+	static float WALL_EAGE_DISTANCE[PHOTO_TYPE::element_count];
 
 public:
 	static void accel_run(const float distance_m, const float end_velocity,

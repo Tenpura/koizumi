@@ -79,6 +79,8 @@ int main(void) {
 	mpu6000::init_mpu6000();
 
 	while (1) {
+		myprintf("right %f  ", run::WALL_EAGE_DISTANCE[PHOTO_TYPE::right]);
+		myprintf("left %f  ", run::WALL_EAGE_DISTANCE[PHOTO_TYPE::left]);
 		myprintf("right %d  ", photo::get_value(right));
 		myprintf("left %d  ", photo::get_value(left));
 		myprintf("f_r %d  ", photo::get_value(front_right));
@@ -123,8 +125,8 @@ int main(void) {
 
 	//run::accel_run(0.045, SEARCH_VELOCITY, 0);
 	//run::accel_run(0.09, SEARCH_VELOCITY, 0);
-	//run::accel_run_wall_eage(0.09*5, SEARCH_VELOCITY, 0, 0.09*4);
-	run::accel_run(0.045*6, 0, 0);
+	run::accel_run_wall_eage(0.09*5, SEARCH_VELOCITY, 0, 0.09*4.5);
+	run::accel_run(0.045, 0, 0);
 
 	//run::spin_turn(180);
 	wait::ms(1000);
