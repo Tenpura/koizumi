@@ -469,14 +469,14 @@ void accelmeter::interrupt() {
 	float sum = 0;
 
 	for (uint8_t i = 0; (i + 1) < AVERAGE_COUNT; i++) {
-		buff[i + 1] = buff[i];	//配列を1つずらす
-		sum += buff[i + 1];			//ついでに加算する
+		buff[i] = buff[i + 1];	//配列を1つずらす
+		sum += buff[i];			//ついでに加算する
 	}
 
 	//配列の最初に入れる
-	buff[0] = mpu6000::get_mpu_value(sen_accel, axis_y);	//加速度のy方向
+	buff[(AVERAGE_COUNT - 1)] = mpu6000::get_mpu_value(sen_accel, axis_y);//加速度のy方向
 
-	sum += buff[0];
+	sum += buff[(AVERAGE_COUNT - 1)];
 
 	accel_ad = sum / AVERAGE_COUNT;
 
@@ -608,7 +608,7 @@ gyro::~gyro() {
 }
 
 //encoder関連
-const uint8_t encoder::MOVING_AVERAGE = 70;
+const uint8_t encoder::MOVING_AVERAGE = 20;
 const uint32_t encoder::MEDIAN = 32762;
 float encoder::left_velocity, encoder::right_velocity, encoder::velocity;
 
@@ -619,23 +619,23 @@ void encoder::interrupt() {
 	float sum_l = 0;
 
 	for (uint8_t i = 0; (i + 1) < MOVING_AVERAGE; i++) {
-		data_r[i + 1] = data_r[i];	//配列を1つずらす
-		sum_r += data_r[i + 1];			//ついでに加算する
-		data_l[i + 1] = data_l[i];	//配列を1つずらす
-		sum_l += data_l[i + 1];			//ついでに加算する
+		data_r[i] = data_r[i + 1];	//配列を1つずらす
+		sum_r += data_r[i];			//ついでに加算する
+		data_l[i] = data_l[i + 1];	//配列を1つずらす
+		sum_l += data_l[i];			//ついでに加算する
 	}
 
-	//配列の最初に入れる
-	data_r[0] = (32762 - static_cast<float>(TIM3->CNT)) * ENCODER_CONST
-			/ CONTROL_PERIOD * tire_R;	//count*[rad/count]/[sec]*[m]
-	data_l[0] = (static_cast<float>(TIM2->CNT) - 32762) * ENCODER_CONST
-			/ CONTORL_PERIOD * tire_R;	//m/s
+	//配列の最後に入れる
+	data_r[(MOVING_AVERAGE - 1)] = (32762 - static_cast<float>(TIM3->CNT))
+			* ENCODER_CONST / CONTROL_PERIOD * tire_R;//count*[rad/count]/[sec]*[m]
+	data_l[(MOVING_AVERAGE - 1)] = (static_cast<float>(TIM2->CNT) - 32762)
+			* ENCODER_CONST / CONTORL_PERIOD * tire_R;	//m/s
 
 	TIM2->CNT = 32762;
 	TIM3->CNT = 32762;
 
-	sum_r += data_r[0];
-	sum_l += data_r[0];
+	sum_r += data_r[(MOVING_AVERAGE - 1)];
+	sum_l += data_r[(MOVING_AVERAGE - 1)];
 
 	right_velocity = sum_r / MOVING_AVERAGE;
 	left_velocity = sum_l / MOVING_AVERAGE;
@@ -661,6 +661,7 @@ encoder::~encoder() {
 
 int16_t photo::ave_buf[PHOTO_TYPE::element_count][GAP_AVE_COUNT] = { 0 };
 float photo::diff_buf[PHOTO_TYPE::element_count][GAP_AVE_COUNT] = { 0 };
+uint8_t photo::gap_buf[PHOTO_TYPE::element_count][GAP_AVE_COUNT] = { 0 };
 signed int photo::right_ad, photo::left_ad, photo::front_right_ad,
 		photo::front_left_ad, photo::front_ad;
 signed int photo::right_ref, photo::left_ref, photo::front_right_ref,
@@ -770,33 +771,37 @@ void photo::set_ad(PHOTO_TYPE sensor_type, int16_t set_value) {
 	static const int16_t PHOTO_AVERAGE_TIME = 10;	//いくつの移動平均をとるか
 	static int16_t buf[element_count][PHOTO_AVERAGE_TIME] = { 0 };
 
-	int16_t sum = 0, ave_sum = 0;
+	int16_t sum = 0;
+	float ave_sum = 0;
 
 	for (uint8_t i = 0; (i + 1) < PHOTO_AVERAGE_TIME; i++) {
-		buf[sensor_type][i + 1] = buf[sensor_type][i];	//配列を1つずらす
-		sum += buf[sensor_type][i + 1];			//ついでに加算する
+		buf[sensor_type][i] = buf[sensor_type][i + 1];	//配列を1つずらす
+		sum += buf[sensor_type][i];			//ついでに加算する
 
-		if (i < GAP_AVE_COUNT) {		//配列の要素外にアクセスしないように
-			ave_buf[sensor_type][i + 1] = ave_buf[sensor_type][i];	//配列を1つずらす
-			diff_buf[sensor_type][i + 1] = diff_buf[sensor_type][i];//配列を1つずらす
-			ave_sum += ave_buf[sensor_type][i + 1];			//ついでに加算する
+		if ((i + 1) < GAP_AVE_COUNT) {		//配列の要素外にアクセスしないように
+			ave_buf[sensor_type][i] = ave_buf[sensor_type][i + 1];	//配列を1つずらす
+			diff_buf[sensor_type][i] = diff_buf[sensor_type][i + 1];//配列を1つずらす
+			gap_buf[sensor_type][i] = gap_buf[sensor_type][i + 1];	//配列を1つずらす
+			ave_sum += ave_buf[sensor_type][i];			//ついでに加算する
 		}
 	}
 
-	//配列の最初に入れる
-	buf[sensor_type][0] = set_value;	//count*[rad/count]/[sec]*[m]
+	//配列の最後に入れる
+	buf[sensor_type][(PHOTO_AVERAGE_TIME - 1)] = set_value;	//count*[rad/count]/[sec]*[m]
 	sum += set_value;
 
 	int16_t now_val = sum / PHOTO_AVERAGE_TIME; 	//見やすさのため名前を付ける
 
-	ave_buf[sensor_type][0] = now_val;
+	ave_buf[sensor_type][(GAP_AVE_COUNT - 1)] = now_val;
 	ave_sum += now_val;
 
 	//移動平均をとったセンサ値と、それのさらに平均をとったものとの差分を記録
 	//この値は平均を2回取るので、平均区間の真ん中あたりが強調される＝少し前の真値のようなものと考えることができる
 	//その差分なので、おおよそノイズの影響を除去した傾きが分かると信じてる
-	diff_buf[sensor_type][0] = static_cast<float>(ave_sum) / GAP_AVE_COUNT
+	diff_buf[sensor_type][(GAP_AVE_COUNT - 1)] = ave_sum / GAP_AVE_COUNT
 			- static_cast<float>(now_val);
+
+	gap_buf[sensor_type][(GAP_AVE_COUNT - 1)] = count_wall_gap(sensor_type);
 
 	switch (sensor_type) {
 	case right:
@@ -981,14 +986,19 @@ bool photo::check_wall(PHOTO_TYPE type) {
 
 }
 
-bool photo::check_wall_gap(PHOTO_TYPE type) {
-	//壁の切れ目ならtrue
-	uint8_t count = 0;	//負（センサ値が下がってる）の数を数える
+uint8_t photo::count_wall_gap(PHOTO_TYPE type) {
+	int8_t count = 0;	//負（センサ値が下がってる）の数を数える
 	for (uint8_t i = 0; i < GAP_AVE_COUNT; i++) {
 		if (diff_buf[type][i] < 0)
+			count--;
+		else
 			count++;
 	}
-	if (count < GAP_AVE_COUNT * 0.9)
+	return count;
+}
+bool photo::check_wall_gap(PHOTO_TYPE type) {
+	//壁の切れ目ならtrue
+	if (-count_wall_gap(type) < (GAP_AVE_COUNT * 0.9))
 		return false;
 
 	return true;
@@ -1004,8 +1014,8 @@ photo::~photo() {
 //XXX 各種ゲイン
 //control関連
 const PID gyro_gain = { 30, 150, 0 };
-const PID photo_gain = { 0.5, 0, 0 };
-const PID encoder_gain = { 500, 1500, 0 };
+const PID photo_gain = { 0.1, 0, 0 };
+const PID encoder_gain = { 500, 1700, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta;
 bool control::control_phase = false;
@@ -1058,7 +1068,7 @@ void control::cal_delta() {
 			photo_right_delta = delta;
 		}
 		//壁の切れ目では制御を切る
-		if(photo::check_wall_gap(right)){
+		if (photo::check_wall_gap(right)) {
 			photo_right_delta = 0;
 		}
 //		if (delta < 0)
@@ -1071,13 +1081,16 @@ void control::cal_delta() {
 		ideal = static_cast<float>(parameter::get_ideal_photo(left));
 		actual = static_cast<float>(photo::get_value(left));
 		delta = actual - ideal;		//理想値との差分
+
+		my7seg::turn_off();
 		//中央付近は制御しない
 		if (ABS(delta) > 30) {
 			photo_left_delta = delta;
 		}
 		//壁の切れ目では制御を切る
-		if(photo::check_wall_gap(left)){
+		if (photo::check_wall_gap(left)) {
 			photo_right_delta = 0;
+			my7seg::light(my7seg::left);
 		}
 		//	if (delta < 0)
 		//		photo_left_delta = 0;	//近づく方向には制御しない
@@ -1089,7 +1102,6 @@ void control::cal_delta() {
 		photo_right_delta = 0;
 
 	}
-
 
 	photo_delta.P = (photo_right_delta - photo_left_delta);
 	//photo_delta.I += (photo_delta.P * CONTORL_PERIOD);

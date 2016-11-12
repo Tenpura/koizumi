@@ -8,7 +8,7 @@
 #include"parameter.h"
 //ideal_photo[x][y]	xは0がハーフ,1がクラシック	yが光学センサの向きに対応。
 //right left front_right front_left,front
-const unsigned int parameter::ideal_photo[2][5] = { { 310, 270, 10000, 900, 0 },
+const unsigned int parameter::ideal_photo[2][5] = { { 310, 280, 0, 900, 0 },
 		{ 3250, 3200, 10815, 10100, 0 } };
 const int16_t parameter::min_wall_photo[2][5] = { { 70, 80, 0, 130, 230 }, //700 },
 		{ 20000, 2000, 0, 0, 0 } };
@@ -38,6 +38,7 @@ const INIT_SLALOM parameter::left_slalom[slalom_type_count][RUN_MODE_NUMBER] = {
 //速度、角度、加速角度、前距離、後ろ距離、角加速度、最高角速度
 const INIT_SLALOM parameter::right_slalom_half[slalom_type_count][RUN_MODE_NUMBER] =
 		{ { { 0 } },	//none
+//				{ { SEARCH_VELOCITY, 90, 30, 0.01, 0.01, 121.389, 11.275, 0 }, { 0 },
 				{ { SEARCH_VELOCITY, 90, 30, 0.01, 0, 92.939, 9.865, 0 }, { 0 },
 						{ 0 }, { 0 }, { 0 } }	//small
 		};

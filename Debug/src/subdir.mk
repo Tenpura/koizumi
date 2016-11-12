@@ -12,7 +12,6 @@ C_SRCS += \
 
 CPP_SRCS += \
 ../src/ad_convert.cpp \
-../src/c++_convert_c.cpp \
 ../src/hardware.cpp \
 ../src/main.cpp \
 ../src/map.cpp \
@@ -22,7 +21,6 @@ CPP_SRCS += \
 
 OBJS += \
 ./src/ad_convert.o \
-./src/c++_convert_c.o \
 ./src/hardware.o \
 ./src/init\ .o \
 ./src/main.o \
@@ -44,7 +42,6 @@ C_DEPS += \
 
 CPP_DEPS += \
 ./src/ad_convert.d \
-./src/c++_convert_c.d \
 ./src/hardware.d \
 ./src/main.d \
 ./src/map.d \

@@ -113,7 +113,7 @@ int main(void) {
 
 	mouse::set_direction(MUKI_UP);
 	//adachi::left_hand_method(GOAL_x, GOAL_y);
-	adachi::adachi_method_spin(GOAL_x, GOAL_y,false);
+	//adachi::adachi_method_spin(GOAL_x, GOAL_y,false);
 
 	my7seg::count_down(3, 500);
 	mouse::run_init(true, true);
@@ -121,16 +121,15 @@ int main(void) {
 	flog[0][0] = -1;
 	//control::stop_wall_control();
 
-	run::accel_run(0.045, SEARCH_VELOCITY, 0);
-	run::accel_run(0.09, SEARCH_VELOCITY, 0);
-	flog[0][0] = -1;
-	control::stop_wall_control();
-	run::accel_run(0.09*3, 0, 0);
+	//run::accel_run(0.045, SEARCH_VELOCITY, 0);
+	//run::accel_run(0.09, SEARCH_VELOCITY, 0);
+	//run::accel_run_wall_eage(0.09*5, SEARCH_VELOCITY, 0, 0.09*4);
+	run::accel_run(0.045*6, 0, 0);
 
-	run::spin_turn(180);
+	//run::spin_turn(180);
 	wait::ms(1000);
 	//run::accel_run(0.045, SEARCH_VELOCITY, 0);
-	//run::slalom(small, MUKI_LEFT, 0);
+	//run::slalom(small, MUKI_RIGHT, 0);
 	//run::accel_run(0.045, 0, 0);
 	my7seg::light(5);
 
@@ -184,7 +183,7 @@ void interrupt_timer() {
 			}
 		} else if (i < 10000) {
 			flog[0][i] = mouse::get_distance_m();
-			flog[1][i] = photo::get_value(left);
+			flog[1][i] = photo::get_value(right);
 			i++;
 			GPIO_ResetBits(GPIOA, GPIO_Pin_14);
 

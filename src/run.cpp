@@ -493,11 +493,14 @@ void mouse::look_wall(bool comb_ignore) {
 
 }
 
-void mouse::velify_wall(){
+void mouse::velify_wall() {
 	my7seg::turn_off();
-	if(photo::check_wall(front)) my7seg::light(my7seg::front);
-	if(photo::check_wall(right)) my7seg::light(my7seg::right);
-	if(photo::check_wall(left)) my7seg::light(my7seg::left);
+	if (photo::check_wall(front))
+		my7seg::light(my7seg::front);
+	if (photo::check_wall(right))
+		my7seg::light(my7seg::right);
+	if (photo::check_wall(left))
+		my7seg::light(my7seg::left);
 
 }
 
@@ -518,6 +521,10 @@ mouse::mouse() {
 mouse::~mouse() {
 
 }
+
+//XXX 壁キレの距離
+// right left front_right front_left front
+uint8_t run::WALL_EAGE_DISTANCE[PHOTO_TYPE::element_count] = { 0, 0, 0, 0, 0 };
 
 void run::accel_run(const float distance_m, const float end_velocity,
 		const unsigned char select_mode) {
@@ -579,8 +586,60 @@ void run::accel_run(const float distance_m, const float end_velocity,
 	mouse::set_distance_m(0);
 }
 
-void run::slalom(const SLALOM_TYPE slalom_type,
-		const signed char right_or_left, const unsigned char select_mode) {
+void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
+		const unsigned char select_mode, const float check_distance) {
+	static const uint8_t EAGE_CHECK_TIME = 10;		//GAPが何連続で出たら壁キレと判断するか
+
+	float target_distance = check_distance;
+	bool wall_eage_flag = true;
+	bool wall_eage_right = false, wall_eage_left = false;	//壁があるかないかフラグ
+	int8_t cnt[PHOTO_TYPE::element_count] = { 0 };	//WALL_GAPが反応した数
+
+	//チェック距離までは普通に走る
+	accel_run(distance_m - check_distance, end_velocity, select_mode);
+
+	while (mouse::get_distance_m() < target_distance) {
+		//フェイルセーフが掛かっていればそこで抜ける
+		if (mouse::get_fail_flag()) {
+			return;
+		}
+
+		if (wall_eage_flag) {
+			cnt[PHOTO_TYPE::right] = 0;
+			cnt[PHOTO_TYPE::left] = 0;
+			//WALL_GAPを検知したらカウントを増やしていく
+			for (int8_t i = 0; i < GAP_AVE_COUNT; i++) {
+				if (photo::gap_buf[PHOTO_TYPE::right][i] == GAP_AVE_COUNT)
+					cnt[PHOTO_TYPE::right]++;
+				else
+					cnt[PHOTO_TYPE::right]--;
+
+				if (photo::gap_buf[PHOTO_TYPE::left][i] == GAP_AVE_COUNT)
+					cnt[PHOTO_TYPE::left]++;
+				else
+					cnt[PHOTO_TYPE::left]--;
+
+			}
+			if (cnt[PHOTO_TYPE::right] == EAGE_CHECK_TIME) {	//壁が切れたら
+				target_distance = WALL_EAGE_DISTANCE[PHOTO_TYPE::right];//距離を更新
+				wall_eage_flag = false;
+			}
+
+			if (cnt[PHOTO_TYPE::left] == EAGE_CHECK_TIME) {	//壁が切れたら
+				target_distance = WALL_EAGE_DISTANCE[PHOTO_TYPE::left];	//距離を更新
+				wall_eage_flag = false;
+			}
+
+		}
+
+	}
+
+	mouse::set_distance_m(0);
+
+}
+
+void run::slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
+		const uint8_t select_mode) {
 	//スラロームのパラメーター取得
 	float distance = parameter::get_slalom(slalom_type, before_distance,
 			right_or_left, select_mode);
@@ -599,7 +658,7 @@ void run::slalom(const SLALOM_TYPE slalom_type,
 	bool wall_flag = control::get_wall_control_phase();
 
 	if (slalom_type == none) {
-		return ;
+		return;
 	}
 
 	gyro::reset_angle();
@@ -624,7 +683,7 @@ void run::slalom(const SLALOM_TYPE slalom_type,
 	while (ABS(gyro::get_angle()) < clothoid_angle_degree) {
 //フェイルセーフが掛かっていればそこで抜ける
 		if (mouse::get_fail_flag()) {
-			return ;
+			return;
 		}
 		//最大角速度に達したら終了
 		if (ABS(mouse::get_ideal_angular_velocity()) > ABS(max_angular)) {
@@ -644,7 +703,7 @@ void run::slalom(const SLALOM_TYPE slalom_type,
 			< (target_angle_degree - clothoid_angle_degree)) {
 //フェイルセーフが掛かっていればそこで抜ける
 		if (mouse::get_fail_flag()) {
-			return ;
+			return;
 		}
 
 		de_accel_angle = degree(
@@ -677,7 +736,7 @@ void run::slalom(const SLALOM_TYPE slalom_type,
 
 //フェイルセーフが掛かっていればそこで抜ける
 		if (mouse::get_fail_flag()) {
-			return ;
+			return;
 		}
 	}
 
@@ -696,7 +755,6 @@ void run::slalom(const SLALOM_TYPE slalom_type,
 	//mouse::slalom_flag = false;
 	//gyro::reset_angle();
 	control::reset_delta(sen_gyro);
-
 
 }
 
@@ -882,13 +940,13 @@ void adachi::run_next_action(ACTION_TYPE next_action) {
 
 	case turn_right:
 		//スラローム
-		run::slalom(small,MUKI_RIGHT,0);
+		run::slalom(small, MUKI_RIGHT, 0);
 		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
 		break;
 
 	case turn_left:
 		//スラローム
-		run::slalom(small,MUKI_LEFT,0);
+		run::slalom(small, MUKI_LEFT, 0);
 		direction_turn(&direction_x, &direction_y, MUKI_LEFT);	//向きを90°変える
 		break;
 
@@ -948,7 +1006,6 @@ void adachi::run_next_action_by_spin(ACTION_TYPE next_action) {
 		break;
 	}
 }
-
 
 void adachi::simulate_next_action(ACTION_TYPE next_action) {
 	switch (next_action) {
@@ -1196,7 +1253,6 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 
 	return false;
 }
-
 
 bool adachi::adachi_method_spin(unsigned char target_x, unsigned char target_y,
 		bool is_FULUKAWA) {

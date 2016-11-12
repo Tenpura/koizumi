@@ -195,9 +195,10 @@ public:
 #define GAP_AVE_COUNT 10	//壁の切れ目対策にいくつの平均をとるか
 class photo {
 private:
-
+public:
 	static int16_t ave_buf[element_count][GAP_AVE_COUNT];	//センサー値（平均取ったやつ）のバッファ　壁の切れ目チェックとかで使う
 	static float diff_buf[element_count][GAP_AVE_COUNT];	//今のセンサー値とave_bufの差　壁の切れ目チェックとかで使う
+	static uint8_t gap_buf[element_count][GAP_AVE_COUNT];		//count_wall_gapで数え上げた値を保存しておく
 
 	static signed int right_ad, left_ad, front_right_ad, front_left_ad,
 			front_ad;
@@ -230,6 +231,8 @@ public:
 	//TODO この関数はマウスclassにあるべきかも
 	static bool check_wall(unsigned char muki);
 	static bool check_wall(PHOTO_TYPE type);
+
+	static uint8_t count_wall_gap(PHOTO_TYPE);	//diff_gapに保存されてる値の正負を数え上げて返す。
 	static bool check_wall_gap(PHOTO_TYPE type);	//diff_gapに保存されてる値の正負を考え、9割以上が負（センサ値が下がってる）と、壁の切れ目だからtrue
 
 	~photo();

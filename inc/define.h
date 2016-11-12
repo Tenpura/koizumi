@@ -14,7 +14,7 @@
 
 //’²®€–Ú
 
-#define MAZE_SIZE	16
+#define MAZE_SIZE	32
 
 #define GOAL_x 1
 #define GOAL_y 0

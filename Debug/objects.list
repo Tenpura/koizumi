@@ -1,5 +1,4 @@
 "src/ad_convert.o"
-"src/c++_convert_c.o"
 "src/hardware.o"
 "src/init .o"
 "src/main.o"

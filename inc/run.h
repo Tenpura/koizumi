@@ -112,12 +112,15 @@ public:
 class run {
 private:
 	run();
+	static uint8_t WALL_EAGE_DISTANCE[PHOTO_TYPE::element_count];
 
 public:
 	static void accel_run(const float distance_m, const float end_velocity,
 			const unsigned char select_mode);
-	static void slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
-			const unsigned char select_mode);
+	static void accel_run_wall_eage(const float distance_m, const float end_velocity,
+			const unsigned char select_mode, const float check_distance);
+
+	static void slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,const uint8_t select_mode);
 	static void spin_turn(const float target_degree);
 	~run();
 
