@@ -8,6 +8,7 @@
 #ifndef USER_H_
 #define USER_H_
 
+#include "stm32f4xx.h"
 #include "extern_c.h"
 #include "define.h"
 #include "hardware.h"
@@ -53,22 +54,23 @@ public:
 
 };
 
-/*
+
 //mode選択クラス
 class mode {
 private:
+
 	mode();
 
 public:
-	//今はスイッチで切替、muki方向のセンサに反応させながらスイッチが決定
-	static unsigned char select_mode(const unsigned char mode_number, const unsigned char muki);//mode選択し、選んだモード番号を返す
+	//今はスイッチで切替、スイッチが決定
+	static uint8_t select_mode(const unsigned char mode_number, const PHOTO_TYPE type);//mode選択し、選んだモード番号を返す
 
 	static bool search_mode();		//探索モード
 	static bool shortest_mode();	//最短モード
 
 	~mode();
 };
-*/
+
 //logクラス	いつかはtemplateで任意の型に対応させたい…!
 
 //ログというよりバッファ。掲示板的

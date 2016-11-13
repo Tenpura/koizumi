@@ -1082,7 +1082,6 @@ void control::cal_delta() {
 		actual = static_cast<float>(photo::get_value(left));
 		delta = actual - ideal;		//—‘z’l‚Æ‚Ì·•ª
 
-		my7seg::turn_off();
 		//’†‰›•t‹ß‚Í§Œä‚µ‚È‚¢
 		if (ABS(delta) > 30) {
 			photo_left_delta = delta;
@@ -1090,7 +1089,6 @@ void control::cal_delta() {
 		//•Ç‚ÌØ‚ê–Ú‚Å‚Í§Œä‚ğØ‚é
 		if (photo::check_wall_gap(left)) {
 			photo_right_delta = 0;
-			my7seg::light(my7seg::left);
 		}
 		//	if (delta < 0)
 		//		photo_left_delta = 0;	//‹ß‚Ã‚­•ûŒü‚É‚Í§Œä‚µ‚È‚¢

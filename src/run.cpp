@@ -589,11 +589,11 @@ void run::accel_run(const float distance_m, const float end_velocity,
 
 void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 		const unsigned char select_mode, const float check_distance) {
-	static const uint8_t EAGE_CHECK_TIME = 10;		//GAPが何連続で出たら壁キレと判断するか
 
 	float target_distance = check_distance;
 	bool wall_eage_flag = true;
 	int16_t wall_eage[PHOTO_TYPE::element_count];	//この値を下回ったら壁キレ
+	bool right_flag = false, left_flag = false;		//壁キレを待つ前に、そもそも壁があるのか判断するフラグ
 
 	//min_wallとideal_wallの平均が壁キレ
 	wall_eage[PHOTO_TYPE::right] = (parameter::get_min_wall_photo(
@@ -606,6 +606,12 @@ void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 	//チェック距離までは普通に走る
 	accel_run(distance_m - check_distance, end_velocity, select_mode);
 
+	//壁キレを待つ前にそもそも壁キレが起こるのかを判断
+	if (photo::get_value(PHOTO_TYPE::left) < wall_eage[PHOTO_TYPE::left])
+		left_flag = true;
+	if (photo::get_value(PHOTO_TYPE::right) < wall_eage[PHOTO_TYPE::right])
+		right_flag = true;
+
 	while (mouse::get_distance_m() < target_distance) {
 		//フェイルセーフが掛かっていればそこで抜ける
 		if (mouse::get_fail_flag()) {
@@ -614,7 +620,7 @@ void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 
 		if (wall_eage_flag) {
 			//センサー値の大きさで壁キレを判断するので壁のある時だけを考える
-			if (photo::check_wall(PHOTO_TYPE::left)) {
+			if (photo::check_wall(PHOTO_TYPE::left) && left_flag) {
 				if (photo::get_value(PHOTO_TYPE::left)
 						< wall_eage[PHOTO_TYPE::left]) {
 					target_distance = WALL_EAGE_DISTANCE[PHOTO_TYPE::left];
@@ -623,7 +629,7 @@ void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 				}
 			}
 			//センサー値の大きさで壁キレを判断するので壁のある時だけを考える
-			if (photo::check_wall(PHOTO_TYPE::right)) {
+			if (photo::check_wall(PHOTO_TYPE::right) && right_flag) {
 				if (photo::get_value(PHOTO_TYPE::right)
 						< wall_eage[PHOTO_TYPE::right]) {
 					target_distance = WALL_EAGE_DISTANCE[PHOTO_TYPE::right];
