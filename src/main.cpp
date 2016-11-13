@@ -79,8 +79,6 @@ int main(void) {
 	mpu6000::init_mpu6000();
 
 	while (1) {
-		myprintf("right %f  ", run::WALL_EAGE_DISTANCE[PHOTO_TYPE::right]);
-		myprintf("left %f  ", run::WALL_EAGE_DISTANCE[PHOTO_TYPE::left]);
 		myprintf("right %d  ", photo::get_value(right));
 		myprintf("left %d  ", photo::get_value(left));
 		myprintf("f_r %d  ", photo::get_value(front_right));
@@ -105,6 +103,8 @@ int main(void) {
 //	}
 
 	my7seg::turn_off();
+
+
 
 	map::reset_wall();
 	map::output_map_data(&mouse::now_map);

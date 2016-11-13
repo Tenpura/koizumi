@@ -504,6 +504,50 @@ void mouse::velify_wall() {
 
 }
 
+void mouse::turn_direction(const unsigned char right_or_left) {
+	//マウスの向きを90°回転
+
+	if (right_or_left == MUKI_RIGHT) {
+		switch (mouse_direction) {
+		case MUKI_UP:
+			mouse_direction = MUKI_RIGHT;
+			break;
+
+		case MUKI_DOWN:
+			mouse_direction = MUKI_LEFT;
+			break;
+
+		case MUKI_RIGHT:
+			mouse_direction = MUKI_DOWN;
+			break;
+
+		case MUKI_LEFT:
+			mouse_direction = MUKI_UP;
+			break;
+		}
+
+	} else {
+		switch (mouse_direction) {
+		case MUKI_UP:
+			mouse_direction = MUKI_LEFT;
+			break;
+
+		case MUKI_DOWN:
+			mouse_direction = MUKI_RIGHT;
+			break;
+
+		case MUKI_RIGHT:
+			mouse_direction = MUKI_UP;
+			break;
+
+		case MUKI_LEFT:
+			mouse_direction = MUKI_DOWN;
+			break;
+		}
+	}
+}
+
+
 void mouse::error() {
 	//TODO エラー処理は必要に応じて書くこと
 	while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
