@@ -102,6 +102,10 @@ typedef union {
 	} element;
 } DIRECTION;				//Ÿ‚És‚­ƒ}ƒX‚Ì•ûŒü‚ğ•Û‘¶
 
+enum BOOL {
+	FALSE=0, TRUE=1
+};
+
 //PATH
 typedef union {
 	uint16_t all;					//ˆêŠ‡‚ÅŒ©‚é

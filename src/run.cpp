@@ -698,7 +698,7 @@ void run::fit_run(const unsigned char select_mode) {
 	while (mouse::get_ideal_velocity() > 0) {		//速度がなくなるまで原則
 	}
 	mouse::set_acceleration(0);
-	mouse::set_ideal_velocity (0);
+	mouse::set_ideal_velocity(0);
 
 	bool wall_flag = control::get_wall_control_phase();
 	control::stop_wall_control();
@@ -938,6 +938,113 @@ void run::spin_turn(const float target_degree) {
 //もともと壁制御かかってたなら復活させる
 	if (wall_flag)
 		control::start_wall_control();
+}
+
+void run::path(const float finish_velocity, const unsigned char run_mode) {
+	float next_velocity = 0;
+	bool naname_flag = false;
+	SLALOM_TYPE slalom_type;
+	unsigned char slalom_muki;
+
+	mouse::run_init(true, true);
+
+	my7seg::count_down(3, 500);
+
+	for (uint16_t path_count = 0; path::get_path_flag(path_count);
+			path_count++) {
+
+		//配列外にでるなら
+		if (path_count >= PATH_MAX) {
+			break;
+		}
+
+		if (mouse::get_fail_flag()) {		//フェイルセーフが掛かっていたら終了
+			break;
+		}
+
+		mouse::set_distance_m(0);
+
+//直線の処理
+		if (path::get_path_straight(path_count) == 0) {			//直線がない場合
+			//既に終わってた場合
+			if ((path::get_path_flag(path_count)) == false) {
+				next_velocity = finish_velocity;
+				//例外処理なので最後の直線を走って終わり
+				run::accel_run(0.045 * MOUSE_MODE, next_velocity, run_mode);
+				break;
+
+			}
+		} else {
+			//次のパスで終了する場合
+			if ((path::get_path_flag(path_count + 1)) == false) {
+				if (path::get_path_turn_type(path_count) == none) {	//この直線で最後
+					next_velocity = finish_velocity;
+					//例外処理なので最後の直線を走って終わり
+					run::accel_run(path::get_path_straight(path_count),
+							next_velocity, run_mode);
+					break;
+
+				} else {
+					//次のターン速度に合わせる
+					next_velocity = parameter::get_slalom(
+							path::get_path_turn_type(path_count), velocity,
+							path::get_path_turn_muki(path_count), run_mode);
+
+				}
+
+			} else {
+				//次のターン速度に合わせる
+				next_velocity = parameter::get_slalom(
+						path::get_path_turn_type(path_count), velocity,
+						path::get_path_turn_muki(path_count), run_mode);
+			}
+
+			if (naname_flag) {	//ナナメ走行中
+				run::accel_run(path::get_path_straight(path_count),
+						next_velocity, run_mode);
+
+			} else {				//普通の直進
+				control::start_wall_control();
+				run::accel_run_wall_eage(path::get_path_straight(path_count),
+						next_velocity, run_mode, 0.045 * MOUSE_MODE);
+			}
+
+		}
+
+		if (mouse::get_fail_flag()) {		//フェイルセーフが掛かっていたら終了
+			break;
+		}
+
+		my7seg::light(2);
+
+//ターンの処理
+		slalom_type = path::get_path_turn_type(path_count);
+		slalom_muki = path::get_path_turn_muki(path_count);
+
+		run::slalom(slalom_type, slalom_muki, run_mode);
+
+		//FIXME
+		/*
+		 switch (path::get_path_turn_type(path_count)) {
+		 //ナナメに入るなら
+		 case begin_45:
+		 case begin_135:
+		 naname_flag = true;
+		 break;
+		 //ナナメから出るなら
+		 case end_45:
+		 case end_135:
+		 naname_flag = false;
+		 break;
+		 default:
+		 break;
+		 }
+		 */
+	}
+
+	wait::ms(100);
+	motor::sleep_motor();
+
 }
 
 run::run() {
