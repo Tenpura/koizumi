@@ -59,103 +59,117 @@ int main(void) {
 		}
 	}
 
-	/*
-	 while(1){
-	 if(photo::check_wall(right)) GPIO_ResetBits(GPIOH, GPIO_Pin_1);	//Pinを1に
-	 else GPIO_SetBits(GPIOH, GPIO_Pin_1);	//Pinを1に
-
-	 if(photo::check_wall(front)) GPIO_ResetBits(GPIOC, GPIO_Pin_2);	//Pinを1に
-	 else GPIO_SetBits(GPIOC, GPIO_Pin_2);	//Pinを1に
-
-	 if(photo::check_wall(left)) GPIO_ResetBits(GPIOC, GPIO_Pin_15);	//Pinを1に
-	 else GPIO_SetBits(GPIOC, GPIO_Pin_15);	//Pinを1に
-
-	 wait::ms(10);
-
-
-
-	 }
-	 */
 	mpu6000::init_mpu6000();
 
+	my7seg::turn_off();
+
+	//マップをリセットする
+	map::reset_wall();
+	map::output_map_data(&mouse::now_map);
+
+	uint8_t select = 0;	//モード管理用
 	while (1) {
-		myprintf("right %d  ", photo::get_value(right));
-		myprintf("left %d  ", photo::get_value(left));
-		myprintf("f_r %d  ", photo::get_value(front_right));
-		myprintf("f_l %d  ", photo::get_value(front_left));
-		myprintf("front %d  ", photo::get_value(front));
-		myprintf("\n\r");
-
-
+		//チャタリング対策
+		while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0)
+			;
 		wait::ms(100);
 
-		if (photo::get_value(front)
-				> (parameter::get_min_wall_photo(front) * 1.5)) {
+		if (get_battery() < 4) {
+			while (1) {
+
+				my7seg::light_error();
+				wait::ms(500);
+
+				my7seg::turn_off();
+				wait::ms(500);
+
+				if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0) {
+					wait::ms(100);
+					break;
+				}
+
+			}
+		}
+		//チャタリング対策
+		while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0)
+			;
+		wait::ms(100);
+
+		select = mode::select_mode(6, PHOTO_TYPE::right);
+
+		switch (select) {
+		case 0:		//壁の値を読むだけ	事故防止のためにモード0は実害ない奴にしとく
+			while (1) {
+				myprintf("right %d  ", photo::get_value(right));
+				myprintf("left %d  ", photo::get_value(left));
+				myprintf("f_r %d  ", photo::get_value(front_right));
+				myprintf("f_l %d  ", photo::get_value(front_left));
+				myprintf("front %d  ", photo::get_value(front));
+				myprintf("\n\r");
+
+				wait::ms(100);
+				if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0) {
+					wait::ms(100);
+					break;
+				}
+			}
 			break;
+
+		case 1:		//探索
+			mode::search_mode();
+			break;
+
+		case 2:		//最短
+		//	mode::shortest_mode();
+			break;
+
+		case 3:		//データ消去
+			//マップをリセットする
+			map::reset_wall();
+			map::output_map_data(&mouse::now_map);
+			break;
+
+		case 4:		//調整用
+			my7seg::count_down(3, 500);
+			mouse::run_init(true, true);
+			flog[0][0] = -1;
+
+			//control::stop_wall_control();
+
+			//run::accel_run(0.09 * 4, 0, 0);
+			//	run::accel_run_wall_eage(0.09*5, SEARCH_VELOCITY, 0, 0.09*4.5);
+			//	run::accel_run(0.045, 0, 0);
+
+			//run::spin_turn(180);
+			my7seg::turn_off();
+			wait::ms(1000);
+			run::accel_run(0.045 + 0.09 * 2, SEARCH_VELOCITY, 0);
+			my7seg::light(8);
+			run::slalom(small, MUKI_RIGHT, 0);
+			run::accel_run(0.045, 0, 0);
+			my7seg::light(5);
+
+			wait::ms(1000);
+
+			motor::sleep_motor();
+			my7seg::turn_off();
+
+			while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
+			}
+			//map::draw_map(false);
+
+			for (int i = 0; i < 2000; i++) {
+				myprintf("%f,%f\n\r", flog[0][i], flog[1][i]);
+			}
+			break;
+
+		case 5:
+			map::draw_map(false);
+			break;
+
 		}
 
 	}
-
-	my7seg::count_down(3, 1000);
-
-//	while(photo::get_value(front)<(parameter::get_min_wall_photo(front)*1.5)){
-//		my7seg::blink(8,100,1);
-//	}
-
-	my7seg::turn_off();
-
-
-
-	map::reset_wall();
-	map::output_map_data(&mouse::now_map);
-	map::input_map_data(&mouse::now_map);
-
-	mouse::set_position(0, 0);
-	mouse::set_direction(MUKI_UP);
-
-	mouse::set_direction(MUKI_UP);
-	//adachi::left_hand_method(GOAL_x, GOAL_y);
-	//adachi::adachi_method_spin(GOAL_x, GOAL_y,false);
-
-	my7seg::count_down(3, 500);
-	mouse::run_init(true, true);
-
-	flog[0][0] = -1;
-	//control::stop_wall_control();
-
-	//run::accel_run(0.045, SEARCH_VELOCITY, 0);
-	//run::accel_run(0.09, SEARCH_VELOCITY, 0);
-	run::accel_run_wall_eage(0.09*5, SEARCH_VELOCITY, 0, 0.09*4.5);
-	run::accel_run(0.045, 0, 0);
-
-	//run::spin_turn(180);
-	wait::ms(1000);
-	//run::accel_run(0.045, SEARCH_VELOCITY, 0);
-	//run::slalom(small, MUKI_RIGHT, 0);
-	//run::accel_run(0.045, 0, 0);
-	my7seg::light(5);
-
-	wait::ms(1000);
-
-	motor::sleep_motor();
-	my7seg::turn_off();
-
-	while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
-	}
-	//map::draw_map(false);
-
-	for (int i = 0; i < 2000; i++) {
-		myprintf("%f,%f\n\r", flog[0][i], flog[1][i]);
-	}
-
-	/*
-	 while (1) {
-	 //myprintf("gyro -> 0x%x\n\r", mpu6000::get_mpu6000_value(sen_gyro, axis_z));
-	 myprintf("%f \n\r",encoder::get_velocity());
-	 //TIM2が左で前転カウントアップ、TIM3が右で前転カウントダウン
-	 wait::ms(100);
-	 }
-	 */
 	return 1;
 }
 
@@ -164,6 +178,7 @@ void interrupt_timer() {
 
 	wait_counter++;	//ms(ミリ秒)のカウントを1増加
 	mouse::add_one_count_ms();
+	wait::set_count(wait_counter);
 
 	photo::interrupt(true);
 	gyro::interrupt();
@@ -185,7 +200,7 @@ void interrupt_timer() {
 			}
 		} else if (i < 10000) {
 			flog[0][i] = mouse::get_distance_m();
-			flog[1][i] = photo::get_value(right);
+			flog[1][i] = static_cast<float>(photo::get_value(PHOTO_TYPE::left));//mouse::get_distance_m();			//photo::get_value(right);
 			i++;
 			GPIO_ResetBits(GPIOA, GPIO_Pin_14);
 

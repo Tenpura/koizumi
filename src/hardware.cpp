@@ -968,7 +968,7 @@ bool photo::check_wall(unsigned char muki) {
 
 	case MUKI_UP:
 		//TODO 暇があったら、前壁見るのは斜めセンサいらない？？
-		if (photo::get_value(front) >= parameter::get_min_wall_photo(front)) {
+		if (photo::get_value(PHOTO_TYPE::front) >= parameter::get_min_wall_photo(PHOTO_TYPE::front)) {
 			//if ((front_right_ad >= parameter::get_min_wall_photo(front_right))
 			//		|| (front_left_ad >= parameter::get_min_wall_photo(front_left))) {
 			return true;
@@ -1042,6 +1042,7 @@ float control::cross_delta_gain(SEN_TYPE sensor) {
 	return 0;
 }
 
+//XXX 偏差を計算してる場所
 void control::cal_delta() {
 	float before_p_delta;
 	float photo_right_delta = 0, photo_left_delta = 0;

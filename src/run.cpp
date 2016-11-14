@@ -547,7 +547,6 @@ void mouse::turn_direction(const unsigned char right_or_left) {
 	}
 }
 
-
 void mouse::error() {
 	//TODO エラー処理は必要に応じて書くこと
 	while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
@@ -688,6 +687,72 @@ void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 
 	mouse::set_distance_m(0);
 
+}
+
+void run::fit_run(const unsigned char select_mode) {
+
+	float de_accel_value = ABS(parameter::get_run_de_acceleration(select_mode));
+
+	//減速
+	mouse::set_acceleration(-de_accel_value);
+	while (mouse::get_ideal_velocity() > 0) {		//速度がなくなるまで原則
+	}
+	mouse::set_acceleration(0);
+	mouse::set_ideal_velocity (0);
+
+	bool wall_flag = control::get_wall_control_phase();
+	control::stop_wall_control();
+
+	float diff_front = 0, diff_front_left = 0;
+	uint32_t time_count = wait::get_count();
+	uint16_t loop_count = 0;
+
+	//ゲイン
+	static const PID gain_vel = { 0.2, 0.05, 0 }, gain_ang = { 0, 0, 0 };
+	PID diff_vel = { 0 };	//距離の偏差
+	PID diff_ang = { 0 };	//角度の偏差
+
+	while (1) {
+		//割り込みに組み込むの面倒だから、各ループ1ms待つことで疑似的に制御周期で動かす
+		while (time_count == wait::get_count())
+			;		//1ms経つまで待つ
+		time_count = wait::get_count();			//更新
+		loop_count++;
+
+		//規格化してみた
+		//frontの値だけのほうがブレがなくて信用できる
+		diff_front = 1
+				- static_cast<float>(photo::get_value(PHOTO_TYPE::front))
+						/ parameter::get_ideal_photo(PHOTO_TYPE::front);
+
+		//	diff_front_left = 1
+		//		- static_cast<float>(photo::get_value(PHOTO_TYPE::front_left))
+		//					/ parameter::get_ideal_photo(PHOTO_TYPE::front_left);
+
+		//偏差計算
+		diff_vel.P = (diff_front + diff_front_left);
+		diff_vel.I += diff_vel.P * 0.001;		//各ループ1msなので
+		diff_ang.P = (-diff_front + diff_front_left);
+		diff_ang.I += diff_ang.P * 0.001;		//各ループ1msなので
+
+		mouse::set_ideal_velocity(
+				diff_vel.P * gain_vel.P + diff_vel.I * gain_vel.I);
+
+		//		mouse::set_ideal_angular_velocity(diff_ang.P * gain_ang.P + diff_ang.I * gain_ang.I );
+
+		if (ABS(diff_vel.P) < 0.01)
+			break;
+		if (loop_count == 1000)
+			break;
+
+	}
+	mouse::set_acceleration(0);
+	mouse::set_ideal_velocity(0);
+	mouse::set_distance_m(0);
+
+	//元々壁制御かかってたなら復活
+	if (wall_flag)
+		control::start_wall_control();
 }
 
 void run::slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
@@ -954,7 +1019,7 @@ bool adachi::check_move_by_step(unsigned char target_x, unsigned char target_y,
 
 	if (step::get_step((target_x + muki_x), (target_y + muki_y))
 			< step::get_step(target_x, target_y)) {			//歩数の小さいほうへ
-		if ((map::get_wall(target_x, target_y, muki) == false)) {	//壁がないなら
+		if ((map::get_wall(target_x, target_y, muki) == false)) {		//壁がないなら
 			return true;
 		}
 	}
@@ -1005,17 +1070,22 @@ void adachi::run_next_action(ACTION_TYPE next_action) {
 
 	case back:
 		//半区間進んで180°ターンして半区間直進
-		run::accel_run((0.045 * MOUSE_MODE), 0, 0);			//半区間直進
+		//前壁があれば前壁制御
+		if (photo::check_wall(PHOTO_TYPE::front)) {
+			run::fit_run(0);
+		} else {
+			run::accel_run((0.045 * MOUSE_MODE), 0, 0);			//半区間直進
+		}
 		run::spin_turn(180);
 		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
 		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
-		run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);		//半区間直進
+		run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);	//半区間直進
 		break;
 
 	case stop:
 		//半区間進んでストップ
 		run::accel_run((0.045 * MOUSE_MODE), 0, 0);			//半区間直進
-		//TODO ここでモーターの電源切るべき？
+		motor::sleep_motor();
 		break;
 	}
 }
@@ -1049,13 +1119,13 @@ void adachi::run_next_action_by_spin(ACTION_TYPE next_action) {
 		run::spin_turn(180);
 		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
 		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
-		run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);		//半区間直進
+		run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);	//半区間直進
 		break;
 
 	case stop:
 		//半区間進んでストップ
 		run::accel_run((0.045 * MOUSE_MODE), 0, 0);			//半区間直進
-		//TODO ここでモーターの電源切るべき？
+		motor::sleep_motor();
 		break;
 	}
 }
@@ -1219,7 +1289,7 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 				priority_direction.element.right = 1;
 			} else if (target_unknown_count > max_unknown_count) {
 				max_unknown_count = target_unknown_count;
-				priority_direction.all = 0;				//他の方向はいらないのでリセット
+				priority_direction.all = 0;			//他の方向はいらないのでリセット
 				priority_direction.element.right = 1;
 			}
 
@@ -1233,7 +1303,7 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 				priority_direction.element.left = 1;
 			} else if (target_unknown_count > max_unknown_count) {
 				max_unknown_count = target_unknown_count;
-				priority_direction.all = 0;				//他の方向はいらないのでリセット
+				priority_direction.all = 0;			//他の方向はいらないのでリセット
 				priority_direction.element.left = 1;
 			}
 
@@ -1246,7 +1316,7 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 				priority_direction.element.up = 1;
 			} else if (target_unknown_count > max_unknown_count) {
 				max_unknown_count = target_unknown_count;
-				priority_direction.all = 0;				//他の方向はいらないのでリセット
+				priority_direction.all = 0;			//他の方向はいらないのでリセット
 				priority_direction.element.up = 1;
 			}
 
@@ -1259,7 +1329,7 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 				priority_direction.element.down = 1;
 			} else if (target_unknown_count > max_unknown_count) {
 				max_unknown_count = target_unknown_count;
-				priority_direction.all = 0;				//他の方向はいらないのでリセット
+				priority_direction.all = 0;			//他の方向はいらないのでリセット
 				priority_direction.element.down = 1;
 			}
 
@@ -1375,7 +1445,7 @@ bool adachi::adachi_method_spin(unsigned char target_x, unsigned char target_y,
 				priority_direction.element.right = 1;
 			} else if (target_unknown_count > max_unknown_count) {
 				max_unknown_count = target_unknown_count;
-				priority_direction.all = 0;				//他の方向はいらないのでリセット
+				priority_direction.all = 0;			//他の方向はいらないのでリセット
 				priority_direction.element.right = 1;
 			}
 
@@ -1389,7 +1459,7 @@ bool adachi::adachi_method_spin(unsigned char target_x, unsigned char target_y,
 				priority_direction.element.left = 1;
 			} else if (target_unknown_count > max_unknown_count) {
 				max_unknown_count = target_unknown_count;
-				priority_direction.all = 0;				//他の方向はいらないのでリセット
+				priority_direction.all = 0;			//他の方向はいらないのでリセット
 				priority_direction.element.left = 1;
 			}
 
@@ -1402,7 +1472,7 @@ bool adachi::adachi_method_spin(unsigned char target_x, unsigned char target_y,
 				priority_direction.element.up = 1;
 			} else if (target_unknown_count > max_unknown_count) {
 				max_unknown_count = target_unknown_count;
-				priority_direction.all = 0;				//他の方向はいらないのでリセット
+				priority_direction.all = 0;			//他の方向はいらないのでリセット
 				priority_direction.element.up = 1;
 			}
 
@@ -1415,7 +1485,7 @@ bool adachi::adachi_method_spin(unsigned char target_x, unsigned char target_y,
 				priority_direction.element.down = 1;
 			} else if (target_unknown_count > max_unknown_count) {
 				max_unknown_count = target_unknown_count;
-				priority_direction.all = 0;				//他の方向はいらないのでリセット
+				priority_direction.all = 0;			//他の方向はいらないのでリセット
 				priority_direction.element.down = 1;
 			}
 

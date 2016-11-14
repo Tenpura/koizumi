@@ -69,7 +69,7 @@ uint8_t mode::select_mode(const unsigned char mode_number,
 
 	}
 
-	my7seg::blink(select, 500, 5);		//決定したときは選択したモードを強調
+	my7seg::blink(select, 250, 5);		//決定したときは選択したモードを強調
 
 	return select;
 }
@@ -77,7 +77,15 @@ uint8_t mode::select_mode(const unsigned char mode_number,
 bool mode::search_mode() {
 	signed char direction_x, direction_y;
 
-	switch (select_mode(7, PHOTO_TYPE::right)) {
+	uint8_t select = select_mode(7, PHOTO_TYPE::right);
+
+	while (select != 0) {
+		my7seg::blink(8, 500, 1);
+		if (photo::check_wall(PHOTO_TYPE::front))
+			break;
+	}
+
+	switch (select) {
 	case 0:		//0はメニューに戻る
 		break;
 
@@ -153,7 +161,6 @@ bool mode::search_mode() {
 
 			adachi::adachi_method(0, 0, true);
 		}
-		break;
 		break;
 
 	}
