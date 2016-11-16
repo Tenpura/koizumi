@@ -567,8 +567,8 @@ mouse::~mouse() {
 
 //XXX 壁キレの距離[m]
 // right left front_right front_left front
-float run::WALL_EAGE_DISTANCE[PHOTO_TYPE::element_count] =
-		{ 0.04, 0.035, 0, 0, 0 };
+float run::WALL_EAGE_DISTANCE[PHOTO_TYPE::element_count] = { 0.04, 0.035, 0, 0,
+		0 };
 
 void run::accel_run(const float distance_m, const float end_velocity,
 		const unsigned char select_mode) {
@@ -921,6 +921,141 @@ void run::slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
 
 }
 
+void run::slalom_for_search(const SLALOM_TYPE slalom_type, const signed char right_or_left,
+		const uint8_t select_mode) {
+//スラロームのパラメーター取得
+	float distance = parameter::get_slalom(slalom_type, before_distance,
+			right_or_left, select_mode);
+	float slalom_velocity = parameter::get_slalom(slalom_type, velocity,
+			right_or_left, select_mode);
+	float angular_acceleration = parameter::get_slalom(slalom_type,
+			angular_accel, right_or_left, select_mode);
+	float target_angle_degree = parameter::get_slalom(slalom_type, target_angle,
+			right_or_left, select_mode);
+	float clothoid_angle_degree = parameter::get_slalom(slalom_type,
+			clothoid_angle, right_or_left, select_mode);
+	float max_angular = parameter::get_slalom(slalom_type, max_angular_velocity,
+			right_or_left, select_mode);
+	float de_accel_angle = 0;
+
+	static float slalom_front_wall = (parameter::get_ideal_photo(front)
+			- parameter::get_min_wall_photo(front)) / 2;//スラローム時にこの値より前壁の値が大きければ前距離を無視する。
+
+	bool wall_flag = control::get_wall_control_phase();
+
+	if (slalom_type == none) {
+		return;
+	}
+
+	gyro::reset_angle();
+	control::reset_delta(sen_gyro);
+
+	if (photo::get_value(front) >= parameter::get_ideal_photo(front)) {	//前壁に近づきすぎてる場合はその場で超信地
+		run::fit_run(select_mode);
+		if (right_or_left == MUKI_RIGHT)
+			run::spin_turn(90);
+		else
+			run::spin_turn(270);
+		accel_run(0.045 * MOUSE_MODE, slalom_velocity, select_mode);
+		return;
+	} else if (photo::get_value(front) > slalom_front_wall) {//前壁が近い場合は前距離無視する
+		mouse::set_distance_m(0);
+	} else {
+//前距離の分走る
+		mouse::set_distance_m(0);
+		accel_run(distance, slalom_velocity, select_mode);
+	}
+
+//mouse::slalom_flag = true;
+	control::stop_wall_control();
+
+//時計回りが正
+	if (right_or_left == MUKI_LEFT) {
+		angular_acceleration = -ABS(angular_acceleration);
+		max_angular = -ABS(max_angular);
+	}
+	mouse::set_ideal_angular_velocity(0);
+
+//角加速区間
+	mouse::set_angular_acceleration(angular_acceleration);
+	while (ABS(gyro::get_angle()) < clothoid_angle_degree) {
+//フェイルセーフが掛かっていればそこで抜ける
+		if (mouse::get_fail_flag()) {
+			return;
+		}
+		//最大角速度に達したら終了
+		if (ABS(mouse::get_ideal_angular_velocity()) > ABS(max_angular)) {
+			mouse::set_ideal_angular_velocity(max_angular);
+			break;
+		}
+	}
+
+//減速時にも同様の角度がずれると予想されるから
+//追従遅れで生じた加速区間の角度の理想と現実の差を記録しておく
+	float def_angle = (clothoid_angle_degree - ABS(degree(gyro::get_angle())));
+
+//等角速度
+	mouse::set_angular_acceleration(0);
+
+	while (ABS(gyro::get_angle())
+			< (target_angle_degree - clothoid_angle_degree)) {
+//フェイルセーフが掛かっていればそこで抜ける
+		if (mouse::get_fail_flag()) {
+			return;
+		}
+
+		de_accel_angle = degree(
+		//(gyro::get_angular_velocity() * gyro::get_angular_velocity())
+				(mouse::get_ideal_angular_velocity()
+						* mouse::get_ideal_angular_velocity())
+						/ (2 * angular_acceleration));
+
+//減速に必要な角度が残ってなければ抜ける
+		//追従遅れのために減速には余分な角度が必要なはず
+		if ((ABS(de_accel_angle) + def_angle)
+				>= (target_angle_degree - ABS(mouse::get_angle_degree()))) {
+			break;
+		}
+
+	}
+
+//角減速区間
+	mouse::set_angular_acceleration(-angular_acceleration);
+	while (ABS(gyro::get_angle()) < target_angle_degree) {
+		if (ABS(mouse::get_ideal_angular_velocity()) < 0.2) {
+			mouse::set_angular_acceleration(0);
+			if (right_or_left == MUKI_RIGHT) {
+				mouse::set_ideal_angular_velocity(0.2);
+			} else {
+				mouse::set_ideal_angular_velocity(-0.2);
+			}
+			break;
+		}
+
+//フェイルセーフが掛かっていればそこで抜ける
+		if (mouse::get_fail_flag()) {
+			return;
+		}
+	}
+
+	mouse::set_angular_acceleration(0);
+	mouse::set_ideal_angular_velocity(0);
+
+//後ろ距離分走る
+	if (wall_flag)
+		control::start_wall_control();	//もともと壁制御がかかってたら復活させる
+
+	mouse::set_distance_m(0);
+	distance = parameter::get_slalom((slalom_type), after_distance,
+			right_or_left, select_mode);
+	accel_run(distance, slalom_velocity, select_mode);
+
+//mouse::slalom_flag = false;
+//gyro::reset_angle();
+	control::reset_delta(sen_gyro);
+
+}
+
 void run::spin_turn(const float target_degree) {
 	const static float max_angular_velocity = 2.0;	//rad/s
 	float angular_acceleration = 2.0;				//rad/s^2
@@ -1002,7 +1137,7 @@ void run::path(const float finish_velocity, const unsigned char run_mode) {
 	SLALOM_TYPE slalom_type;
 	unsigned char slalom_muki;
 
-	while (select != 0) {
+	while (1) {
 		my7seg::blink(8, 500, 1);
 		if (photo::check_wall(PHOTO_TYPE::front))
 			break;
@@ -1067,8 +1202,13 @@ void run::path(const float finish_velocity, const unsigned char run_mode) {
 
 			} else {				//普通の直進
 				control::start_wall_control();
-				run::accel_run_wall_eage(path::get_path_straight(path_count),
-						next_velocity, run_mode, 0.045 * MOUSE_MODE);
+				if (path_count == 0)		//最初の直進の場合は壁キレ読めない気がするので普通に走る
+					run::accel_run(path::get_path_straight(path_count),
+							next_velocity, run_mode);
+				else
+					run::accel_run_wall_eage(
+							path::get_path_straight(path_count), next_velocity,
+							run_mode, 0.045 * MOUSE_MODE);
 			}
 
 		}
@@ -1076,8 +1216,6 @@ void run::path(const float finish_velocity, const unsigned char run_mode) {
 		if (mouse::get_fail_flag()) {		//フェイルセーフが掛かっていたら終了
 			break;
 		}
-
-		my7seg::light(2);
 
 //ターンの処理
 		slalom_type = path::get_path_turn_type(path_count);
@@ -1224,7 +1362,8 @@ void adachi::run_next_action(ACTION_TYPE next_action, bool slalom) {
 	case go_straight:
 		//1区間直進
 		//run::accel_run((0.09 * MOUSE_MODE), SEARCH_VELOCITY, 0);
-		run::accel_run_wall_eage((0.09 * MOUSE_MODE), SEARCH_VELOCITY, 0,(0.09 * MOUSE_MODE));
+		run::accel_run_wall_eage((0.09 * MOUSE_MODE), SEARCH_VELOCITY, 0,
+				(0.09 * MOUSE_MODE));
 		break;
 
 	case turn_right:

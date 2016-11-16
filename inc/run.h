@@ -120,12 +120,17 @@ public:
 public:
 	static void accel_run(const float distance_m, const float end_velocity,
 			const unsigned char select_mode);
-	static void accel_run_wall_eage(const float distance_m, const float end_velocity,
-			const unsigned char select_mode, const float check_distance);
+	static void accel_run_wall_eage(const float distance_m,
+			const float end_velocity, const unsigned char select_mode,
+			const float check_distance);
 
-	static void fit_run(const unsigned char select_mode);	//前壁に対してうまく合うように調整して止まる
+	static void fit_run(const unsigned char select_mode);//前壁に対してうまく合うように調整して止まる
 
-	static void slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,const uint8_t select_mode);
+	static void slalom(const SLALOM_TYPE slalom_type,
+			const signed char right_or_left, const uint8_t select_mode);
+	//探索用のスラローム。前壁の値によって超信地になったり、前距離無視したりする
+	static void slalom_for_search(const SLALOM_TYPE slalom_type,
+			const signed char right_or_left, const uint8_t select_mode);
 	static void spin_turn(const float target_degree);
 
 	static void path(const float finish_velocity, const uint8_t run_mode);
@@ -154,7 +159,7 @@ private:
 			unsigned char target_y);
 
 	//引数に応じて次の行動をマウスが実行する（実際に動く部分）
-	static void run_next_action(ACTION_TYPE next_action,bool slalom);
+	static void run_next_action(ACTION_TYPE next_action, bool slalom);
 	static void simulate_next_action(ACTION_TYPE next_action);//機体は動かない。仮想的に変数とか更新。デバック用
 
 	//次行く方向と今の向きを与えると、次に取る行動を返す。優先度は、直進、右ターン、左ターン、バックの順

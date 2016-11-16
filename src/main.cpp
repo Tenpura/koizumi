@@ -153,7 +153,7 @@ int main(void) {
 
 			run::accel_run_wall_eage(0.09 * 2, SEARCH_VELOCITY, 0, 0.09);
 			//run::accel_run(0.045+0.09, SEARCH_VELOCITY, 0);
-			run::slalom(small, MUKI_RIGHT, 0);
+			run::slalom_for_search(small, MUKI_RIGHT, 0);
 			//run::accel_run_wall_eage(0.09*5, SEARCH_VELOCITY, 0, 0.09*4.5);
 			run::accel_run(0.045, 0, 0);
 
