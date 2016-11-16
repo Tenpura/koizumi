@@ -567,8 +567,8 @@ mouse::~mouse() {
 
 //XXX 壁キレの距離[m]
 // right left front_right front_left front
-float run::WALL_EAGE_DISTANCE[PHOTO_TYPE::element_count] = { 0.032, 0.024, 0, 0,
-		0 };
+float run::WALL_EAGE_DISTANCE[PHOTO_TYPE::element_count] =
+		{ 0.04, 0.035, 0, 0, 0 };
 
 void run::accel_run(const float distance_m, const float end_velocity,
 		const unsigned char select_mode) {
@@ -593,6 +593,9 @@ void run::accel_run(const float distance_m, const float end_velocity,
 		if (de_accel_distance >= distance_m - mouse::get_distance_m()) {
 			break;
 		}
+
+		if (mouse::get_fail_flag())
+			return;
 	}
 
 	//等速
@@ -607,6 +610,9 @@ void run::accel_run(const float distance_m, const float end_velocity,
 		if (de_accel_distance >= distance_m - mouse::get_distance_m()) {
 			break;
 		}
+
+		if (mouse::get_fail_flag())
+			return;
 	}
 
 	//減速
@@ -616,6 +622,9 @@ void run::accel_run(const float distance_m, const float end_velocity,
 		if (distance_m < mouse::get_distance_m()) {
 			break;
 		}
+
+		if (mouse::get_fail_flag())
+			return;
 	}
 	mouse::set_acceleration(0);
 	mouse::set_ideal_velocity(end_velocity);
@@ -624,6 +633,8 @@ void run::accel_run(const float distance_m, const float end_velocity,
 	if (end_velocity > 0) {
 		//もし速度が先に無くなっても、最後まで走りきるよう
 		while (distance_m > mouse::get_distance_m()) {
+			if (mouse::get_fail_flag())
+				return;
 		}
 	}
 
@@ -635,25 +646,27 @@ void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 
 	float target_distance = check_distance;
 	bool wall_eage_flag = true;
-	int16_t wall_eage[PHOTO_TYPE::element_count];	//この値を下回ったら壁キレ
+	float wall_eage[PHOTO_TYPE::element_count];	//この値を下回ったら壁キレ
 	bool right_flag = false, left_flag = false;		//壁キレを待つ前に、そもそも壁があるのか判断するフラグ
 
 	//min_wallとideal_wallの平均が壁キレ
-	wall_eage[PHOTO_TYPE::right] = (parameter::get_min_wall_photo(
+	wall_eage[PHOTO_TYPE::right] = (parameter::get_ideal_photo(
 			PHOTO_TYPE::right)
 			+ parameter::get_min_wall_photo(PHOTO_TYPE::right)) / 2;
-	wall_eage[PHOTO_TYPE::left] = (parameter::get_min_wall_photo(
-			PHOTO_TYPE::left) + parameter::get_min_wall_photo(PHOTO_TYPE::left))
-			/ 2;
+	wall_eage[PHOTO_TYPE::left] = 380 / 2;
+//			(parameter::get_ideal_photo(PHOTO_TYPE::left)
+//			+ parameter::get_min_wall_photo(PHOTO_TYPE::left)) / 2;
 
 	//チェック距離までは普通に走る
 	accel_run(distance_m - check_distance, end_velocity, select_mode);
 
 	//壁キレを待つ前にそもそも壁キレが起こるのかを判断
-	if (photo::get_value(PHOTO_TYPE::left) < wall_eage[PHOTO_TYPE::left])
+	if (photo::get_value(PHOTO_TYPE::left) > wall_eage[PHOTO_TYPE::left])
 		left_flag = true;
-	if (photo::get_value(PHOTO_TYPE::right) < wall_eage[PHOTO_TYPE::right])
+	if (photo::get_value(PHOTO_TYPE::right) > wall_eage[PHOTO_TYPE::right])
 		right_flag = true;
+
+	my7seg::turn_off();
 
 	while (mouse::get_distance_m() < target_distance) {
 		//フェイルセーフが掛かっていればそこで抜ける
@@ -669,6 +682,7 @@ void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 					target_distance = WALL_EAGE_DISTANCE[PHOTO_TYPE::left];
 					mouse::set_distance_m(0);
 					wall_eage_flag = false;
+					my7seg::light(left);
 				}
 			}
 			//センサー値の大きさで壁キレを判断するので壁のある時だけを考える
@@ -678,6 +692,7 @@ void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 					target_distance = WALL_EAGE_DISTANCE[PHOTO_TYPE::right];
 					mouse::set_distance_m(0);
 					wall_eage_flag = false;
+					my7seg::light(right);
 				}
 			}
 
@@ -692,25 +707,53 @@ void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 void run::fit_run(const unsigned char select_mode) {
 
 	float de_accel_value = ABS(parameter::get_run_de_acceleration(select_mode));
-
-	//減速
-	mouse::set_acceleration(-de_accel_value);
-	while (mouse::get_ideal_velocity() > 0) {		//速度がなくなるまで原則
-	}
-	mouse::set_acceleration(0);
-	mouse::set_ideal_velocity(0);
-
-	bool wall_flag = control::get_wall_control_phase();
-	control::stop_wall_control();
-
 	float diff_front = 0, diff_front_left = 0;
 	uint32_t time_count = wait::get_count();
 	uint16_t loop_count = 0;
 
 	//ゲイン
-	static const PID gain_vel = { 0.2, 0.05, 0 }, gain_ang = { 0, 0, 0 };
+	static const PID gain_vel = { 0.1, 0.15, 0 }, gain_ang = { 0, 0, 0 };
 	PID diff_vel = { 0 };	//距離の偏差
 	PID diff_ang = { 0 };	//角度の偏差
+
+	//減速
+	mouse::set_acceleration(-de_accel_value);
+	while (mouse::get_ideal_velocity() > 0) {		//速度がなくなるまで原則
+
+		//割り込みに組み込むの面倒だから、各ループ1ms待つことで疑似的に制御周期で動かす
+		while (time_count == wait::get_count())
+			;		//1ms経つまで待つ
+		time_count = wait::get_count();			//更新
+
+		//規格化してみた
+		//frontの値だけのほうがブレがなくて信用できる
+		diff_front = 1
+				- static_cast<float>(photo::get_value(PHOTO_TYPE::front))
+						/ parameter::get_ideal_photo(PHOTO_TYPE::front);
+
+		//	diff_front_left = 1
+		//		- static_cast<float>(photo::get_value(PHOTO_TYPE::front_left))
+		//					/ parameter::get_ideal_photo(PHOTO_TYPE::front_left);
+
+		//偏差計算
+		diff_vel.P = (diff_front + diff_front_left);
+		diff_vel.I += diff_vel.P * 0.001;		//各ループ1msなので
+		diff_ang.P = (-diff_front + diff_front_left);
+		diff_ang.I += diff_ang.P * 0.001;		//各ループ1msなので
+
+		//滑らかにつながるように、理想速度と前壁制御値が同じくらいの時に移行させる
+		if (mouse::get_ideal_velocity()
+				< (diff_vel.P * gain_vel.P + diff_vel.I * gain_vel.I))
+			break;
+
+		if (mouse::get_fail_flag())
+			return;
+
+	}
+	mouse::set_acceleration(0);
+
+	bool wall_flag = control::get_wall_control_phase();
+	control::stop_wall_control();
 
 	while (1) {
 		//割り込みに組み込むの面倒だから、各ループ1ms待つことで疑似的に制御周期で動かす
@@ -740,10 +783,13 @@ void run::fit_run(const unsigned char select_mode) {
 
 		//		mouse::set_ideal_angular_velocity(diff_ang.P * gain_ang.P + diff_ang.I * gain_ang.I );
 
-		if (ABS(diff_vel.P) < 0.01)
+		if (diff_vel.P < 0.01)
 			break;
-		if (loop_count == 1000)
+		if (loop_count > 1000)
 			break;
+
+		if (mouse::get_fail_flag())
+			return;
 
 	}
 	mouse::set_acceleration(0);
@@ -904,6 +950,9 @@ void run::spin_turn(const float target_degree) {
 			break;
 		}
 
+		if (mouse::get_fail_flag())
+			return;
+
 	}
 
 //等角速度区間
@@ -919,6 +968,10 @@ void run::spin_turn(const float target_degree) {
 		if (angle_degree >= (target_degree - mouse::get_angle_degree())) {
 			break;
 		}
+
+		if (mouse::get_fail_flag())
+			return;
+
 	}
 
 //角減速区間
@@ -928,6 +981,9 @@ void run::spin_turn(const float target_degree) {
 		if (ABS(mouse::get_ideal_angular_velocity()) < 0.02) {
 			mouse::set_angular_acceleration(0);
 		}
+
+		if (mouse::get_fail_flag())
+			return;
 
 	}
 
@@ -945,6 +1001,12 @@ void run::path(const float finish_velocity, const unsigned char run_mode) {
 	bool naname_flag = false;
 	SLALOM_TYPE slalom_type;
 	unsigned char slalom_muki;
+
+	while (select != 0) {
+		my7seg::blink(8, 500, 1);
+		if (photo::check_wall(PHOTO_TYPE::front))
+			break;
+	}
 
 	mouse::run_init(true, true);
 
@@ -1155,35 +1217,58 @@ unsigned int adachi::count_unknown_wall(unsigned char target_x,
 	return unknown_count;
 }
 
-void adachi::run_next_action(ACTION_TYPE next_action) {
+void adachi::run_next_action(ACTION_TYPE next_action, bool slalom) {
+	bool check_right = false;
+
 	switch (next_action) {
 	case go_straight:
 		//1区間直進
-		run::accel_run((0.09 * MOUSE_MODE), SEARCH_VELOCITY, 0);
-		//run::accel_run_wall_eage((0.09 * MOUSE_MODE), SEARCH_VELOCITY, 0,(0.09 * MOUSE_MODE));
+		//run::accel_run((0.09 * MOUSE_MODE), SEARCH_VELOCITY, 0);
+		run::accel_run_wall_eage((0.09 * MOUSE_MODE), SEARCH_VELOCITY, 0,(0.09 * MOUSE_MODE));
 		break;
 
 	case turn_right:
-		//スラローム
-		run::slalom(small, MUKI_RIGHT, 0);
+		//スラロームか超信地旋回か
+		if (slalom) {
+			run::slalom(small, MUKI_RIGHT, 0);
+		} else {
+			run::accel_run((0.045 * MOUSE_MODE), 0, 0);
+			run::spin_turn(90);
+			run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
+		}
 		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
 		break;
 
 	case turn_left:
-		//スラローム
-		run::slalom(small, MUKI_LEFT, 0);
+		//スラロームか超信地旋回か
+		if (slalom) {
+			run::slalom(small, MUKI_LEFT, 0);
+		} else {
+			run::accel_run((0.045 * MOUSE_MODE), 0, 0);
+			run::spin_turn(270);
+			run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
+		}
 		direction_turn(&direction_x, &direction_y, MUKI_LEFT);	//向きを90°変える
 		break;
 
 	case back:
 		//半区間進んで180°ターンして半区間直進
+		//右側の前壁調整は安定しないから切る
+		//	check_right = photo::check_wall(PHOTO_TYPE::right);
 		//前壁があれば前壁制御
 		if (photo::check_wall(PHOTO_TYPE::front)) {
 			run::fit_run(0);
 		} else {
 			run::accel_run((0.045 * MOUSE_MODE), 0, 0);			//半区間直進
 		}
-		run::spin_turn(180);
+		if (check_right) {		//右壁があればそちらにも
+			run::spin_turn(90);
+			run::fit_run(0);
+			run::spin_turn(90);
+		} else {
+			run::spin_turn(180);
+		}
+
 		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
 		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
 		run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);	//半区間直進
@@ -1192,48 +1277,8 @@ void adachi::run_next_action(ACTION_TYPE next_action) {
 	case stop:
 		//半区間進んでストップ
 		run::accel_run((0.045 * MOUSE_MODE), 0, 0);			//半区間直進
-		motor::sleep_motor();
-		break;
-	}
-}
-
-void adachi::run_next_action_by_spin(ACTION_TYPE next_action) {
-	switch (next_action) {
-	case go_straight:
-		//1区間直進
-		run::accel_run((0.09 * MOUSE_MODE), SEARCH_VELOCITY, 0);
 		break;
 
-	case turn_right:
-		//半区間⇒超信地⇒半区間
-		run::accel_run((0.045 * MOUSE_MODE), 0, 0);
-		run::spin_turn(90);
-		run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
-		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
-		break;
-
-	case turn_left:
-		//半区間⇒超信地⇒半区間
-		run::accel_run((0.045 * MOUSE_MODE), 0, 0);
-		run::spin_turn(270);
-		run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
-		direction_turn(&direction_x, &direction_y, MUKI_LEFT);	//向きを90°変える
-		break;
-
-	case back:
-		//半区間進んで180°ターンして半区間直進
-		run::accel_run((0.045 * MOUSE_MODE), 0, 0);			//半区間直進
-		run::spin_turn(180);
-		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
-		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
-		run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);	//半区間直進
-		break;
-
-	case stop:
-		//半区間進んでストップ
-		run::accel_run((0.045 * MOUSE_MODE), 0, 0);			//半区間直進
-		motor::sleep_motor();
-		break;
 	}
 }
 
@@ -1373,7 +1418,7 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 
 //目標の座標にたどり着いたら終了
 		if ((now_x == target_x) && (now_y == target_y)) {
-			run_next_action(stop);
+			run_next_action(stop, true);
 			break;
 		}
 
@@ -1450,7 +1495,7 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 //next_dirrctionから次行く方向を選び、行動する
 		next_action = get_next_action(next_direction, mouse::get_direction());
 		//TODO 壁キレようの関数を用意する
-		run_next_action(next_action);
+		run_next_action(next_action, true);
 
 		//もし止まるべきと出たならココで足立法をやめる
 		if (next_action == stop) {
@@ -1529,7 +1574,7 @@ bool adachi::adachi_method_spin(unsigned char target_x, unsigned char target_y,
 
 //目標の座標にたどり着いたら終了
 		if ((now_x == target_x) && (now_y == target_y)) {
-			run_next_action(stop);
+			run_next_action(stop, false);
 			break;
 		}
 
@@ -1606,7 +1651,7 @@ bool adachi::adachi_method_spin(unsigned char target_x, unsigned char target_y,
 //next_dirrctionから次行く方向を選び、行動する
 		next_action = get_next_action(next_direction, mouse::get_direction());
 		//TODO 壁キレようの関数を用意する
-		run_next_action(next_action);
+		run_next_action(next_action, false);
 
 		//もし止まるべきと出たならココで足立法をやめる
 		if (next_action == stop) {
@@ -1669,7 +1714,7 @@ bool adachi::left_hand_method(const uint8_t target_x, const uint8_t target_y) {
 		else
 			next_action = back;
 
-		run_next_action(next_action);
+		run_next_action(next_action, true);
 
 	}
 

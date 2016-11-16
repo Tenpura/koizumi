@@ -75,7 +75,6 @@ uint8_t mode::select_mode(const unsigned char mode_number,
 }
 
 bool mode::search_mode() {
-	signed char direction_x, direction_y;
 
 	uint8_t select = select_mode(7, PHOTO_TYPE::right);
 

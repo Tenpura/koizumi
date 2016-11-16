@@ -998,7 +998,7 @@ uint8_t photo::count_wall_gap(PHOTO_TYPE type) {
 }
 bool photo::check_wall_gap(PHOTO_TYPE type) {
 	//壁の切れ目ならtrue
-	if (-count_wall_gap(type) < (GAP_AVE_COUNT * 0.9))
+	if (-count_wall_gap(type) < (GAP_AVE_COUNT * 0.8))
 		return false;
 
 	return true;
@@ -1015,7 +1015,7 @@ photo::~photo() {
 //control関連
 const PID gyro_gain = { 30, 150, 0 };
 const PID photo_gain = { 0.1, 0, 0 };
-const PID encoder_gain = { 500, 1700, 0 };
+const PID encoder_gain = { 900, 2000, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta;
 bool control::control_phase = false;
@@ -1084,7 +1084,7 @@ void control::cal_delta() {
 		delta = actual - ideal;		//理想値との差分
 
 		//中央付近は制御しない
-		if (ABS(delta) > 30) {
+		if (ABS(delta) > 10) {
 			photo_left_delta = delta;
 		}
 		//壁の切れ目では制御を切る
@@ -1239,7 +1239,7 @@ void control::reset_delta(SEN_TYPE type) {
 
 void control::fail_safe() {
 	//TODO 閾値どのくらいかわからない。Gyroも参照すべき？
-	if (encoder_delta.P > 0.5) {
+	if (ABS(encoder_delta.P) > 1.0) {
 		motor::sleep_motor();
 		mouse::set_fail_flag(true);
 	}

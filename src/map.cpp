@@ -1157,7 +1157,6 @@ void path::create_path() {
 	int8_t path_direction_x, path_direction_y;		//方向管理用
 	bool straight_flag;			//直線できるかどうか判別用フラグ
 	SAVE_DIRECTION save_direction;				//次に行くマスの方向を保存
-	uint8_t want_next_turn = 0;
 	uint16_t count = 0;	//数を数えるだけの変数
 
 	//set_step_for_shortest(GOAL_x,GOAL_y);
@@ -1316,12 +1315,56 @@ void path::draw_path() {
 	myprintf("path-start \n\r");
 
 	for (int i = 0; path_memory[i].element.flag == TRUE; i++) {
-		myprintf("distance -> %d \n\r", path_memory[i].element.distance);
-		myprintf("turn -> %d ", path_memory[i].element.turn);
+		//直線
+		myprintf("distance -> %2d *", path_memory[i].element.distance);
+		if (MOUSE_MODE == 1)		//ハーフは半区間が45mm
+			myprintf("45mm\n\r");
+		else
+			myprintf("90mm\n\r");
+
+		//ターン
+		//myprintf("turn -> %2d ", path_memory[i].element.turn);	//格納している値を表示
+		myprintf("turn -> ");
+		switch (path::get_path_turn_type(i)) {
+		case none:
+			myprintf("none");
+			break;
+		case small:
+			myprintf("small");
+			break;
+		case big_90:
+			myprintf("big_90");
+			break;
+		case big_180:
+			myprintf("big_180");
+			break;
+		case begin_45:
+			myprintf("begin_45");
+			break;
+		case end_45:
+			myprintf("end_45");
+			break;
+		case begin_135:
+			myprintf("begin_135");
+			break;
+		case end_135:
+			myprintf("end_135");
+			break;
+		case oblique_90:
+			myprintf("oblique_90");
+			break;
+		case spin_turn:
+			myprintf("spin_turn");
+			break;
+		default:
+			myprintf("error!! %d", path_memory[i].element.turn);
+			break;
+		}
+
 		if (path_memory[i].element.muki == MUKI_RIGHT) {
-			myprintf("R\n\r");
+			myprintf(" Right\n\r");
 		} else if (path_memory[i].element.muki == MUKI_LEFT) {
-			myprintf("L\n\r");
+			myprintf(" Left\n\r");
 		}
 	}
 	myprintf("path-end \n\r");

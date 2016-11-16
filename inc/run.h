@@ -154,8 +154,7 @@ private:
 			unsigned char target_y);
 
 	//引数に応じて次の行動をマウスが実行する（実際に動く部分）
-	static void run_next_action_by_spin(ACTION_TYPE next_action);
-	static void run_next_action(ACTION_TYPE next_action);
+	static void run_next_action(ACTION_TYPE next_action,bool slalom);
 	static void simulate_next_action(ACTION_TYPE next_action);//機体は動かない。仮想的に変数とか更新。デバック用
 
 	//次行く方向と今の向きを与えると、次に取る行動を返す。優先度は、直進、右ターン、左ターン、バックの順

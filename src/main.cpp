@@ -31,7 +31,7 @@ float flog[2][10000] = { 0 };
 void interrupt_timer();			//CONTROL_PERIODÇ≤Ç∆Ç…äÑÇËçûÇﬁä÷êî
 
 int main(void) {
-	for (int16_t j = 0; j < 100; j++) {
+	for (int16_t j = 0; j < 10; j++) {
 		for (volatile int16_t i = 0; i < 10000; i++) {
 			//ÉNÉçÉbÉNÇà¿íËÇ≥ÇπÇÈÅH
 		}
@@ -41,9 +41,11 @@ int main(void) {
 	init_all();
 	mouse::reset_count();
 
+	my7seg::blink(8, 100, 5);
+
 	myprintf("vol -> %f\n\r", get_battery());
-	my7seg::turn_off();
-	if (get_battery() < 4) {
+
+	if (get_battery() < 3.8) {
 		while (1) {
 
 			my7seg::light_error();
@@ -53,11 +55,14 @@ int main(void) {
 			wait::ms(500);
 
 			if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0) {
+				wait::ms(100);
 				break;
 			}
 
 		}
 	}
+
+	my7seg::turn_off();
 
 	mpu6000::init_mpu6000();
 
@@ -74,7 +79,7 @@ int main(void) {
 			;
 		wait::ms(100);
 
-		if (get_battery() < 4) {
+		if (get_battery() < 3.8) {
 			while (1) {
 
 				my7seg::light_error();
@@ -95,7 +100,7 @@ int main(void) {
 			;
 		wait::ms(100);
 
-		select = mode::select_mode(6, PHOTO_TYPE::right);
+		select = mode::select_mode(7, PHOTO_TYPE::right);
 
 		switch (select) {
 		case 0:		//ï«ÇÃílÇì«ÇﬁÇæÇØ	éñåÃñhé~ÇÃÇΩÇﬂÇ…ÉÇÅ[Éh0ÇÕé¿äQÇ»Ç¢ìzÇ…ÇµÇ∆Ç≠
@@ -117,10 +122,15 @@ int main(void) {
 
 		case 1:		//íTçı
 			mode::search_mode();
+			motor::sleep_motor();
 			break;
 
 		case 2:		//ç≈íZ
-		//	mode::shortest_mode();
+			path::create_path();
+			map::draw_map(false);
+			run::path(0, 0);
+			path::draw_path();
+			//mode::shortest_mode();
 			break;
 
 		case 3:		//ÉfÅ[É^è¡ãé
@@ -130,24 +140,25 @@ int main(void) {
 			break;
 
 		case 4:		//í≤êÆóp
+			while (1) {
+				my7seg::blink(8, 500, 1);
+				if (photo::check_wall(PHOTO_TYPE::front))
+					break;
+			}
 			my7seg::count_down(3, 500);
 			mouse::run_init(true, true);
 			flog[0][0] = -1;
 
 			//control::stop_wall_control();
 
-			//run::accel_run(0.09 * 4, 0, 0);
-			//	run::accel_run_wall_eage(0.09*5, SEARCH_VELOCITY, 0, 0.09*4.5);
-			//	run::accel_run(0.045, 0, 0);
+			run::accel_run_wall_eage(0.09 * 2, SEARCH_VELOCITY, 0, 0.09);
+			//run::accel_run(0.045+0.09, SEARCH_VELOCITY, 0);
+			run::slalom(small, MUKI_RIGHT, 0);
+			//run::accel_run_wall_eage(0.09*5, SEARCH_VELOCITY, 0, 0.09*4.5);
+			run::accel_run(0.045, 0, 0);
 
 			//run::spin_turn(180);
-			my7seg::turn_off();
-			wait::ms(1000);
-			run::accel_run(0.045 + 0.09 * 2, SEARCH_VELOCITY, 0);
-			my7seg::light(8);
-			run::slalom(small, MUKI_RIGHT, 0);
-			run::accel_run(0.045, 0, 0);
-			my7seg::light(5);
+			//run::fit_run(0);
 
 			wait::ms(1000);
 
@@ -163,7 +174,37 @@ int main(void) {
 			}
 			break;
 
-		case 5:
+		case 5:		//í≤êÆóp
+			while (1) {
+				my7seg::blink(8, 500, 1);
+				if (photo::check_wall(PHOTO_TYPE::front))
+					break;
+			}
+			my7seg::count_down(3, 500);
+			mouse::run_init(true, true);
+			flog[0][0] = -1;
+
+			//control::stop_wall_control();
+
+			run::accel_run_wall_eage(0.09 * 2, SEARCH_VELOCITY, 0, 0.09);
+			run::accel_run(0.045, 0, 0);
+
+			wait::ms(1000);
+
+			motor::sleep_motor();
+			my7seg::turn_off();
+
+			while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
+			}
+			//map::draw_map(false);
+
+			for (int i = 0; i < 2000; i++) {
+				myprintf("%f,%f\n\r", flog[0][i], flog[1][i]);
+			}
+			break;
+
+
+		case 6:
 			map::draw_map(false);
 			break;
 
@@ -190,7 +231,7 @@ void interrupt_timer() {
 	control::cal_delta();			//épê®êßå‰Ç…ópÇ¢ÇÈïŒç∑ÇåvéZ
 	control::posture_control();
 
-//	control::fail_safe();
+	control::fail_safe();
 
 	static volatile uint16_t i = 0;
 	if (motor::isEnable()) {
@@ -200,7 +241,7 @@ void interrupt_timer() {
 			}
 		} else if (i < 10000) {
 			flog[0][i] = mouse::get_distance_m();
-			flog[1][i] = static_cast<float>(photo::get_value(PHOTO_TYPE::left));//mouse::get_distance_m();			//photo::get_value(right);
+			flog[1][i] = photo::get_value(left);
 			i++;
 			GPIO_ResetBits(GPIOA, GPIO_Pin_14);
 
