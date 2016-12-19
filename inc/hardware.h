@@ -232,7 +232,7 @@ public:
 	static bool check_wall(unsigned char muki);
 	static bool check_wall(PHOTO_TYPE type);
 
-	static uint8_t count_wall_gap(PHOTO_TYPE);	//diff_gapに保存されてる値の正負を数え上げて返す。
+	static int8_t count_wall_gap(PHOTO_TYPE);	//diff_gapに保存されてる値の正負を数え上げて返す。
 	static bool check_wall_gap(PHOTO_TYPE type);	//diff_gapに保存されてる値の正負を考え、9割以上が負（センサ値が下がってる）と、壁の切れ目だからtrue
 
 	~photo();

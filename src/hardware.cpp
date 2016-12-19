@@ -435,7 +435,7 @@ void mpu6000::init_mpu6000() {
 	write_spi(PWR_MGMT_2, 0xEE);		//ジャイロのZ軸方向、加速度のY軸方向以外は停止//6c
 	write_spi(USER_CTRL, 16);			//I2CをDisable、SPIをEnable
 	write_spi(SIGNAL_PATH_RESET, 0x06);	//ジャイロ、加速度リセット//04
-	write_spi(DATA_CONFIG, 0x00);		//フィルターはかけない
+	write_spi(DATA_CONFIG, 0x01);		//フィルターはかけない
 	write_spi(GYRO_CONFIG, 0x18);		//ジャイロを±2000°/sに設定
 	write_spi(ACCEL_CONFIG, 0x18);		//加速度を±16g/sに設定
 
@@ -768,7 +768,7 @@ void photo::turn_off_all() {
 
 void photo::set_ad(PHOTO_TYPE sensor_type, int16_t set_value) {
 
-	static const int16_t PHOTO_AVERAGE_TIME = 10;	//いくつの移動平均をとるか
+	static const int16_t PHOTO_AVERAGE_TIME = 5;	//いくつの移動平均をとるか
 	static int16_t buf[element_count][PHOTO_AVERAGE_TIME] = { 0 };
 
 	int16_t sum = 0;
@@ -968,7 +968,8 @@ bool photo::check_wall(unsigned char muki) {
 
 	case MUKI_UP:
 		//TODO 暇があったら、前壁見るのは斜めセンサいらない？？
-		if (photo::get_value(PHOTO_TYPE::front) >= parameter::get_min_wall_photo(PHOTO_TYPE::front)) {
+		if (photo::get_value(PHOTO_TYPE::front)
+				>= parameter::get_min_wall_photo(PHOTO_TYPE::front)) {
 			//if ((front_right_ad >= parameter::get_min_wall_photo(front_right))
 			//		|| (front_left_ad >= parameter::get_min_wall_photo(front_left))) {
 			return true;
@@ -986,7 +987,7 @@ bool photo::check_wall(PHOTO_TYPE type) {
 
 }
 
-uint8_t photo::count_wall_gap(PHOTO_TYPE type) {
+int8_t photo::count_wall_gap(PHOTO_TYPE type) {
 	int8_t count = 0;	//負（センサ値が下がってる）の数を数える
 	for (uint8_t i = 0; i < GAP_AVE_COUNT; i++) {
 		if (diff_buf[type][i] < 0)
@@ -998,7 +999,8 @@ uint8_t photo::count_wall_gap(PHOTO_TYPE type) {
 }
 bool photo::check_wall_gap(PHOTO_TYPE type) {
 	//壁の切れ目ならtrue
-	if (-count_wall_gap(type) < (GAP_AVE_COUNT * 0.8))
+	//急に壁が現れた時も制御を切る
+	if (ABS(count_wall_gap(type)) < (GAP_AVE_COUNT * 0.8))
 		return false;
 
 	return true;
@@ -1015,7 +1017,7 @@ photo::~photo() {
 //control関連
 const PID gyro_gain = { 30, 150, 0 };
 const PID photo_gain = { 0.1, 0, 0 };
-const PID encoder_gain = { 900, 2000, 0 };
+const PID encoder_gain = { 600, 2200, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta;
 bool control::control_phase = false;
@@ -1046,6 +1048,7 @@ float control::cross_delta_gain(SEN_TYPE sensor) {
 void control::cal_delta() {
 	float before_p_delta;
 	float photo_right_delta = 0, photo_left_delta = 0;
+	static float max_photo_delta = 500;		//壁に近いとき非線形にセンサ値が上昇するので上限を切る
 
 	//エンコーダーのΔ計算
 	before_p_delta = encoder_delta.P;	//積分用
@@ -1064,10 +1067,16 @@ void control::cal_delta() {
 		ideal = static_cast<float>(parameter::get_ideal_photo(right));
 		actual = static_cast<float>(photo::get_value(right));
 		delta = actual - ideal;		//理想値との差分
+
+		//上限を切る。
+		if (delta > max_photo_delta)
+			delta = max_photo_delta;
+
 		//中央付近は制御しない
-		if (ABS(delta) > 30) {
-			photo_right_delta = delta;
-		}
+		//if (ABS(delta) > 10) {
+		//	photo_right_delta = delta;
+		//}
+
 		//壁の切れ目では制御を切る
 		if (photo::check_wall_gap(right)) {
 			photo_right_delta = 0;
@@ -1083,13 +1092,17 @@ void control::cal_delta() {
 		actual = static_cast<float>(photo::get_value(left));
 		delta = actual - ideal;		//理想値との差分
 
+		//上限を切る。
+		if (delta > max_photo_delta)
+			delta = max_photo_delta;
+
 		//中央付近は制御しない
-		if (ABS(delta) > 10) {
+		if (ABS(delta) > 30) {
 			photo_left_delta = delta;
 		}
 		//壁の切れ目では制御を切る
 		if (photo::check_wall_gap(left)) {
-			photo_right_delta = 0;
+			photo_left_delta = 0;
 		}
 		//	if (delta < 0)
 		//		photo_left_delta = 0;	//近づく方向には制御しない
@@ -1239,7 +1252,7 @@ void control::reset_delta(SEN_TYPE type) {
 
 void control::fail_safe() {
 	//TODO 閾値どのくらいかわからない。Gyroも参照すべき？
-	if (ABS(encoder_delta.P) > 1.0) {
+	if (ABS(encoder_delta.P) > 0.7) {
 		motor::sleep_motor();
 		mouse::set_fail_flag(true);
 	}

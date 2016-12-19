@@ -168,6 +168,45 @@ bool mode::search_mode() {
 
 }
 
+bool mode::shortest_mode() {
+
+	uint8_t select = select_mode(5, PHOTO_TYPE::right);
+
+	while (select != 0) {
+		my7seg::blink(8, 500, 1);
+		if (photo::check_wall(PHOTO_TYPE::front))
+			break;
+	}
+
+	switch (select) {
+	case 0:		//0はメニューに戻る
+		break;
+
+	case 1:		//1は普通の足立法
+		run::path(0,0);
+		break;
+
+	case 2:		//2は帰りもあるよ
+		run::path(0,1);
+
+		break;
+
+	case 3:
+		run::path(0,2);
+			break;
+
+	case 4:
+		run::path(0,3);
+			break;
+
+
+	}
+
+	return false;
+
+}
+
+
 mode::mode() {
 }
 

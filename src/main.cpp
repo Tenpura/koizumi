@@ -127,10 +127,11 @@ int main(void) {
 
 		case 2:		//ç≈íZ
 			path::create_path();
-			map::draw_map(false);
-			run::path(0, 0);
-			path::draw_path();
-			//mode::shortest_mode();
+			//map::draw_map(false);
+			mode::shortest_mode();
+			//run::path(0, 0);
+			//path::draw_path();
+			motor::sleep_motor();
 			break;
 
 		case 3:		//ÉfÅ[É^è¡ãé
@@ -147,17 +148,18 @@ int main(void) {
 			}
 			my7seg::count_down(3, 500);
 			mouse::run_init(true, true);
-			flog[0][0] = -1;
 
 			//control::stop_wall_control();
 
-			run::accel_run_wall_eage(0.09 * 2, SEARCH_VELOCITY, 0, 0.09);
-			//run::accel_run(0.045+0.09, SEARCH_VELOCITY, 0);
-			run::slalom_for_search(small, MUKI_RIGHT, 0);
+			//run::accel_run_wall_eage(0.09 * 2, SEARCH_VELOCITY, 0, 0.09);
+			//run::accel_run(0.045, SEARCH_VELOCITY, 0);
+			flog[0][0] = -1;
+			//run::slalom_for_search(small, MUKI_LEFT, 0);
 			//run::accel_run_wall_eage(0.09*5, SEARCH_VELOCITY, 0, 0.09*4.5);
-			run::accel_run(0.045, 0, 0);
 
-			//run::spin_turn(180);
+			run::accel_run(0.045 * 2 * 5, 0, 0);
+			run::spin_turn(-180);
+
 			//run::fit_run(0);
 
 			wait::ms(1000);
@@ -182,13 +184,16 @@ int main(void) {
 			}
 			my7seg::count_down(3, 500);
 			mouse::run_init(true, true);
-			flog[0][0] = -1;
 
 			//control::stop_wall_control();
 
-			run::accel_run_wall_eage(0.09 * 2, SEARCH_VELOCITY, 0, 0.09);
-			run::accel_run(0.045, 0, 0);
+			//run::accel_run_wall_eage(0.09 * 2, SEARCH_VELOCITY, 0, 0.09);
+			//run::accel_run(0.09*15, 0, 0);
 
+			run::accel_run(0.09, SEARCH_VELOCITY, 0);
+			run::fit_run(0);
+			flog[0][0] = -1;
+			run::spin_turn(-180);
 			wait::ms(1000);
 
 			motor::sleep_motor();
@@ -203,9 +208,9 @@ int main(void) {
 			}
 			break;
 
-
 		case 6:
 			map::draw_map(false);
+			path::draw_path();
 			break;
 
 		}
@@ -240,8 +245,8 @@ void interrupt_timer() {
 				i++;
 			}
 		} else if (i < 10000) {
-			flog[0][i] = mouse::get_distance_m();
-			flog[1][i] = photo::get_value(left);
+			flog[0][i] = mouse::get_distance_m();//mouse::get_ideal_angular_velocity();
+			flog[1][i] = control::photo_delta.P;//gyro::get_angular_velocity();
 			i++;
 			GPIO_ResetBits(GPIOA, GPIO_Pin_14);
 
