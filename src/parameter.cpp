@@ -10,7 +10,7 @@
 //right left front_right front_left,front
 const unsigned int parameter::ideal_photo[2][5] = { { 110, 380, 0, 190, 1700 }, //2760 },
 		{ 3250, 3200, 10815, 10100, 0 } };
-const int16_t parameter::min_wall_photo[2][5] = { { 50, 80, 100, 130, 150 }, {
+const int16_t parameter::min_wall_photo[2][5] = { { 3000, 80, 100, 130, 150 }, {
 		20000, 20000, 0, 0, 0 } };
 
 //0”Ô–Ú‚Í’Tõ—p

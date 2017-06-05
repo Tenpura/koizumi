@@ -25,6 +25,9 @@ void my7seg::light(const my7seg::DIRECTION muki) {
 		GPIO_ResetBits(GPIOB, GPIO_Pin_12);	//LED3
 		GPIO_ResetBits(GPIOH, GPIO_Pin_1);	//LED4
 		break;
+
+	default:
+		break;
 	}
 }
 
@@ -206,7 +209,7 @@ void motor::set_duty(const MOTOR_SIDE side, const float set_duty) {
 	TIM_OC_InitStructure.TIM_Pulse = static_cast<uint32_t>(MAX_PERIOD * duty
 			* 0.01);	//dutyに応じてカウントを変更
 
-	if (side == motor_right) {
+	if (side == MOTOR_SIDE::m_right) {
 
 		if (set_duty == 0) {					//0のときはstop
 			TIM_OC_InitStructure.TIM_Pulse = 0;		//duty0の時は一応0を代入しておく
@@ -228,7 +231,7 @@ void motor::set_duty(const MOTOR_SIDE side, const float set_duty) {
 		right_duty = duty;
 	}
 
-	if (side == motor_left) {
+	if (side == MOTOR_SIDE::m_left) {
 
 		if (set_duty == 0) {					//0のときはstop
 			TIM_OC_InitStructure.TIM_Pulse = 0;		//duty0の時は一応0を代入しておく
@@ -265,8 +268,8 @@ void motor::sleep_motor() {
 	GPIO_ResetBits(GPIOA, GPIO_Pin_2);	//モータードライバースリープ
 	TIM_Cmd(TIM4, DISABLE);
 	TIM_Cmd(TIM5, DISABLE);
-	motor::set_duty(motor_left, 0);
-	motor::set_duty(motor_right, 0);
+	motor::set_duty(m_left, 0);
+	motor::set_duty(m_right, 0);
 	motor_state = false;
 
 }
@@ -371,7 +374,7 @@ void mpu6000::write_spi(uint16_t reg, uint16_t data) {
 
 }
 
-int16_t mpu6000::get_mpu_value(SEN_TYPE sen, AXIS_t axis) {
+int16_t mpu6000::get_mpu_val(SEN_TYPE sen, AXIS_t axis) {
 	int16_t data = 0;
 	uint16_t reg_h = 0;	//highの値へのレジスタ
 	uint16_t reg_l = 0;	//Lowの値へのレジスタ
@@ -461,7 +464,7 @@ mpu6000::~mpu6000() {
 const float accelmeter::ACCEL_PERIOD = CONTORL_PERIOD;		//加速度計の制御周期[s]
 const float accelmeter::REF_TIME = 1;			//加速度計のリファレンスとる時間[s]
 const uint8_t accelmeter::AVERAGE_COUNT = 20;			//加速度計の平均回数[回]
-float accelmeter::accel_ad, accelmeter::accel_ref;
+float accelmeter::accel_ad = 0, accelmeter::accel_ref = 0;
 float accelmeter::accel;
 
 void accelmeter::interrupt() {
@@ -473,14 +476,15 @@ void accelmeter::interrupt() {
 		sum += buff[i];			//ついでに加算する
 	}
 
-	//配列の最初に入れる
-	buff[(AVERAGE_COUNT - 1)] = mpu6000::get_mpu_value(sen_accel, axis_y);//加速度のy方向
+	//配列の最後に入れる
+	buff[(AVERAGE_COUNT - 1)] = static_cast<float>(mpu6000::get_mpu_val(
+			sen_accel, axis_y));			//加速度のy方向
 
 	sum += buff[(AVERAGE_COUNT - 1)];
 
 	accel_ad = sum / AVERAGE_COUNT;
 
-	accel = (accel_ad - accel_ref) / ACCEL_SENSITIVITY / 9.8;//加速度[g]を[m/ss]に直すため重力加速度で割る
+	cal_accel();
 
 }
 
@@ -502,6 +506,10 @@ void accelmeter::set_accel_ref() {
 	accel_ref = get_accel_ref();
 }
 
+void accelmeter::cal_accel() {
+	accel = (accel_ad - accel_ref) / ACCEL_SENSITIVITY * 9.8;//加速度[g]を[m/ss]に直すため重力加速度をかける
+}
+
 float accelmeter::get_accel() {
 	return accel;
 }
@@ -515,7 +523,7 @@ const float gyro::GYRO_PERIOD = CONTORL_PERIOD;		//制御周期[s]
 const float gyro::REF_TIME = 2;							//リファレンスとる時間[s]
 
 void gyro::interrupt() {
-	gyro_value = -mpu6000::get_mpu_value(sen_gyro, axis_z);	//Z方向のジャイロを見る。時計回り正
+	gyro_value = -mpu6000::get_mpu_val(sen_gyro, axis_z);	//Z方向のジャイロを見る。時計回り正
 	gyro::cal_angular_velocity();	//gyroから角速度を計算[°/s]
 	gyro::cal_angle();				//gyroから角度を計算
 
@@ -611,12 +619,17 @@ gyro::~gyro() {
 const uint8_t encoder::MOVING_AVERAGE = 20;
 const uint32_t encoder::MEDIAN = 32762;
 float encoder::left_velocity, encoder::right_velocity, encoder::velocity;
+int16_t encoder::last_value[2] = { 0 };
+float encoder::correct[2][4097] = { 0 };
+bool encoder::correct_flag[2] = { false, false };
+uint32_t encoder::init_time[2] = { 0 };
 
 void encoder::interrupt() {
 	static float data_r[MOVING_AVERAGE] = { 0 };	//データを保存しておく配列
 	float sum_r = 0;
 	static float data_l[MOVING_AVERAGE] = { 0 };	//データを保存しておく配列
 	float sum_l = 0;
+	float temp_last_value_r, temp_last_value_l;
 
 	for (uint8_t i = 0; (i + 1) < MOVING_AVERAGE; i++) {
 		data_r[i] = data_r[i + 1];	//配列を1つずらす
@@ -625,14 +638,18 @@ void encoder::interrupt() {
 		sum_l += data_l[i];			//ついでに加算する
 	}
 
-	//配列の最後に入れる
-	data_r[(MOVING_AVERAGE - 1)] = (32762 - static_cast<float>(TIM3->CNT))
-			* ENCODER_CONST / CONTROL_PERIOD * tire_R;//count*[rad/count]/[sec]*[m]
-	data_l[(MOVING_AVERAGE - 1)] = (static_cast<float>(TIM2->CNT) - 32762)
-			* ENCODER_CONST / CONTORL_PERIOD * tire_R;	//m/s
+	//エンコーダ―の値を取得
+	temp_last_value_r = 32762 - static_cast<float>(TIM3->CNT);
+	temp_last_value_l = static_cast<float>(TIM2->CNT) - 32762;
 
 	TIM2->CNT = 32762;
 	TIM3->CNT = 32762;
+
+	//配列の最後に入れる
+	data_r[(MOVING_AVERAGE - 1)] = temp_last_value_r * ENCODER_CONST
+			/ CONTROL_PERIOD * tire_R;			//count*[rad/count]/[sec]*[m]
+	data_l[(MOVING_AVERAGE - 1)] = temp_last_value_l * ENCODER_CONST
+			/ CONTORL_PERIOD * tire_R;	//m/s
 
 	sum_r += data_r[(MOVING_AVERAGE - 1)];
 	sum_l += data_r[(MOVING_AVERAGE - 1)];
@@ -642,6 +659,38 @@ void encoder::interrupt() {
 
 	velocity = (right_velocity + left_velocity) / 2;
 
+
+
+	//補正用にデータを保存
+	if (correct_flag[enc_right]) {
+		last_value[enc_right] += static_cast<int16_t>(temp_last_value_r);//正転で増えていく方向に
+		if (last_value[enc_right] < 0)
+			last_value[enc_right] += 4096;
+		else if (last_value[enc_right] > 4096) {
+			last_value[enc_right] %= 4096;
+			correct_flag[enc_right] = false;
+		} else {
+			//オーバーフローしないときは保存していく
+			correct[enc_right][last_value[enc_right]] = wait::get_count()
+					- init_time[enc_right];	//時間を保存
+		}
+	}
+	if (correct_flag[enc_left]) {
+		last_value[enc_left] += static_cast<int16_t>(temp_last_value_l);//正転で増えていく方向に
+		if (last_value[enc_left] < 0)
+			last_value[enc_left] += 4096;
+		else if (last_value[enc_left] > 4096) {
+			last_value[enc_left] %= 4096;
+			correct_flag[enc_left] = false;
+		} else {
+			//オーバーフローしないときは保存していく
+			correct[enc_left][last_value[enc_left]] = wait::get_count()
+					- init_time[enc_left];	//時間を保存
+		}
+
+	}
+
+
 }
 
 float encoder::get_velocity() {
@@ -650,6 +699,73 @@ float encoder::get_velocity() {
 	return (velocity
 			+ accelmeter::get_accel() * accelmeter::AVERAGE_COUNT
 					* accelmeter::ACCEL_PERIOD / 2);
+}
+
+void encoder::yi_correct(ENC_SIDE enc_side) {
+	motor::stanby_motor();
+	if (enc_side == enc_right)
+		motor::set_duty(MOTOR_SIDE::m_right, 20);
+	else
+		motor::set_duty(MOTOR_SIDE::m_left, 20);
+
+	//補正テーブルを全消去
+	for (int i = 0; i < 4097; i++) {
+		correct[enc_side][i] = -1;
+	}
+
+	wait::ms(1000);	//回転が平衡状態に達するまで待機
+
+	correct_flag[enc_side] = true;
+	//初期値代入
+	last_value[enc_side] = 0;
+	correct[enc_side][0] = 0;
+	while (correct_flag[enc_side])
+		;	//一周分測定
+	int16_t finish_val = last_value[enc_side];	//4096を少し超えて終了するので、0より少し大きい値のはず
+	int16_t finish_time = wait::get_count() - init_time[enc_side];	//終了した時間を保存
+
+	motor::sleep_motor();
+
+	//とびとびで値が保存されているはずなので、補完する
+	int16_t bigger_val = 0;		//線系補完するときの、大きいほうのエンコーダ―の生値
+	uint32_t bigger_time = 0;		//線系補完するときの、大きいほうの時間
+	if (correct[enc_side][4096] == -1) {	//ぴったり4096で終わってなかったら
+		bigger_val = 4096 + finish_val;
+		bigger_time = finish_time;
+	} else {								//ぴったり終わっていれば、最後の値をそのまま入れる
+		bigger_val = 4096;
+		bigger_time = correct[enc_side][4096];
+	}
+	for (int i = 4096; i >= 0; i--) {	//おしりから値が入っていないところを探していく
+		if (correct[enc_side][i] != -1) {		//値が入っていたら
+			if (bigger_val - i <= 1)
+				;	//値が入っているのが連続なら線系補完はしない(4096に値が入っている場合のために不等号)
+			else {
+				//間のやつらを線形補完する
+				float a = (bigger_time - correct[enc_side][i])
+						/ (bigger_val - i);	//傾き
+				for (int j = MIN(bigger_val-1,4096); j > i; j--) {//bigger_val ~ i までの間を線系補完
+					correct[enc_side][j] = (a * (j - i) + correct[enc_side][i]);//傾き×現在値＋切片　で線形補完
+				}
+			}
+			//bigger を更新して次へ
+			bigger_val = i;
+			bigger_time = correct[enc_side][i];
+		}
+	}
+
+	//ここまででcorrectに連続で値が入ったはず.なので次はcorrectを「correct[生値]=計測時間」から「correct[生値]=補正値」に直していく
+	float slope = 4096 / correct[enc_side][4096];//生値/時間の傾き。観測量は曲線だが真の値は直線のはずなのでこれで補正値を求める
+	//全て時間から補正値に変換
+	for (int i = 0; i < 4097; i++)
+		correct[enc_side][i] *= slope;
+
+}
+
+void encoder::yi_correct() {
+	//左右で補正を行う
+	yi_correct(enc_right);
+	yi_correct(enc_left);
 }
 
 encoder::encoder() {
@@ -696,6 +812,9 @@ void photo::switch_led(PHOTO_TYPE sensor_type, bool is_light) {
 		GPIOx = GPIOC;
 		GPIO_Pin = GPIO_Pin_12;
 		break;
+
+	default:
+		break;
 	}
 
 	//光らせる
@@ -712,29 +831,32 @@ uint16_t photo::get_ad(PHOTO_TYPE sensor_type) {
 
 	//どのIOをいじるか設定
 	switch (sensor_type) {
-	case right:
+	case PHOTO_TYPE::right:
 		ADCx = ADC1;
 		ADC_CH = ADC_Channel_15;
 		break;
 
-	case left:
+	case PHOTO_TYPE::left:
 		ADCx = ADC1;
 		ADC_CH = ADC_Channel_11;
 		break;
 
-	case front_right:
+	case PHOTO_TYPE::front_right:
 		ADCx = ADC1;
 		ADC_CH = ADC_Channel_8;
 		break;
 
-	case front_left:
+	case PHOTO_TYPE::front_left:
 		ADCx = ADC1;
 		ADC_CH = ADC_Channel_10;
 		break;
 
-	case front:
+	case PHOTO_TYPE::front:
 		ADCx = ADC1;
 		ADC_CH = ADC_Channel_14;
+		break;
+
+	default:
 		break;
 	}
 
@@ -804,33 +926,33 @@ void photo::set_ad(PHOTO_TYPE sensor_type, int16_t set_value) {
 	gap_buf[sensor_type][(GAP_AVE_COUNT - 1)] = count_wall_gap(sensor_type);
 
 	switch (sensor_type) {
-	case right:
+	case PHOTO_TYPE::right:
 		right_ad = now_val;
 		break;
 
-	case left:
+	case PHOTO_TYPE::left:
 		left_ad = now_val;
 		break;
 
-	case front_right:
+	case PHOTO_TYPE::front_right:
 		front_right_ad = now_val;
-		;
 		break;
 
-	case front_left:
+	case PHOTO_TYPE::front_left:
 		front_left_ad = now_val;
-		;
 		break;
 
 	case front:
 		front_ad = now_val;
-		;
+		break;
+
+	default:
 		break;
 	}
 }
 
 void photo::interrupt(bool is_light) {
-	const static int wait_number = 1000;
+	const static int wait_number = 1200;	//1000でだいたい100us弱	1500で120usくらい
 	photo::turn_off_all();
 
 	photo::set_ref(right, get_ad(right));		//消えてる時をrefにする
@@ -843,7 +965,8 @@ void photo::interrupt(bool is_light) {
 	if (is_light) {
 		photo::light(right);
 		photo::light(left);
-		for (int i = 0; i < wait_number * 2; i++) {
+		for (int i = 0; i < wait_number; i++) {
+
 		}
 	}
 	photo::set_ad(right, get_ad(right) - get_ref(right));		//差分を代入
@@ -877,24 +1000,27 @@ void photo::interrupt(bool is_light) {
 
 int16_t photo::get_ref(PHOTO_TYPE sensor_type) {
 	switch (sensor_type) {
-	case right:
+	case PHOTO_TYPE::right:
 		return right_ref;
 		break;
 
-	case left:
+	case PHOTO_TYPE::left:
 		return left_ref;
 		break;
 
-	case front_right:
+	case PHOTO_TYPE::front_right:
 		return front_right_ref;
 		break;
 
-	case front_left:
+	case PHOTO_TYPE::front_left:
 		return front_left_ref;
 		break;
 
-	case front:
+	case PHOTO_TYPE::front:
 		return front_ref;
+		break;
+
+	default:
 		break;
 	}
 
@@ -903,48 +1029,54 @@ int16_t photo::get_ref(PHOTO_TYPE sensor_type) {
 
 void photo::set_ref(PHOTO_TYPE sensor_type, int16_t set_value) {
 	switch (sensor_type) {
-	case right:
+	case PHOTO_TYPE::right:
 		right_ref = set_value;
 		break;
 
-	case left:
+	case PHOTO_TYPE::left:
 		left_ref = set_value;
 		break;
 
-	case front_right:
+	case PHOTO_TYPE::front_right:
 		front_right_ref = set_value;
 		break;
 
-	case front_left:
+	case PHOTO_TYPE::front_left:
 		front_left_ref = set_value;
 		break;
 
-	case front:
+	case PHOTO_TYPE::front:
 		front_ref = set_value;
+		break;
+
+	default:
 		break;
 	}
 }
 
 int16_t photo::get_value(PHOTO_TYPE sensor_type) {
 	switch (sensor_type) {
-	case right:
+	case PHOTO_TYPE::right:
 		return right_ad;
 		break;
 
-	case left:
+	case PHOTO_TYPE::left:
 		return left_ad;
 		break;
 
-	case front_right:
+	case PHOTO_TYPE::front_right:
 		return front_right_ad;
 		break;
 
-	case front_left:
+	case PHOTO_TYPE::front_left:
 		return front_left_ad;
 		break;
 
-	case front:
+	case PHOTO_TYPE::front:
 		return front_ad;
+		break;
+
+	default:
 		break;
 	}
 
@@ -955,13 +1087,15 @@ bool photo::check_wall(unsigned char muki) {
 
 	switch (muki) {
 	case MUKI_RIGHT:
-		if (photo::get_value(right) >= parameter::get_min_wall_photo(right)) {
+		if (photo::get_value(PHOTO_TYPE::right)
+				>= parameter::get_min_wall_photo(PHOTO_TYPE::right)) {
 			return true;
 		}
 		return false;
 
 	case MUKI_LEFT:
-		if (photo::get_value(left) >= parameter::get_min_wall_photo(left)) {
+		if (photo::get_value(PHOTO_TYPE::left)
+				>= parameter::get_min_wall_photo(PHOTO_TYPE::left)) {
 			return true;
 		}
 		return false;
@@ -1040,6 +1174,9 @@ float control::cross_delta_gain(SEN_TYPE sensor) {
 		return (photo_delta.P * photo_gain.P + photo_delta.I * photo_gain.I
 				+ photo_delta.D * photo_gain.D);
 
+	default:
+		break;
+
 	}
 	return 0;
 }
@@ -1073,23 +1210,24 @@ void control::cal_delta() {
 			delta = max_photo_delta;
 
 		//中央付近は制御しない
-		//if (ABS(delta) > 10) {
-		//	photo_right_delta = delta;
-		//}
+		if (ABS(delta) > 10) {
+			photo_right_delta = delta;
+		}
 
 		//壁の切れ目では制御を切る
 		if (photo::check_wall_gap(right)) {
-			photo_right_delta = 0;
+			//		photo_right_delta = 0;
 		}
 //		if (delta < 0)
 //			photo_right_delta = 0;	//近づく方向には制御しない
 
 	}
 
-	if (photo::check_wall(left) && control::get_wall_control_phase()) {
+	if (photo::check_wall(m_left) && control::get_wall_control_phase()) {
 
-		ideal = static_cast<float>(parameter::get_ideal_photo(left));
-		actual = static_cast<float>(photo::get_value(left));
+		ideal =
+				static_cast<float>(parameter::get_ideal_photo(PHOTO_TYPE::left));
+		actual = static_cast<float>(photo::get_value(PHOTO_TYPE::left));
 		delta = actual - ideal;		//理想値との差分
 
 		//上限を切る。
@@ -1102,7 +1240,7 @@ void control::cal_delta() {
 		}
 		//壁の切れ目では制御を切る
 		if (photo::check_wall_gap(left)) {
-			photo_left_delta = 0;
+			//		photo_left_delta = 0;
 		}
 		//	if (delta < 0)
 		//		photo_left_delta = 0;	//近づく方向には制御しない
@@ -1202,8 +1340,8 @@ void control::posture_control() {
 				duty_l += get_feedback(MUKI_LEFT);
 			}
 
-			motor::set_duty(motor_right, duty_r);
-			motor::set_duty(motor_left, duty_l);
+			motor::set_duty(m_right, duty_r);
+			motor::set_duty(m_left, duty_l);
 		}
 	}
 }
@@ -1246,6 +1384,9 @@ void control::reset_delta(SEN_TYPE type) {
 
 	case sen_accel:
 		//現在は偏差がないため。
+		break;
+
+	default:
 		break;
 	}
 }

@@ -43,26 +43,9 @@ int main(void) {
 
 	my7seg::blink(8, 100, 5);
 
+	myprintf("Compile TIME: %s\n\r",__TIME__ );
+
 	myprintf("vol -> %f\n\r", get_battery());
-
-	if (get_battery() < 3.8) {
-		while (1) {
-
-			my7seg::light_error();
-			wait::ms(500);
-
-			my7seg::turn_off();
-			wait::ms(500);
-
-			if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0) {
-				wait::ms(100);
-				break;
-			}
-
-		}
-	}
-
-	my7seg::turn_off();
 
 	mpu6000::init_mpu6000();
 
@@ -100,18 +83,35 @@ int main(void) {
 			;
 		wait::ms(100);
 
+		gyro::set_gyro_ref();
+
+		motor::stanby_motor();
+		motor::set_duty(MOTOR_SIDE::m_left,20);
+		motor::set_duty(MOTOR_SIDE::m_right,20);
+		while(1);
+
+
 		select = mode::select_mode(7, PHOTO_TYPE::right);
 
 		switch (select) {
 		case 0:		//•Ç‚Ì’l‚ğ“Ç‚Ş‚¾‚¯	–ŒÌ–h~‚Ì‚½‚ß‚Éƒ‚[ƒh0‚ÍÀŠQ‚È‚¢“z‚É‚µ‚Æ‚­
 			while (1) {
+
+				myprintf("gyro %4.4f  ",gyro::get_angular_velocity());
+				myprintf("accel %4.4f",accelmeter::get_accel());
+				myprintf("right_v %d  ",encoder::last_value[enc_right]);
+				myprintf("left_v %d",encoder::last_value[enc_left]);
+
+				myprintf("\n\r");
+
+				/*
 				myprintf("right %d  ", photo::get_value(right));
 				myprintf("left %d  ", photo::get_value(left));
 				myprintf("f_r %d  ", photo::get_value(front_right));
 				myprintf("f_l %d  ", photo::get_value(front_left));
 				myprintf("front %d  ", photo::get_value(front));
 				myprintf("\n\r");
-
+				*/
 				wait::ms(100);
 				if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0) {
 					wait::ms(100);
@@ -143,13 +143,14 @@ int main(void) {
 		case 4:		//’²®—p
 			while (1) {
 				my7seg::blink(8, 500, 1);
-				if (photo::check_wall(PHOTO_TYPE::front))
+				if (photo::check_wall(PHOTO_TYPE::right))
 					break;
 			}
 			my7seg::count_down(3, 500);
 			mouse::run_init(true, true);
 
-			//control::stop_wall_control();
+			control::stop_wall_control();
+			//control::start_wall_control();
 
 			//run::accel_run_wall_eage(0.09 * 2, SEARCH_VELOCITY, 0, 0.09);
 			//run::accel_run(0.045, SEARCH_VELOCITY, 0);
@@ -157,8 +158,8 @@ int main(void) {
 			//run::slalom_for_search(small, MUKI_LEFT, 0);
 			//run::accel_run_wall_eage(0.09*5, SEARCH_VELOCITY, 0, 0.09*4.5);
 
-			run::accel_run(0.045 * 2 * 5, 0, 0);
-			run::spin_turn(-180);
+			run::accel_run(0.045 * 3, 0, 0);
+			//run::spin_turn(-180);
 
 			//run::fit_run(0);
 
@@ -226,6 +227,7 @@ void interrupt_timer() {
 	mouse::add_one_count_ms();
 	wait::set_count(wait_counter);
 
+
 	photo::interrupt(true);
 	gyro::interrupt();
 	accelmeter::interrupt();
@@ -236,7 +238,7 @@ void interrupt_timer() {
 	control::cal_delta();			//p¨§Œä‚É—p‚¢‚é•Î·‚ğŒvZ
 	control::posture_control();
 
-	control::fail_safe();
+	//control::fail_safe();
 
 	static volatile uint16_t i = 0;
 	if (motor::isEnable()) {
@@ -245,11 +247,9 @@ void interrupt_timer() {
 				i++;
 			}
 		} else if (i < 10000) {
-			flog[0][i] = mouse::get_distance_m();//mouse::get_ideal_angular_velocity();
-			flog[1][i] = control::photo_delta.P;//gyro::get_angular_velocity();
+			flog[0][i] = mouse::get_ideal_angular_velocity();
+			flog[1][i] = encoder::get_velocity();
 			i++;
-			GPIO_ResetBits(GPIOA, GPIO_Pin_14);
-
 		}
 	}
 

@@ -44,7 +44,7 @@ public:
 //motor関連
 extern const uint16_t MAX_PERIOD;
 enum MOTOR_SIDE {
-	motor_left = 0, motor_right = 1
+	m_left = 0, m_right = 1
 };
 
 class motor {
@@ -100,10 +100,9 @@ private:
 	const static uint16_t cs_GPIO_Pin;	//csをたたくIOピンの番号
 
 protected:
-public:
 	static uint16_t read_spi(uint16_t read_reg);		//SPI通信でregレジスタから読みだす
 	static void write_spi(uint16_t reg, uint16_t data);	//SPI通信でregレジスタにdataを書き込む
-	static int16_t get_mpu_value(SEN_TYPE sen, AXIS_t axis);//senセンサーのaxis軸方向のデータを読む
+	static int16_t get_mpu_val(SEN_TYPE sen, AXIS_t axis);//senセンサーのaxis軸方向のデータを読む
 
 	mpu6000();
 
@@ -175,18 +174,30 @@ public:
 };
 
 //encoder
+typedef enum {
+	enc_right = 0, enc_left = 1
+} ENC_SIDE;
 class encoder {
 private:
 	const static uint8_t MOVING_AVERAGE;	//移動平均をとる時間　単位は制御周期
 	const static uint32_t MEDIAN;		//カウントの中央値
+	static float correct[2][4097];	//補正用のテーブル
+	static bool correct_flag[2];	//補正中か否か
+	static uint32_t init_time[2];	//補正の開始時間
+	static int16_t finish_time[2];	//補正終了時の時間
+
+	static void yi_correct(ENC_SIDE enc_right);		//片方ずつY.I.式補正法を行う。（補正テーブルの作成）
 
 	encoder();
 
 public:
 	static float right_velocity, left_velocity, velocity;
+	static int16_t last_value[2];	//エンコーダ―の生値
 
 	static void interrupt();		//モーターのEncoderの値計算
 	static float get_velocity();	//左右の平均(重心速度)のEncoder取得[m/s]　 移動平均取ってることに注意！
+
+	static void yi_correct();		//Y.I.式補正法を行う。（補正テーブルの作成）
 
 	~encoder();
 };
