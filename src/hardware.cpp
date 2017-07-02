@@ -374,7 +374,7 @@ void mpu6000::write_spi(uint16_t reg, uint16_t data) {
 
 }
 
-int16_t mpu6000::get_mpu_val(SEN_TYPE sen, AXIS_t axis) {
+volatile int16_t mpu6000::get_mpu_val(SEN_TYPE sen, AXIS_t axis) {
 	int16_t data = 0;
 	uint16_t reg_h = 0;	//highの値へのレジスタ
 	uint16_t reg_l = 0;	//Lowの値へのレジスタ
@@ -435,12 +435,12 @@ void mpu6000::init_mpu6000() {
 	static const uint16_t ACCEL_CONFIG = 0x1c;
 
 	write_spi(PWR_MGMT_1, 0x00);		//サイクル1、SLEEP解除、温度センサは使わない
-	write_spi(PWR_MGMT_2, 0xEE);		//ジャイロのZ軸方向、加速度のY軸方向以外は停止//6c
+	write_spi(PWR_MGMT_2, 0xC6);		//ジャイロのZ軸方向以外は停止、加速度はXYZ軸方向全部許可
 	write_spi(USER_CTRL, 16);			//I2CをDisable、SPIをEnable
-	write_spi(SIGNAL_PATH_RESET, 0x06);	//ジャイロ、加速度リセット//04
+	write_spi(SIGNAL_PATH_RESET, 0x06);	//ジャイロ、加速度リセット
 	write_spi(DATA_CONFIG, 0x01);		//フィルターはかけない
 	write_spi(GYRO_CONFIG, 0x18);		//ジャイロを±2000°/sに設定
-	write_spi(ACCEL_CONFIG, 0x18);		//加速度を±16g/sに設定
+	write_spi(ACCEL_CONFIG, 0x08);		//加速度を±4g/sに設定
 
 	//確認用
 	/*
@@ -463,55 +463,74 @@ mpu6000::~mpu6000() {
 
 const float accelmeter::ACCEL_PERIOD = CONTORL_PERIOD;		//加速度計の制御周期[s]
 const float accelmeter::REF_TIME = 1;			//加速度計のリファレンスとる時間[s]
-const uint8_t accelmeter::AVERAGE_COUNT = 20;			//加速度計の平均回数[回]
-float accelmeter::accel_ad = 0, accelmeter::accel_ref = 0;
-float accelmeter::accel;
+const uint8_t accelmeter::AVERAGE_COUNT = 10;			//加速度計の平均回数[回]
+float accelmeter::accel_ad[AXIS_t::dim_num] = { 0 },
+		accelmeter::accel_ref[AXIS_t::dim_num] = { 0 };
+float accelmeter::accel[AXIS_t::dim_num] = { 0 };
 
 void accelmeter::interrupt() {
-	static float buff[AVERAGE_COUNT] = { 0 };	//データを保存しておく配列
-	float sum = 0;
+	static float buff[AXIS_t::dim_num][AVERAGE_COUNT] = { 0 };	//データを保存しておく配列
+	float sum[AXIS_t::dim_num] = { 0 };
 
-	for (uint8_t i = 0; (i + 1) < AVERAGE_COUNT; i++) {
-		buff[i] = buff[i + 1];	//配列を1つずらす
-		sum += buff[i];			//ついでに加算する
+	for (int i = 0; (i + 1) < AVERAGE_COUNT; i++) {
+		for (int j = 0; j < AXIS_t::dim_num; j++) {
+			buff[j][i] = buff[j][i + 1];	//配列を1つずらす
+			sum[j] += buff[j][i];			//ついでに加算する
+		}
 	}
 
 	//配列の最後に入れる
-	buff[(AVERAGE_COUNT - 1)] = static_cast<float>(mpu6000::get_mpu_val(
-			sen_accel, axis_y));			//加速度のy方向
+	buff[AXIS_t::axis_x][(AVERAGE_COUNT - 1)] =
+			static_cast<float>(mpu6000::get_mpu_val(sen_accel, axis_x));//加速度のx方向
+	buff[AXIS_t::axis_y][(AVERAGE_COUNT - 1)] =
+			static_cast<float>(mpu6000::get_mpu_val(sen_accel, axis_y));//加速度のy方向
+	buff[AXIS_t::axis_z][(AVERAGE_COUNT - 1)] =
+			static_cast<float>(mpu6000::get_mpu_val(sen_accel, axis_z));//加速度のz方向
 
-	sum += buff[(AVERAGE_COUNT - 1)];
-
-	accel_ad = sum / AVERAGE_COUNT;
+	for (int j = 0; j < AXIS_t::dim_num; j++) {
+		sum[j] += buff[j][(AVERAGE_COUNT - 1)];		//sumに最新の値を足す
+		accel_ad[j] = sum[j] / AVERAGE_COUNT;		//平均をとって加速度の値とする
+	}
 
 	cal_accel();
 
 }
 
-float accelmeter::get_accel_ref() {
+float accelmeter::get_accel_ref(AXIS_t xyz) {
 	float accel_sum = 0;
 	int32_t i;
 	for (i = 0; i < static_cast<int32_t>(REF_TIME / ACCEL_PERIOD); i++) {
-		accel_sum += get_accel_ad();
+		accel_sum += get_accel_ad(xyz);
 		wait::ms(1);
 	}
 	return (accel_sum / (i + 1));
 }
 
-float accelmeter::get_accel_ad() {
-	return accel_ad;
+float accelmeter::get_accel_ad(AXIS_t xyz) {
+	return accel_ad[xyz];
 }
 
 void accelmeter::set_accel_ref() {
-	accel_ref = get_accel_ref();
+	set_accel_ref(AXIS_t::axis_x);
+	set_accel_ref(AXIS_t::axis_y);
+	set_accel_ref(AXIS_t::axis_z);
+}
+
+void accelmeter::set_accel_ref(AXIS_t xyz) {
+	accel_ref[xyz] = get_accel_ref(xyz);
 }
 
 void accelmeter::cal_accel() {
-	accel = (accel_ad - accel_ref) / ACCEL_SENSITIVITY * 9.8;//加速度[g]を[m/ss]に直すため重力加速度をかける
+	for (int j = 0; j < AXIS_t::dim_num; j++)
+		accel[j] = (accel_ad[j] - accel_ref[j]) / ACCEL_SENSITIVITY * 9.8;//加速度[g]を[m/ss]に直すため重力加速度をかける
 }
 
 float accelmeter::get_accel() {
-	return accel;
+	return accel[axis_y];		//進行方向の加速度
+}
+
+float accelmeter::get_accel(AXIS_t xyz) {
+	return accel[xyz];
 }
 
 int16_t gyro::gyro_value;
@@ -616,20 +635,21 @@ gyro::~gyro() {
 }
 
 //encoder関連
-const uint8_t encoder::MOVING_AVERAGE = 20;
+const uint8_t encoder::MOVING_AVERAGE = 1;
 const uint32_t encoder::MEDIAN = 32762;
 float encoder::left_velocity, encoder::right_velocity, encoder::velocity;
-int16_t encoder::last_value[2] = { 0 };
+int16_t encoder::raw_count[2] = { 0 };
 float encoder::correct[2][4097] = { 0 };
 bool encoder::correct_flag[2] = { false, false };
 uint32_t encoder::init_time[2] = { 0 };
+bool encoder::isCorrect[2] = { false, false };		//Y.I.式補正を行っているかどうかのフラグ
 
 void encoder::interrupt() {
 	static float data_r[MOVING_AVERAGE] = { 0 };	//データを保存しておく配列
 	float sum_r = 0;
 	static float data_l[MOVING_AVERAGE] = { 0 };	//データを保存しておく配列
 	float sum_l = 0;
-	float temp_last_value_r, temp_last_value_l;
+	float delta_value_r, delta_value_l;
 
 	for (uint8_t i = 0; (i + 1) < MOVING_AVERAGE; i++) {
 		data_r[i] = data_r[i + 1];	//配列を1つずらす
@@ -639,96 +659,137 @@ void encoder::interrupt() {
 	}
 
 	//エンコーダ―の値を取得
-	temp_last_value_r = 32762 - static_cast<float>(TIM3->CNT);
-	temp_last_value_l = static_cast<float>(TIM2->CNT) - 32762;
+	delta_value_r = 32762 - static_cast<float>(TIM3->CNT);
+	delta_value_l = static_cast<float>(TIM2->CNT) - 32762;
 
 	TIM2->CNT = 32762;
 	TIM3->CNT = 32762;
 
-	//配列の最後に入れる
-	data_r[(MOVING_AVERAGE - 1)] = temp_last_value_r * ENCODER_CONST
-			/ CONTROL_PERIOD * tire_R;			//count*[rad/count]/[sec]*[m]
-	data_l[(MOVING_AVERAGE - 1)] = temp_last_value_l * ENCODER_CONST
-			/ CONTORL_PERIOD * tire_R;	//m/s
-
-	sum_r += data_r[(MOVING_AVERAGE - 1)];
-	sum_l += data_r[(MOVING_AVERAGE - 1)];
-
-	right_velocity = sum_r / MOVING_AVERAGE;
-	left_velocity = sum_l / MOVING_AVERAGE;
+	//Y.I.式補正テーブルが完成していたら、Y.I.式補正をする.してなかったら移動平均をとる
+	if (isCorrect[enc_right])
+		//補正した差分を使って速度をとる
+		right_velocity = raw_to_correct(enc_right, delta_value_r)
+				* ENCODER_CONST / CONTROL_PERIOD * tire_R;//count*[rad/count]/[sec]*[m]
+	else {
+		//移動平均をとる
+		//配列の最後に入れる
+		data_r[(MOVING_AVERAGE - 1)] = delta_value_r * ENCODER_CONST
+				/ CONTROL_PERIOD * tire_R;		//count*[rad/count]/[sec]*[m]
+		sum_r += data_r[(MOVING_AVERAGE - 1)];
+		right_velocity = sum_r / MOVING_AVERAGE;
+	}
+	if (isCorrect[enc_left])
+		//補正した差分を使って速度をとる
+		left_velocity = raw_to_correct(enc_left, delta_value_l) * ENCODER_CONST
+				/ CONTROL_PERIOD * tire_R;		//count*[rad/count]/[sec]*[m]
+	else {
+		//移動平均をとる
+		//配列の最後に入れる
+		data_l[(MOVING_AVERAGE - 1)] = delta_value_l * ENCODER_CONST
+				/ CONTROL_PERIOD * tire_R;		//count*[rad/count]/[sec]*[m]
+		sum_l += data_l[(MOVING_AVERAGE - 1)];
+		left_velocity = sum_l / MOVING_AVERAGE;
+	}
 
 	velocity = (right_velocity + left_velocity) / 2;
 
-
-
 	//補正用にデータを保存
 	if (correct_flag[enc_right]) {
-		last_value[enc_right] += static_cast<int16_t>(temp_last_value_r);//正転で増えていく方向に
-		if (last_value[enc_right] < 0)
-			last_value[enc_right] += 4096;
-		else if (last_value[enc_right] > 4096) {
-			last_value[enc_right] %= 4096;
-			correct_flag[enc_right] = false;
+		raw_count[enc_right] += static_cast<int16_t>(delta_value_r);//正転で増えていく方向に
+		if (raw_count[enc_right] < 0)
+			raw_count[enc_right] += 4096;
+		else if (raw_count[enc_right] > 4096) {
+			raw_count[enc_right] %= 4096;
+			correct_flag[enc_right] = false;	//補正テーブル作成完了
+			isCorrect[enc_right] = true;		//補正フラグを建てる
+			//（厳密には補正テーブルはまだできていないが作成途中ではエンコーダーの値を参照しないのでこの時点で建てる）
 		} else {
 			//オーバーフローしないときは保存していく
-			correct[enc_right][last_value[enc_right]] = wait::get_count()
-					- init_time[enc_right];	//時間を保存
+			correct[enc_right][raw_count[enc_right]] =
+					static_cast<float>(wait::get_count() - init_time[enc_right]);//時間を保存
 		}
 	}
 	if (correct_flag[enc_left]) {
-		last_value[enc_left] += static_cast<int16_t>(temp_last_value_l);//正転で増えていく方向に
-		if (last_value[enc_left] < 0)
-			last_value[enc_left] += 4096;
-		else if (last_value[enc_left] > 4096) {
-			last_value[enc_left] %= 4096;
+		raw_count[enc_left] += static_cast<int16_t>(delta_value_l);	//正転で増えていく方向に
+		if (raw_count[enc_left] < 0)
+			raw_count[enc_left] += 4096;
+		else if (raw_count[enc_left] > 4096) {
+			raw_count[enc_left] %= 4096;
 			correct_flag[enc_left] = false;
+			isCorrect[enc_left] = true;		//補正を完了フラグを建てる
+			//（厳密には補正テーブルはまだできていないが作成途中ではエンコーダーの値を参照しないのでこの時点で建てる）
 		} else {
 			//オーバーフローしないときは保存していく
-			correct[enc_left][last_value[enc_left]] = wait::get_count()
-					- init_time[enc_left];	//時間を保存
+			correct[enc_left][raw_count[enc_left]] =
+					static_cast<float>(wait::get_count() - init_time[enc_left]);//時間を保存
 		}
-
 	}
-
 
 }
 
 float encoder::get_velocity() {
+	return velocity;
 
 	//松井さん方式　http://matsui-mouse.blogspot.jp/2014/03/blog-post_26.html
-	return (velocity
-			+ accelmeter::get_accel() * accelmeter::AVERAGE_COUNT
-					* accelmeter::ACCEL_PERIOD / 2);
+	//カルマンフィルタで加速度とセンサフュージョンしてるからコレしないでいい気がする
+	/*
+	 return (velocity
+	 + accelmeter::get_accel(axis_y) * accelmeter::AVERAGE_COUNT
+	 * accelmeter::ACCEL_PERIOD / 2);
+	 */
 }
 
-void encoder::yi_correct(ENC_SIDE enc_side) {
-	motor::stanby_motor();
+volatile float encoder::raw_to_correct(ENC_SIDE enc_side, int16_t raw_delta) {
+	float temp_delta = 0;						//エンコーダーの前回との差分をとる
+	static float correct_cnt[2] = { 0 };		//補正後の値を記録
+
+	raw_count[enc_right] += raw_delta;
+	if (raw_count[enc_right] > 4096) {
+		raw_count[enc_right] -= 4096;
+		temp_delta += 4096;	//上方向のオーバーフローしたので差分値も先に補正しておく
+	} else if (raw_count[enc_right] < 0) {
+		raw_count[enc_right] += 4096;
+		temp_delta -= 4096;	//下方向のオーバーフローしたので差分値も先に補正しておく
+	}
+	temp_delta += (correct[enc_right][raw_count[enc_right]]
+			- correct_cnt[enc_right]);	//YI式補正テーブルで補正し、前回との差分をとる
+	correct_cnt[enc_right] = correct[enc_right][raw_count[enc_right]];	//値を更新
+	//補正直後の1msだけエンコーダーの差分を求める式が初期値の問題でバグる。そんなすぐにはエンコーダー参照しないので問題ないはず
+
+	return temp_delta;	//速度を求めるために補正した差分を使う
+}
+
+volatile void encoder::yi_correct(ENC_SIDE enc_side) {
+	mouse::run_init(false, false);
 	if (enc_side == enc_right)
 		motor::set_duty(MOTOR_SIDE::m_right, 20);
 	else
 		motor::set_duty(MOTOR_SIDE::m_left, 20);
 
 	//補正テーブルを全消去
+	isCorrect[enc_side] = false;	//Y.I.式補正は中止
 	for (int i = 0; i < 4097; i++) {
 		correct[enc_side][i] = -1;
 	}
 
-	wait::ms(1000);	//回転が平衡状態に達するまで待機
+	wait::ms(3000);	//回転が平衡状態に達するまで待機
 
 	correct_flag[enc_side] = true;
 	//初期値代入
-	last_value[enc_side] = 0;
+	raw_count[enc_side] = 0;
 	correct[enc_side][0] = 0;
+	init_time[enc_side] = wait::get_count();
 	while (correct_flag[enc_side])
 		;	//一周分測定
-	int16_t finish_val = last_value[enc_side];	//4096を少し超えて終了するので、0より少し大きい値のはず
-	int16_t finish_time = wait::get_count() - init_time[enc_side];	//終了した時間を保存
+	int16_t finish_val = raw_count[enc_side];	//4096を少し超えて終了するので、0より少し大きい値のはず
+	float finish_time = static_cast<float>(wait::get_count()
+			- init_time[enc_side]);	//終了した時間を保存
 
 	motor::sleep_motor();
 
 	//とびとびで値が保存されているはずなので、補完する
 	int16_t bigger_val = 0;		//線系補完するときの、大きいほうのエンコーダ―の生値
-	uint32_t bigger_time = 0;		//線系補完するときの、大きいほうの時間
+	float bigger_time = 0;		//線系補完するときの、大きいほうの時間
 	if (correct[enc_side][4096] == -1) {	//ぴったり4096で終わってなかったら
 		bigger_val = 4096 + finish_val;
 		bigger_time = finish_time;
@@ -743,9 +804,10 @@ void encoder::yi_correct(ENC_SIDE enc_side) {
 			else {
 				//間のやつらを線形補完する
 				float a = (bigger_time - correct[enc_side][i])
-						/ (bigger_val - i);	//傾き
-				for (int j = MIN(bigger_val-1,4096); j > i; j--) {//bigger_val ~ i までの間を線系補完
-					correct[enc_side][j] = (a * (j - i) + correct[enc_side][i]);//傾き×現在値＋切片　で線形補完
+						/ static_cast<float>(bigger_val - i);	//傾き
+				for (int j = MIN(bigger_val - 1, 4096); j > i; j--) {//bigger_val ~ i までの間を線系補完
+					correct[enc_side][j] = static_cast<float>(a * (j - i)
+							+ correct[enc_side][i]);	//傾き×現在値＋切片　で線形補完
 				}
 			}
 			//bigger を更新して次へ
@@ -766,6 +828,20 @@ void encoder::yi_correct() {
 	//左右で補正を行う
 	yi_correct(enc_right);
 	yi_correct(enc_left);
+}
+
+void encoder::draw_correct(bool right, bool left) {
+	if (!right)
+		if (!left)
+			return;
+	for (int i = 0; i < 4097; i++) {
+		myprintf("%d", i);
+		if (right)
+			myprintf(", %f", correct[enc_right][i]);
+		if (left)
+			myprintf(", %f", correct[enc_left][i]);
+		myprintf("\n\r");
+	}
 }
 
 encoder::encoder() {
@@ -896,10 +972,11 @@ void photo::set_ad(PHOTO_TYPE sensor_type, int16_t set_value) {
 	int16_t sum = 0;
 	float ave_sum = 0;
 
-	for (uint8_t i = 0; (i + 1) < PHOTO_AVERAGE_TIME; i++) {
-		buf[sensor_type][i] = buf[sensor_type][i + 1];	//配列を1つずらす
-		sum += buf[sensor_type][i];			//ついでに加算する
-
+	for (uint8_t i = 0; (i + 1) < MAX(PHOTO_AVERAGE_TIME, GAP_AVE_COUNT); i++) {
+		if ((i + 1) < PHOTO_AVERAGE_TIME) {		//配列の要素外にアクセスしないように
+			buf[sensor_type][i] = buf[sensor_type][i + 1];	//配列を1つずらす
+			sum += buf[sensor_type][i];			//ついでに加算する
+		}
 		if ((i + 1) < GAP_AVE_COUNT) {		//配列の要素外にアクセスしないように
 			ave_buf[sensor_type][i] = ave_buf[sensor_type][i + 1];	//配列を1つずらす
 			diff_buf[sensor_type][i] = diff_buf[sensor_type][i + 1];//配列を1つずらす
@@ -922,8 +999,7 @@ void photo::set_ad(PHOTO_TYPE sensor_type, int16_t set_value) {
 	//その差分なので、おおよそノイズの影響を除去した傾きが分かると信じてる
 	diff_buf[sensor_type][(GAP_AVE_COUNT - 1)] = ave_sum / GAP_AVE_COUNT
 			- static_cast<float>(now_val);
-
-	gap_buf[sensor_type][(GAP_AVE_COUNT - 1)] = count_wall_gap(sensor_type);
+	gap_buf[sensor_type][(GAP_AVE_COUNT - 1)] = count_wall_gap(sensor_type);//使ってない
 
 	switch (sensor_type) {
 	case PHOTO_TYPE::right:
@@ -1131,13 +1207,21 @@ int8_t photo::count_wall_gap(PHOTO_TYPE type) {
 	}
 	return count;
 }
-bool photo::check_wall_gap(PHOTO_TYPE type) {
+bool photo::check_wall_gap(PHOTO_TYPE type, int16_t threshold) {
 	//壁の切れ目ならtrue
 	//急に壁が現れた時も制御を切る
-	if (ABS(count_wall_gap(type)) < (GAP_AVE_COUNT * 0.8))
-		return false;
 
-	return true;
+	float before_val = ave_buf[type][0];
+	float now_val = ave_buf[type][GAP_AVE_COUNT - 1];
+
+	if (ABS(now_val-before_val) > ABS(threshold)) {		//壁の切れ目
+		return true;
+	}
+
+	//if (ABS(count_wall_gap(type)) < (GAP_AVE_COUNT * 0.8))
+	//return false;
+
+	return false;
 
 }
 
@@ -1149,17 +1233,21 @@ photo::~photo() {
 
 //XXX 各種ゲイン
 //control関連
-const PID gyro_gain = { 30, 150, 0 };
-const PID photo_gain = { 0.1, 0, 0 };
-const PID encoder_gain = { 600, 2200, 0 };
+const PID gyro_gain = { 15, 750, 0.015 };//{ 15, 600, 0};		//限界感度法、限界感度30、限界周期0.01[s]
+const PID photo_gain = { 0.5, 0, 0 };
+const PID encoder_gain = { 200, 1000, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
+const PID accel_gain = { 0, 0, 0 };	//{50, 0, 0 };
 
-PID control::gyro_delta, control::photo_delta, control::encoder_delta;
+PID control::gyro_delta, control::photo_delta, control::encoder_delta,
+		control::accel_delta;
+float control::ctrl_accel_int = 0;
 bool control::control_phase = false;
 bool control::wall_control_flag = false;
 bool control::is_FF_CONTROL = false;
 bool control::is_FB_CONTROL = true;
+bool control::is_accel_CONTROL = true;
 
-float control::cross_delta_gain(SEN_TYPE sensor) {
+volatile float control::cross_delta_gain(SEN_TYPE sensor) {
 	switch (sensor) {
 	case sen_gyro:
 		return (gyro_delta.P * gyro_gain.P + gyro_delta.I * gyro_gain.I
@@ -1174,6 +1262,10 @@ float control::cross_delta_gain(SEN_TYPE sensor) {
 		return (photo_delta.P * photo_gain.P + photo_delta.I * photo_gain.I
 				+ photo_delta.D * photo_gain.D);
 
+	case sen_accel:
+		return (accel_delta.P * accel_gain.P + accel_delta.I * accel_gain.I
+				+ accel_delta.D * accel_gain.D);
+
 	default:
 		break;
 
@@ -1185,11 +1277,11 @@ float control::cross_delta_gain(SEN_TYPE sensor) {
 void control::cal_delta() {
 	float before_p_delta;
 	float photo_right_delta = 0, photo_left_delta = 0;
-	static float max_photo_delta = 500;		//壁に近いとき非線形にセンサ値が上昇するので上限を切る
+	static float max_photo_delta = 200;		//壁に近いとき非線形にセンサ値が上昇するので上限を切る
 
 	//エンコーダーのΔ計算
 	before_p_delta = encoder_delta.P;	//積分用
-	encoder_delta.P = (mouse::get_ideal_velocity() - encoder::get_velocity());
+	encoder_delta.P = (mouse::get_ideal_velocity() - mouse::get_velocity());
 	encoder_delta.I += (encoder_delta.P * CONTORL_PERIOD);
 	//encoder_delta.D = (encoder_delta.P - before_p_delta) * 1000;
 
@@ -1199,7 +1291,8 @@ void control::cal_delta() {
 	float delta = 0;
 	float ideal = 0, actual = 0;//uint16 - uint16 の計算はマイナスになったときオーバーフローするからfloat変数を経由する
 
-	if (photo::check_wall(right) && control::get_wall_control_phase()) {
+	if (photo::check_wall(PHOTO_TYPE::right)
+			&& control::get_wall_control_phase()) {
 
 		ideal = static_cast<float>(parameter::get_ideal_photo(right));
 		actual = static_cast<float>(photo::get_value(right));
@@ -1215,15 +1308,16 @@ void control::cal_delta() {
 		}
 
 		//壁の切れ目では制御を切る
-		if (photo::check_wall_gap(right)) {
-			//		photo_right_delta = 0;
+		if (photo::check_wall_gap(right, 15)) {
+			photo_right_delta = 0;
 		}
 //		if (delta < 0)
 //			photo_right_delta = 0;	//近づく方向には制御しない
 
 	}
 
-	if (photo::check_wall(m_left) && control::get_wall_control_phase()) {
+	if (photo::check_wall(PHOTO_TYPE::left)
+			&& control::get_wall_control_phase()) {
 
 		ideal =
 				static_cast<float>(parameter::get_ideal_photo(PHOTO_TYPE::left));
@@ -1239,22 +1333,21 @@ void control::cal_delta() {
 			photo_left_delta = delta;
 		}
 		//壁の切れ目では制御を切る
-		if (photo::check_wall_gap(left)) {
-			//		photo_left_delta = 0;
+		if (photo::check_wall_gap(left, 15)) {
+			photo_left_delta = 0;
 		}
 		//	if (delta < 0)
 		//		photo_left_delta = 0;	//近づく方向には制御しない
 	}
 
 	//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
-	if (mouse::get_ideal_velocity() < (SEARCH_VELOCITY * 0.5)) {
+	if (mouse::get_ideal_velocity() < (SEARCH_VELOCITY * 0.2)) {
 		photo_left_delta = 0;
 		photo_right_delta = 0;
-
 	}
 
 	photo_delta.P = (photo_right_delta - photo_left_delta);
-	//photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
+	photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
 	//photo_delta.D = (photo_delta.P - before_p_delta) * 1000;
 
 	//ジャイロのΔ計算
@@ -1262,13 +1355,23 @@ void control::cal_delta() {
 	gyro_delta.P = (mouse::get_ideal_angular_velocity()
 			- gyro::get_angular_velocity());
 	gyro_delta.I += (gyro_delta.P * CONTORL_PERIOD);
-	//gyro_delta.D = (gyro_delta.P - before_p_delta) * 1000;
+	gyro_delta.D = (gyro_delta.P - before_p_delta) * 1000;
 
 	if (photo_delta.P != 0 && get_wall_control_phase())
 		gyro_delta.I = 0;		//壁制御かけるときはGyroのIは使わない
 	else
 		photo_delta.I = 0;
 
+	//加速度の偏差計算
+	before_p_delta = accel_delta.P;	//積分用
+	accel_delta.P = (mouse::get_ideal_accel() - accelmeter::get_accel());
+	accel_delta.I += (accel_delta.P * CONTORL_PERIOD);
+	//accel_delta.D = (accel_delta.P - before_p_delta) / CONTORL_PERIOD;
+
+}
+
+float control::control_accel() {
+	return cross_delta_gain(sen_accel);
 }
 
 float control::control_velocity() {
@@ -1300,11 +1403,15 @@ void control::stop_control() {
 }
 
 float control::get_feedback(signed char right_or_left) {
-	if (right_or_left == MUKI_RIGHT) {			//右のモーターなら
-		return (control_velocity() - control_angular_velocity());
+	if (is_accel_CONTROL)
+		ctrl_accel_int += control_accel() * CONTORL_PERIOD;		//加速度の制御量を積分する
+	else
+		ctrl_accel_int = 0;
 
+	if (right_or_left == MUKI_RIGHT) {			//右のモーターなら
+		return (ctrl_accel_int + control_velocity() - control_angular_velocity());
 	} else {										//左のモーターなら
-		return (control_velocity() + control_angular_velocity());
+		return (ctrl_accel_int + control_velocity() + control_angular_velocity());
 
 	}
 }
@@ -1321,8 +1428,8 @@ float control::get_feedforward(const signed char right_or_left) {
 				+ (mouse::get_ideal_angular_velocity() * TREAD_W / 2 / 1000);
 
 	}
-	return (velocity / (2 * PI() * tire_R / 1000) * SPAR / PINION * M_SUM_ORM
-			/ MOTOR_ORM / MOTOR_CONST / get_battery()) * 100;
+	return (velocity / (2 * PI() * tire_R) * SPAR / PINION / MOTOR_CONST
+			* M_SUM_ORM / MOTOR_ORM / get_battery()) * 100;
 }
 
 void control::posture_control() {
@@ -1358,10 +1465,12 @@ void control::reset_delta() {
 	reset_delta(sen_gyro);
 	reset_delta(sen_photo);
 	reset_delta(sen_encoder);
+	reset_delta(sen_accel);
+	ctrl_accel_int = 0;
 
 }
 
-void control::reset_delta(SEN_TYPE type) {
+volatile void control::reset_delta(SEN_TYPE type) {
 
 	switch (type) {
 	case sen_gyro:
@@ -1383,7 +1492,9 @@ void control::reset_delta(SEN_TYPE type) {
 		break;
 
 	case sen_accel:
-		//現在は偏差がないため。
+		accel_delta.P = 0;
+		accel_delta.I = 0;
+		accel_delta.D = 0;
 		break;
 
 	default:
@@ -1406,3 +1517,46 @@ control::~control() {
 
 }
 
+void kalman::update(float EstimateU, float ObserveZ) {
+	float esX = x + EstimateU;		//前回の値に推定分だけずれた値を推定値とする
+	float esP = p + EstP;			//前回の分散に推定分だけ分散を増やす
+
+	float delta = ObserveZ - esX;	//観測量と推定値の差分
+
+	float K = esP / (ObsP + esP);	//カルマンゲイン
+
+	x = esX + K * delta;	//カルマンフィルタで推定値を補正
+	p = (1 - K) * esP;		//補正後の分散
+}
+
+float kalman::get_value() {
+	return x;
+}
+
+float kalman::get_dispersion() {
+	return p;
+}
+
+kalman::kalman() {
+	x = 0;
+	p = 0;
+	EstP = 0;
+	ObsP = 0;
+}
+
+kalman::kalman(float EstimateP, float ObserveP) {
+	x = 0;
+	p = 0;
+	EstP = EstimateP;
+	ObsP = ObserveP;
+}
+
+kalman::kalman(float initX, float initP, float EstimateP, float ObserveP) {
+	x = initX;
+	p = initP;
+	EstP = EstimateP;
+	ObsP = ObserveP;
+}
+
+kalman::~kalman() {
+}

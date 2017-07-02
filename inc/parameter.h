@@ -12,7 +12,7 @@
 
 //パラメータ
 
-#define tire_R (7.45 * 0.001)	//タイヤの半径　[m]
+#define tire_R (7.55 * 0.001)	//タイヤの半径　[m]
 
 //TODO メートルにしたい
 #define TREAD_W	44		//トレッド幅[mm]

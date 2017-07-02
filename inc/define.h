@@ -16,8 +16,8 @@
 
 #define MAZE_SIZE	16
 
-#define GOAL_x 7
-#define GOAL_y 7
+#define GOAL_x 2
+#define GOAL_y 2
 
 #define PATH_MAX 200
 
@@ -35,13 +35,13 @@ static const uint16_t buf_count = 100;	//バッファ式ログのバッファ数。
 #define PINION	9	//ピニオンギアの歯数
 #define SPAR	41	//スパーギアの歯数
 
-#define V_BATT_RATIO 2	//バッテリー監視用の抵抗による分圧比。バッテリーの何分の1を見てるか
+#define V_BATT_RATIO 2.1	//バッテリー監視用の抵抗による分圧比。バッテリーの何分の1を見てるか
 
 #define MOTOR_ORM	4.5		//モーターの端子間抵抗[Ω]
 #define	M_DRIVER_ORM	1	//モータードライバーの抵抗[Ω]
 #define M_SUM_ORM	5.5		//上2つの合算抵抗[Ω]
 
-#define ACCEL_SENSITIVITY	2048	//加速度計の感度[count/g] これで測定値を割ると加速度
+#define ACCEL_SENSITIVITY	8192	//加速度計の感度[count/g] これで測定値を割ると加速度
 #define GYRO_SENSITIVITY	16.4		//Gyroの感度[count/(degree/s)]　これで測定値を割ると角速度になる
 //#define GYRO_CONST	1.53		//gyroの定数[degree/V/ms]パラメーターの1つ
 //XXX左右分ける必要があるかも？

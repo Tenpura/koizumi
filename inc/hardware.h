@@ -77,7 +77,7 @@ public:
 //時計回りが正
 //センサータイプを表す列挙型
 typedef enum {
-	axis_x = 0, axis_y = 1, axis_z = 2
+	axis_x = 0, axis_y = 1, axis_z = 2, dim_num
 } AXIS_t;
 class mpu6000 {
 private:
@@ -102,7 +102,10 @@ private:
 protected:
 	static uint16_t read_spi(uint16_t read_reg);		//SPI通信でregレジスタから読みだす
 	static void write_spi(uint16_t reg, uint16_t data);	//SPI通信でregレジスタにdataを書き込む
-	static int16_t get_mpu_val(SEN_TYPE sen, AXIS_t axis);//senセンサーのaxis軸方向のデータを読む
+
+
+public:
+	static volatile int16_t get_mpu_val(SEN_TYPE sen, AXIS_t axis);//senセンサーのaxis軸方向のデータを読む
 
 	mpu6000();
 
@@ -114,19 +117,18 @@ public:
 };
 
 class accelmeter: public mpu6000 {
-public:
+public:		//松井式速度推定法で用いるため
 	static const uint8_t AVERAGE_COUNT;		//加速度計の平均取る回数[回]
 	static const float ACCEL_PERIOD;		//加速度計の制御周期[s]
-
 private:
 	static const float REF_TIME;			//加速度計のリファレンスとる時間[s]
 
-	static float accel_ad;		//前後方向の加速度の生値
-	static float accel_ref;
-	static float accel;		//前後方向の加速度 [m/ss]
+	static float accel_ad[AXIS_t::dim_num];		//加速度の生値
+	static float accel_ref[AXIS_t::dim_num];
+	static float accel[AXIS_t::dim_num];		//加速度 [m/ss]
 
-	static float get_accel_ref();
-	static float get_accel_ad();
+	static float get_accel_ref(AXIS_t xyz);
+	static float get_accel_ad(AXIS_t xyz);		//xyz方向の加速度[m/s]を返す
 
 	accelmeter();
 
@@ -134,9 +136,11 @@ public:
 
 	static void interrupt();
 	static void set_accel_ref();
+	static void set_accel_ref(AXIS_t xyz);
 	static void cal_accel();	//生値を加速度に変換[m/ss]
 
-	static float get_accel();
+	static float get_accel();		//進行方向の加速度[m/s]
+	static float get_accel(AXIS_t xyz);		//m/sでXYZ方向の加速度を返す
 
 };
 
@@ -186,24 +190,33 @@ private:
 	static uint32_t init_time[2];	//補正の開始時間
 	static int16_t finish_time[2];	//補正終了時の時間
 
-	static void yi_correct(ENC_SIDE enc_right);		//片方ずつY.I.式補正法を行う。（補正テーブルの作成）
+	static bool isCorrect[2];		//Y.I.式補正を行っているかどうかのフラグ
 
 	encoder();
 
+	static volatile float raw_to_correct(ENC_SIDE enc_side, int16_t raw_delta);	//補正テーブルで生値を補正する,返り値はコンバートした後の差分値
+
+
+
 public:
+
+
 	static float right_velocity, left_velocity, velocity;
-	static int16_t last_value[2];	//エンコーダ―の生値
+	static int16_t raw_count[2];	//エンコーダ―の生値
 
 	static void interrupt();		//モーターのEncoderの値計算
 	static float get_velocity();	//左右の平均(重心速度)のEncoder取得[m/s]　 移動平均取ってることに注意！
 
+	static volatile void yi_correct(ENC_SIDE enc_right);		//片方ずつY.I.式補正法を行う。（補正テーブルの作成）
 	static void yi_correct();		//Y.I.式補正法を行う。（補正テーブルの作成）
+
+	static void draw_correct(bool right, bool left);		//Y.I.式補正テーブルを表示
 
 	~encoder();
 };
 
 //光学センサー関連
-#define GAP_AVE_COUNT 10	//壁の切れ目対策にいくつの平均をとるか
+#define GAP_AVE_COUNT 10	//XXX 壁の切れ目対策にいくつの平均をとるか
 class photo {
 private:
 public:
@@ -244,7 +257,7 @@ public:
 	static bool check_wall(PHOTO_TYPE type);
 
 	static int8_t count_wall_gap(PHOTO_TYPE);	//diff_gapに保存されてる値の正負を数え上げて返す。
-	static bool check_wall_gap(PHOTO_TYPE type);	//diff_gapに保存されてる値の正負を考え、9割以上が負（センサ値が下がってる）と、壁の切れ目だからtrue
+	static bool check_wall_gap(PHOTO_TYPE type, int16_t threshold);	//移動平均をとったやつでGAP_AVE_COUNT前と比較して絶対値がthreshold以上なら、壁の切れ目だからtrue
 
 	~photo();
 
@@ -262,11 +275,14 @@ typedef struct {
 class control {
 private:
 	//TODO D項はいらないらしいハセシュン曰く
-	static float cross_delta_gain(SEN_TYPE sensor);		//P_GAIN*P_DELTA+・・・を行う
+	static volatile float cross_delta_gain(SEN_TYPE sensor);		//P_GAIN*P_DELTA+・・・を行う
+	static float ctrl_accel_int;			//加速度のFB制御量の積分値
 
 	static bool wall_control_flag;		//壁制御をかけてればtrue、切ってればfalse。
 	static bool control_phase;		//姿勢制御をかけてるか否か。かけていればtrue
 
+	//加速度はカスケード接続ではなく、速度とは独立に制御量を出し、それの積分を速度制御量に足す
+	static float control_accel();		//加速度に関するPID制御(加速度センサのみ)。戻り値は[Duty/時間]？
 	static float control_velocity();		//速度に関するPID制御(エンコーダーのみ)。戻り値はDuty？
 	static float control_angular_velocity();//速度に関するPID制御(エンコーダーのみ)。戻り値はDuty？
 
@@ -274,11 +290,11 @@ private:
 	static float get_feedforward(const signed char right_or_left);//FFを掛けた後のDutyを返す。
 
 	static bool is_FF_CONTROL, is_FB_CONTROL;	//FFとFBの制御かけるかどうか。かけるならTrue
-
+	static bool is_accel_CONTROL;		//加速度のFB制御かけるかどうか
 	control();
 
 public:
-	static PID gyro_delta, photo_delta, encoder_delta;	//各種Δ
+	static PID gyro_delta, photo_delta, encoder_delta, accel_delta;	//各種Δ
 
 	static void cal_delta();	//割り込み関数内で、偏差を計算する
 
@@ -294,11 +310,34 @@ public:
 	static bool get_wall_control_phase();	//制御がかかっているかを取得。かかっていればtrue
 
 	static void reset_delta();
-	static void reset_delta(SEN_TYPE type);	//特定のセンサーの偏差だけ0にする
+	static volatile void reset_delta(SEN_TYPE type);	//特定のセンサーの偏差だけ0にする
 
 	static void fail_safe();	//Iゲインが一定以上いったらモーターを止める
 
 	~control();
+};
+
+//カルマンフィルタを行う
+//値と分散を管理する用の構造体
+class kalman{
+//変数名の名づけ方はWikiに従う
+//https://ja.wikipedia.org/wiki/%E3%82%AB%E3%83%AB%E3%83%9E%E3%83%B3%E3%83%95%E3%82%A3%E3%83%AB%E3%82%BF%E3%83%BC
+private:
+	float x;		//現在の値
+	float p;		//現在の分散
+	float EstP,ObsP;	//推定値と観測値の分散
+
+public:
+	//カルマンフィルタによる補正を行う。
+	void update(float EstimateU, float ObserveZ);		//前回の値からどれだけ変化するかの推定値EstimateU,観測値ObserveZを入れると補正する。
+
+	float get_value();				//現在の値を返す
+	float get_dispersion();			//現在の分散を返す
+
+	kalman();
+	kalman(float EstimateP, float ObserveP);	//最初に推定値の分散と観測値の分散をパラメータとして入れる
+	kalman(float initX, float initP, float EstimateP, float ObserveP);	//さらに初期値も入れたいなら
+	~kalman();
 };
 
 #endif /* HARDWARE_H_ */

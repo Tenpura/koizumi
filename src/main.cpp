@@ -26,7 +26,8 @@ void abort(void);
 #endif
 
 uint32_t wait_counter = 0;
-float flog[2][10000] = { 0 };
+static const int16_t flog_number = 2000;
+float flog[2][flog_number] = { 0 };
 
 void interrupt_timer();			//CONTROL_PERIODごとに割り込む関数
 
@@ -43,13 +44,15 @@ int main(void) {
 
 	my7seg::blink(8, 100, 5);
 
-	myprintf("Compile TIME: %s\n\r",__TIME__ );
+	myprintf("Compile DATE: %s\n\r", __DATE__);
+	myprintf("Compile TIME: %s\n\r", __TIME__);
 
 	myprintf("vol -> %f\n\r", get_battery());
 
 	mpu6000::init_mpu6000();
 
 	my7seg::turn_off();
+
 
 	//マップをリセットする
 	map::reset_wall();
@@ -61,57 +64,55 @@ int main(void) {
 		while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0)
 			;
 		wait::ms(100);
-
-		if (get_battery() < 3.8) {
+		if (get_battery() < 3.5) {
 			while (1) {
-
 				my7seg::light_error();
-				wait::ms(500);
-
+				wait::ms(200);
 				my7seg::turn_off();
-				wait::ms(500);
-
+				wait::ms(200);
 				if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0) {
 					wait::ms(100);
 					break;
 				}
-
+			}
+		} else if (get_battery() < 3.8) {
+			while (1) {
+				my7seg::light_error();
+				wait::ms(500);
+				my7seg::turn_off();
+				wait::ms(500);
+				if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0) {
+					wait::ms(100);
+					break;
+				}
 			}
 		}
+
 		//チャタリング対策
 		while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0)
 			;
 		wait::ms(100);
-
-		gyro::set_gyro_ref();
-
-		motor::stanby_motor();
-		motor::set_duty(MOTOR_SIDE::m_left,20);
-		motor::set_duty(MOTOR_SIDE::m_right,20);
-		while(1);
-
 
 		select = mode::select_mode(7, PHOTO_TYPE::right);
 
 		switch (select) {
 		case 0:		//壁の値を読むだけ	事故防止のためにモード0は実害ない奴にしとく
 			while (1) {
-
-				myprintf("gyro %4.4f  ",gyro::get_angular_velocity());
-				myprintf("accel %4.4f",accelmeter::get_accel());
-				myprintf("right_v %d  ",encoder::last_value[enc_right]);
-				myprintf("left_v %d",encoder::last_value[enc_left]);
-
-				myprintf("\n\r");
-
 				/*
-				myprintf("right %d  ", photo::get_value(right));
-				myprintf("left %d  ", photo::get_value(left));
-				myprintf("f_r %d  ", photo::get_value(front_right));
-				myprintf("f_l %d  ", photo::get_value(front_left));
-				myprintf("front %d  ", photo::get_value(front));
+				myprintf("gyro %4.4f  ", gyro::get_angular_velocity());
+				myprintf("accel y %4.4f", accelmeter::get_accel(AXIS_t::axis_y));
+				myprintf("accel z %4.4f", accelmeter::get_accel(AXIS_t::axis_z));
+
 				myprintf("\n\r");
 				*/
+
+				 myprintf("right %d  ", photo::get_value(right));
+				 myprintf("left %d  ", photo::get_value(left));
+				 myprintf("f_r %d  ", photo::get_value(front_right));
+				 myprintf("f_l %d  ", photo::get_value(front_left));
+				 myprintf("front %d  ", photo::get_value(front));
+				 myprintf("\n\r");
+
 				wait::ms(100);
 				if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0) {
 					wait::ms(100);
@@ -141,61 +142,32 @@ int main(void) {
 			break;
 
 		case 4:		//調整用
-			while (1) {
-				my7seg::blink(8, 500, 1);
-				if (photo::check_wall(PHOTO_TYPE::right))
-					break;
-			}
-			my7seg::count_down(3, 500);
-			mouse::run_init(true, true);
-
-			control::stop_wall_control();
-			//control::start_wall_control();
-
-			//run::accel_run_wall_eage(0.09 * 2, SEARCH_VELOCITY, 0, 0.09);
-			//run::accel_run(0.045, SEARCH_VELOCITY, 0);
-			flog[0][0] = -1;
-			//run::slalom_for_search(small, MUKI_LEFT, 0);
-			//run::accel_run_wall_eage(0.09*5, SEARCH_VELOCITY, 0, 0.09*4.5);
-
-			run::accel_run(0.045 * 3, 0, 0);
-			//run::spin_turn(-180);
-
-			//run::fit_run(0);
-
-			wait::ms(1000);
-
-			motor::sleep_motor();
-			my7seg::turn_off();
-
-			while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
-			}
-			//map::draw_map(false);
-
-			for (int i = 0; i < 2000; i++) {
-				myprintf("%f,%f\n\r", flog[0][i], flog[1][i]);
-			}
-			break;
-
-		case 5:		//調整用
+			encoder::yi_correct();		//YI式補正
+			encoder::draw_correct(false, false);
 			while (1) {
 				my7seg::blink(8, 500, 1);
 				if (photo::check_wall(PHOTO_TYPE::front))
 					break;
 			}
 			my7seg::count_down(3, 500);
-			mouse::run_init(true, true);
-
-			//control::stop_wall_control();
-
+			mouse::run_init(true, false);
 			//run::accel_run_wall_eage(0.09 * 2, SEARCH_VELOCITY, 0, 0.09);
-			//run::accel_run(0.09*15, 0, 0);
 
-			run::accel_run(0.09, SEARCH_VELOCITY, 0);
-			run::fit_run(0);
 			flog[0][0] = -1;
-			run::spin_turn(-180);
-			wait::ms(1000);
+			run::accel_run(0.09*3, 0, 1);
+
+			//run::accel_run(0.09*1.5, SEARCH_VELOCITY,0);
+			//run::slalom_for_search(small, MUKI_RIGHT, 0);
+			//flog[0][0] = mouse::get_angle_degree();
+			//run::accel_run_wall_eage(0.09*5, SEARCH_VELOCITY, 0, 0.09*4.5);
+			//control::stop_wall_control();
+			//run::accel_run(0.045 * 2, 0, 0);
+			//run::spin_turn(-180);
+			//run::accel_run(0.09*10, 0, 0);
+
+			//run::fit_run(0);
+
+			wait::ms(2000);
 
 			motor::sleep_motor();
 			my7seg::turn_off();
@@ -204,7 +176,41 @@ int main(void) {
 			}
 			//map::draw_map(false);
 
-			for (int i = 0; i < 2000; i++) {
+			for (int i = 0; i < flog_number; i++) {
+				myprintf("%f,%f\n\r", flog[0][i], flog[1][i]);
+			}
+			break;
+
+		case 5:		//調整用
+			/*
+			 while (1) {
+			 my7seg::blink(8, 500, 1);
+			 if (photo::check_wall(PHOTO_TYPE::front))
+			 break;
+			 }
+			 */
+			my7seg::count_down(3, 500);
+
+			/*
+			 mouse::run_init(true, true);
+			 run::accel_run(0.09, SEARCH_VELOCITY, 0);
+			 run::fit_run(0);
+			 flog[0][0] = -1;
+			 run::spin_turn(-180);
+			 wait::ms(1000);
+
+			 motor::sleep_motor();
+			 my7seg::turn_off();
+			 */
+
+			encoder::yi_correct(enc_left);
+
+			my7seg::turn_off();
+			while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
+			}
+			//map::draw_map(false);
+
+			for (int i = 0; i < flog_number; i++) {
 				myprintf("%f,%f\n\r", flog[0][i], flog[1][i]);
 			}
 			break;
@@ -221,17 +227,23 @@ int main(void) {
 }
 
 void interrupt_timer() {
+	//XXX カルマンフィルタの推定値（加速度センサ）と観測値（エンコーダー）の分散
+	static kalman v_kal(0.101,630);		//速度用のカルマンフィルタクラスを呼び出す
+
+
 	GPIO_SetBits(GPIOA, GPIO_Pin_14);
 
 	wait_counter++;	//ms(ミリ秒)のカウントを1増加
 	mouse::add_one_count_ms();
 	wait::set_count(wait_counter);
 
-
 	photo::interrupt(true);
 	gyro::interrupt();
 	accelmeter::interrupt();
 	encoder::interrupt();
+
+	v_kal.update(accelmeter::get_accel(axis_y)*CONTORL_PERIOD,encoder::get_velocity());		//カルマンフィルタをかける
+	mouse::set_velocity(v_kal.get_value());		//現在速度として補正後の速度を採用する
 
 	mouse::interrupt();
 
@@ -246,9 +258,9 @@ void interrupt_timer() {
 			if (flog[0][0] == -1) {
 				i++;
 			}
-		} else if (i < 10000) {
-			flog[0][i] = mouse::get_ideal_angular_velocity();
-			flog[1][i] = encoder::get_velocity();
+		} else if (i < flog_number) {
+			flog[0][i] = encoder::get_velocity();//mouse::get_velocity();//gyro::get_angular_velocity();
+			flog[1][i] = mouse::get_ideal_velocity();//accelmeter::get_accel(axis_y);//mouse::get_ideal_angular_velocity();
 			i++;
 		}
 	}

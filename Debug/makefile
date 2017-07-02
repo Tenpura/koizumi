@@ -51,7 +51,7 @@ dependents:
 halfmouse.elf: $(OBJS) $(USER_OBJS) C:/Users/Koizumi/workspace/stm32f405rg_stdperiph_lib/Debug/libstm32f405rg_stdperiph_lib.a
 	@echo 'Building target: $@'
 	@echo 'Invoking: MCU G++ Linker'
-	arm-none-eabi-g++ -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -L"C:\Users\Koizumi\workspace\stm32f405rg_stdperiph_lib\Debug" -T"C:\Users\Koizumi\workspace\halfmouse\LinkerScript.ld" -Wl,-Map=output.map -Wl,--gc-sections -fno-exceptions -fno-rtti -lm -o "halfmouse.elf" @"objects.list" $(USER_OBJS) $(LIBS)
+	arm-none-eabi-g++ -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -L"C:\Users\Koizumi\workspace\stm32f405rg_stdperiph_lib\Debug" -Xlinker -print-memory-usage -T"C:\Users\Koizumi\workspace\halfmouse\LinkerScript.ld" -Wl,-Map=output.map -Wl,--gc-sections -fno-exceptions -fno-rtti -lm -o "halfmouse.elf" @"objects.list" $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 	$(MAKE) --no-print-directory post-build

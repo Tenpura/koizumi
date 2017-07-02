@@ -34,6 +34,8 @@ private:
 	static float ideal_distance;
 	static float ideal_angle;
 
+	static float velocity;		//マウスの実際の速度[m/s]
+
 	static float run_distance;			//マウスの走行距離[m]
 
 	static unsigned long mouse_count_ms;			//マウスの時間[msec].基本リセットしない
@@ -56,7 +58,7 @@ public:
 	static void add_one_count_ms();		//カウントに1加算。割り込み内のみで呼び出す
 	static unsigned long get_count_ms();		//カウント取得。単位はms
 
-	static float get_acceleration();
+	static float get_ideal_accel();
 	static void set_acceleration(const float set_value_m_ss);
 
 	static float get_angular_acceleration();
@@ -70,6 +72,9 @@ public:
 
 	static void set_ideal(const float accel, const float vel, const float dis);
 	static void set_ideal_ang(const float ang_a, const float ang_omega);
+
+	static void set_velocity(float v);		//現在速度を更新
+	static float get_velocity();			//現在速度を取得
 
 	static float get_angle_degree();
 	static float get_ideal_angle_degree();
@@ -159,7 +164,7 @@ private:
 			unsigned char target_y);
 
 	//引数に応じて次の行動をマウスが実行する（実際に動く部分）
-	static void run_next_action(ACTION_TYPE next_action, bool slalom);
+	static volatile void run_next_action(ACTION_TYPE next_action, bool slalom);
 	static void simulate_next_action(ACTION_TYPE next_action);//機体は動かない。仮想的に変数とか更新。デバック用
 
 	//次行く方向と今の向きを与えると、次に取る行動を返す。優先度は、直進、右ターン、左ターン、バックの順

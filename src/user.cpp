@@ -77,6 +77,7 @@ uint8_t mode::select_mode(const unsigned char mode_number,
 bool mode::search_mode() {
 
 	uint8_t select = select_mode(7, PHOTO_TYPE::right);
+	encoder::yi_correct();		//YIéÆï‚ê≥
 
 	while (select != 0) {
 		my7seg::blink(8, 500, 1);
