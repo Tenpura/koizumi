@@ -1159,6 +1159,47 @@ int16_t photo::get_value(PHOTO_TYPE sensor_type) {
 	return 0;
 }
 
+float photo::get_displacement_from_center(PHOTO_TYPE sensor_type) {
+
+	float f = photo::get_value(sensor_type);				//現在のセンサ値
+	float f_c = parameter::get_ideal_photo(sensor_type);	//中心位置におけるセンサ値
+
+	//XXX フォトセンサの特性を示すパラメータ
+	float a=0;
+
+	switch (sensor_type) {
+	case PHOTO_TYPE::right:
+		a = 0.06;
+		break;
+
+	case PHOTO_TYPE::left:
+		a = -0.055;
+		break;
+
+	case PHOTO_TYPE::front_right:
+		a = 0;
+		break;
+
+	case PHOTO_TYPE::front_left:
+		a = 0;
+		break;
+
+	case PHOTO_TYPE::front:
+		a = 0;
+		break;
+
+	default:
+		break;
+	}
+
+	//センサ値fは f=f_c*exp(a*x) と仮定し、xを求める。-> x = 1/a*log(f/f_c)
+	//f_c:中心のセンサ値、x:中心からのずれ[mm]
+	float displace = my_math::log(f/f_c)/a;
+
+	return displace;
+}
+
+
 bool photo::check_wall(unsigned char muki) {
 
 	switch (muki) {
@@ -1243,6 +1284,7 @@ PID control::gyro_delta, control::photo_delta, control::encoder_delta,
 float control::ctrl_accel_int = 0;
 bool control::control_phase = false;
 bool control::wall_control_flag = false;
+//XXX FF制御とFB制御やるかやらないか決める場所
 bool control::is_FF_CONTROL = false;
 bool control::is_FB_CONTROL = true;
 bool control::is_accel_CONTROL = true;
@@ -1418,18 +1460,34 @@ float control::get_feedback(signed char right_or_left) {
 
 float control::get_feedforward(const signed char right_or_left) {
 	float velocity;		//目標速度
+	float accel;		//目標加速度
 
 	if (right_or_left == MUKI_RIGHT) {			//右のモーターなら
 		velocity = mouse::get_ideal_velocity()
-				- (mouse::get_ideal_angular_velocity() * TREAD_W / 2 / 1000);
+				- (mouse::get_ideal_angular_velocity() * TREAD_W / 2);
+		accel = mouse::get_ideal_accel()
+				- (mouse::get_ideal_angular_accel() * TREAD_W / 2);
 
 	} else {									//左のモーターなら
 		velocity = mouse::get_ideal_velocity()
-				+ (mouse::get_ideal_angular_velocity() * TREAD_W / 2 / 1000);
+				+ (mouse::get_ideal_angular_velocity() * TREAD_W / 2);
+		accel = mouse::get_ideal_accel()
+				+ (mouse::get_ideal_angular_accel() * TREAD_W / 2);
 
 	}
-	return (velocity / (2 * PI() * tire_R) * SPAR / PINION / MOTOR_CONST
-			* M_SUM_ORM / MOTOR_ORM / get_battery()) * 100;
+
+	float Vinv;		//motorが回転することによる逆気電圧
+	float Vt;		//motorを回転させるために必要なトルクを生み出すための電圧
+
+	// V = v[m/s]/2πr[m] * ギア比  / 電圧特性[回/s/V]
+	Vinv = (velocity / (2 * PI() * tire_R) * SPAR / PINION / MOTOR_CONST);
+
+	float mu = 0.000755/3;	//摩擦力
+	// V = 加速に必要な分 + 摩擦力を打ち消す分
+	Vt = ((PI() * tire_R * MASS * MOTOR_ORM * MOTOR_CONST) * accel
+			+ (2 * PI() * MOTOR_ORM * MOTOR_CONST * mu)) * PINION / SPAR;
+
+	return ((Vinv + Vt) * M_SUM_ORM / MOTOR_ORM / get_battery()) * 100;
 }
 
 void control::posture_control() {

@@ -53,7 +53,6 @@ int main(void) {
 
 	my7seg::turn_off();
 
-
 	//マップをリセットする
 	map::reset_wall();
 	map::output_map_data(&mouse::now_map);
@@ -99,19 +98,19 @@ int main(void) {
 		case 0:		//壁の値を読むだけ	事故防止のためにモード0は実害ない奴にしとく
 			while (1) {
 				/*
-				myprintf("gyro %4.4f  ", gyro::get_angular_velocity());
-				myprintf("accel y %4.4f", accelmeter::get_accel(AXIS_t::axis_y));
-				myprintf("accel z %4.4f", accelmeter::get_accel(AXIS_t::axis_z));
+				 myprintf("gyro %4.4f  ", gyro::get_angular_velocity());
+				 myprintf("accel y %4.4f", accelmeter::get_accel(AXIS_t::axis_y));
+				 myprintf("accel z %4.4f", accelmeter::get_accel(AXIS_t::axis_z));
 
-				myprintf("\n\r");
-				*/
-
-				 myprintf("right %d  ", photo::get_value(right));
-				 myprintf("left %d  ", photo::get_value(left));
-				 myprintf("f_r %d  ", photo::get_value(front_right));
-				 myprintf("f_l %d  ", photo::get_value(front_left));
-				 myprintf("front %d  ", photo::get_value(front));
 				 myprintf("\n\r");
+				 */
+
+				myprintf("right %d  ", photo::get_value(right));
+				myprintf("left %d  ", photo::get_value(left));
+				myprintf("f_r %d  ", photo::get_value(front_right));
+				myprintf("f_l %d  ", photo::get_value(front_left));
+				myprintf("front %d  ", photo::get_value(front));
+				myprintf("\n\r");
 
 				wait::ms(100);
 				if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0) {
@@ -154,7 +153,7 @@ int main(void) {
 			//run::accel_run_wall_eage(0.09 * 2, SEARCH_VELOCITY, 0, 0.09);
 
 			flog[0][0] = -1;
-			run::accel_run(0.09*3, 0, 1);
+			run::accel_run(0.09 * 4, 0, 1);
 
 			//run::accel_run(0.09*1.5, SEARCH_VELOCITY,0);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
@@ -182,33 +181,23 @@ int main(void) {
 			break;
 
 		case 5:		//調整用
-			/*
-			 while (1) {
-			 my7seg::blink(8, 500, 1);
-			 if (photo::check_wall(PHOTO_TYPE::front))
-			 break;
-			 }
-			 */
+			while (1) {
+				my7seg::blink(8, 500, 1);
+				if (photo::check_wall(PHOTO_TYPE::front))
+					break;
+			}
 			my7seg::count_down(3, 500);
+			//	mouse::run_init(true, false);
 
-			/*
-			 mouse::run_init(true, true);
-			 run::accel_run(0.09, SEARCH_VELOCITY, 0);
-			 run::fit_run(0);
-			 flog[0][0] = -1;
-			 run::spin_turn(-180);
-			 wait::ms(1000);
+			flog[0][0] = -1;
 
-			 motor::sleep_motor();
-			 my7seg::turn_off();
-			 */
+			wait::ms(2000);
 
-			encoder::yi_correct(enc_left);
-
+			motor::sleep_motor();
 			my7seg::turn_off();
+
 			while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
 			}
-			//map::draw_map(false);
 
 			for (int i = 0; i < flog_number; i++) {
 				myprintf("%f,%f\n\r", flog[0][i], flog[1][i]);
@@ -228,8 +217,7 @@ int main(void) {
 
 void interrupt_timer() {
 	//XXX カルマンフィルタの推定値（加速度センサ）と観測値（エンコーダー）の分散
-	static kalman v_kal(0.101,630);		//速度用のカルマンフィルタクラスを呼び出す
-
+	static kalman v_kal(0.101, 630);		//速度用のカルマンフィルタクラスを呼び出す
 
 	GPIO_SetBits(GPIOA, GPIO_Pin_14);
 
@@ -242,7 +230,8 @@ void interrupt_timer() {
 	accelmeter::interrupt();
 	encoder::interrupt();
 
-	v_kal.update(accelmeter::get_accel(axis_y)*CONTORL_PERIOD,encoder::get_velocity());		//カルマンフィルタをかける
+	v_kal.update(accelmeter::get_accel(axis_y) * CONTORL_PERIOD,
+			encoder::get_velocity());		//カルマンフィルタをかける
 	mouse::set_velocity(v_kal.get_value());		//現在速度として補正後の速度を採用する
 
 	mouse::interrupt();
@@ -253,16 +242,14 @@ void interrupt_timer() {
 	//control::fail_safe();
 
 	static volatile uint16_t i = 0;
-	if (motor::isEnable()) {
-		if (i == 0) {
-			if (flog[0][0] == -1) {
-				i++;
-			}
-		} else if (i < flog_number) {
-			flog[0][i] = encoder::get_velocity();//mouse::get_velocity();//gyro::get_angular_velocity();
-			flog[1][i] = mouse::get_ideal_velocity();//accelmeter::get_accel(axis_y);//mouse::get_ideal_angular_velocity();
+	if (i == 0) {
+		if (flog[0][0] == -1) {
 			i++;
 		}
+	} else if (i < flog_number) {
+		flog[0][i] = photo::get_value(right);//encoder::get_velocity();//mouse::get_velocity();//gyro::get_angular_velocity();
+		flog[1][i] = photo::get_displacement_from_center(right);//accelmeter::get_accel(axis_y);//mouse::get_ideal_angular_velocity();
+		i++;
 	}
 
 	GPIO_ResetBits(GPIOA, GPIO_Pin_14);

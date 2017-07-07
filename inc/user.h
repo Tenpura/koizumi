@@ -139,11 +139,17 @@ public:
 //数学クラス
 class my_math{
 private:
+
+	#define LOG_N 1000	//logテーブルの要素数
+
 	const static float sin_table[92];		//[]の要素がdegreeに対応。念のため92個
+	const static float log_table[LOG_N+1];		//logテーブル。高橋先輩のを参考に傾きに応じて分割している
 
 public:
 	static float sin(const float radian);
 	static float cos(const float radian);
+
+	static float log(float x);			//logを返す関数　自然対数　0.1<x<10の範囲にしか対応していないことに注意！
 
 
 };

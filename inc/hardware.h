@@ -50,8 +50,7 @@ enum MOTOR_SIDE {
 class motor {
 private:
 
-	static signed short get_duty_left();	//左モーターのDuty取得
-	static signed short get_duty_right();	//右モーターのDuty取得
+	static signed char right_duty, left_duty;		//duty[％]
 
 	static const char MAX_DUTY;	 	//Dutyの最大値［％］
 	static const char MAX_COUNT;	//Dutyの最大値［％］
@@ -61,7 +60,8 @@ private:
 	motor();
 
 public:
-	static signed char right_duty, left_duty;		//duty[％]
+	static signed short get_duty_left();	//左モーターのDuty取得
+	static signed short get_duty_right();	//右モーターのDuty取得
 
 	static void set_duty(const MOTOR_SIDE side, const float set_duty);//モーターのDuty決定
 
@@ -251,6 +251,9 @@ public:
 	static void interrupt(bool is_light);
 
 	static int16_t get_value(PHOTO_TYPE sensor_type);
+
+	//センサ値から距離に変換し、区画中心からどれだけずれているのか[mm]を返す。右側正
+	static float get_displacement_from_center(PHOTO_TYPE sensor_type);
 
 	//TODO この関数はマウスclassにあるべきかも
 	static bool check_wall(unsigned char muki);

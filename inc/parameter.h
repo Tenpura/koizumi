@@ -11,12 +11,9 @@
 #include"define.h"
 
 //パラメータ
-
+#define MASS	(20 * 0.001)			//マウスの重さ[kg]
 #define tire_R (7.55 * 0.001)	//タイヤの半径　[m]
-
-//TODO メートルにしたい
-#define TREAD_W	44		//トレッド幅[mm]
-
+#define TREAD_W	(44*0.001)		//トレッド幅[m]
 
 #define LEAST_SQUARE_TIME	2000		//ジャイロの最小二乗法を何ms出かけるか
 

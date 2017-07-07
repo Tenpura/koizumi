@@ -59,10 +59,10 @@ public:
 	static unsigned long get_count_ms();		//カウント取得。単位はms
 
 	static float get_ideal_accel();
-	static void set_acceleration(const float set_value_m_ss);
+	static void set_ideal_accel(const float set_value_m_ss);
 
-	static float get_angular_acceleration();
-	static void set_angular_acceleration(const float set_value_m_ss);
+	static float get_ideal_angular_accel();
+	static void set_ideal_angular_accel(const float set_value_m_ss);
 
 	static float get_ideal_velocity();
 	static void set_ideal_velocity(const float set_value_m_s);
