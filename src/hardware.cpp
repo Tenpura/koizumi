@@ -1281,13 +1281,11 @@ const PID accel_gain = { 0, 0, 0 };	//{50, 0, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta,
 		control::accel_delta;
-float control::ctrl_accel_int = 0;
 bool control::control_phase = false;
 bool control::wall_control_flag = false;
 //XXX FF制御とFB制御やるかやらないか決める場所
 bool control::is_FF_CONTROL = false;
 bool control::is_FB_CONTROL = true;
-bool control::is_accel_CONTROL = true;
 
 volatile float control::cross_delta_gain(SEN_TYPE sensor) {
 	switch (sensor) {
@@ -1319,78 +1317,50 @@ volatile float control::cross_delta_gain(SEN_TYPE sensor) {
 void control::cal_delta() {
 	float before_p_delta;
 	float photo_right_delta = 0, photo_left_delta = 0;
-	static float max_photo_delta = 200;		//壁に近いとき非線形にセンサ値が上昇するので上限を切る
 
 	//エンコーダーのΔ計算
 	before_p_delta = encoder_delta.P;	//積分用
 	encoder_delta.P = (mouse::get_ideal_velocity() - mouse::get_velocity());
 	encoder_delta.I += (encoder_delta.P * CONTORL_PERIOD);
-	//encoder_delta.D = (encoder_delta.P - before_p_delta) * 1000;
+	encoder_delta.D = (encoder_delta.P - before_p_delta) / CONTORL_PERIOD;
 
 	//センサーのΔ計算
 	before_p_delta = photo_delta.P;
 
-	float delta = 0;
-	float ideal = 0, actual = 0;//uint16 - uint16 の計算はマイナスになったときオーバーフローするからfloat変数を経由する
-
-	if (photo::check_wall(PHOTO_TYPE::right)
-			&& control::get_wall_control_phase()) {
-
-		ideal = static_cast<float>(parameter::get_ideal_photo(right));
-		actual = static_cast<float>(photo::get_value(right));
-		delta = actual - ideal;		//理想値との差分
-
-		//上限を切る。
-		if (delta > max_photo_delta)
-			delta = max_photo_delta;
-
-		//中央付近は制御しない
-		if (ABS(delta) > 10) {
-			photo_right_delta = delta;
+	if(control::get_wall_control_phase()){
+		if (photo::check_wall(PHOTO_TYPE::right)) {
+			photo_right_delta = photo::get_displacement_from_center(PHOTO_TYPE::right);		//中心からのずれてる距離[mm]
+			if (photo::check_wall_gap(right, 15))
+				photo_right_delta = 0;		//壁の切れ目では制御を切る
+	//		if (delta < 0)
+	//			photo_right_delta = 0;	//近づく方向には制御しない
 		}
 
-		//壁の切れ目では制御を切る
-		if (photo::check_wall_gap(right, 15)) {
+		if (photo::check_wall(PHOTO_TYPE::left)) {
+			photo_right_delta = photo::get_displacement_from_center(PHOTO_TYPE::left);		//中心からのずれてる距離[mm]
+			if (photo::check_wall_gap(left, 15))
+				photo_left_delta = 0;		//壁の切れ目では制御を切る
+			//	if (delta < 0)
+			//		photo_left_delta = 0;	//近づく方向には制御しない
+		}
+
+		//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
+		if (mouse::get_ideal_velocity() < (SEARCH_VELOCITY * 0.2)) {
+			photo_left_delta = 0;
 			photo_right_delta = 0;
 		}
-//		if (delta < 0)
-//			photo_right_delta = 0;	//近づく方向には制御しない
 
+		photo_delta.P = (photo_right_delta - photo_left_delta);
+		photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
+		photo_delta.D = (photo_delta.P - before_p_delta) / CONTROL_PERIOD;
+
+	}else{
+		//壁制御かけないときは初期化し続ける。
+		photo_delta.P = 0;
+		photo_delta.I = 0;
+		photo_delta.D = 0;
 	}
 
-	if (photo::check_wall(PHOTO_TYPE::left)
-			&& control::get_wall_control_phase()) {
-
-		ideal =
-				static_cast<float>(parameter::get_ideal_photo(PHOTO_TYPE::left));
-		actual = static_cast<float>(photo::get_value(PHOTO_TYPE::left));
-		delta = actual - ideal;		//理想値との差分
-
-		//上限を切る。
-		if (delta > max_photo_delta)
-			delta = max_photo_delta;
-
-		//中央付近は制御しない
-		if (ABS(delta) > 30) {
-			photo_left_delta = delta;
-		}
-		//壁の切れ目では制御を切る
-		if (photo::check_wall_gap(left, 15)) {
-			photo_left_delta = 0;
-		}
-		//	if (delta < 0)
-		//		photo_left_delta = 0;	//近づく方向には制御しない
-	}
-
-	//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
-	if (mouse::get_ideal_velocity() < (SEARCH_VELOCITY * 0.2)) {
-		photo_left_delta = 0;
-		photo_right_delta = 0;
-	}
-
-	photo_delta.P = (photo_right_delta - photo_left_delta);
-	photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
-	//photo_delta.D = (photo_delta.P - before_p_delta) * 1000;
 
 	//ジャイロのΔ計算
 	before_p_delta = gyro_delta.P;	//積分用
@@ -1399,16 +1369,19 @@ void control::cal_delta() {
 	gyro_delta.I += (gyro_delta.P * CONTORL_PERIOD);
 	gyro_delta.D = (gyro_delta.P - before_p_delta) * 1000;
 
+
+	/*
 	if (photo_delta.P != 0 && get_wall_control_phase())
 		gyro_delta.I = 0;		//壁制御かけるときはGyroのIは使わない
 	else
 		photo_delta.I = 0;
+	*/
 
 	//加速度の偏差計算
 	before_p_delta = accel_delta.P;	//積分用
 	accel_delta.P = (mouse::get_ideal_accel() - accelmeter::get_accel());
 	accel_delta.I += (accel_delta.P * CONTORL_PERIOD);
-	//accel_delta.D = (accel_delta.P - before_p_delta) / CONTORL_PERIOD;
+	accel_delta.D = (accel_delta.P - before_p_delta) / CONTORL_PERIOD;
 
 }
 
@@ -1421,11 +1394,7 @@ float control::control_velocity() {
 }
 
 float control::control_angular_velocity() {
-	if (wall_control_flag) {
-		return (cross_delta_gain(sen_gyro) - cross_delta_gain(sen_photo));
-	} else {
-		return cross_delta_gain(sen_gyro);
-	}
+	return cross_delta_gain(sen_gyro);
 }
 
 void control::start_wall_control() {
@@ -1445,15 +1414,14 @@ void control::stop_control() {
 }
 
 float control::get_feedback(signed char right_or_left) {
-	if (is_accel_CONTROL)
-		ctrl_accel_int += control_accel() * CONTORL_PERIOD;		//加速度の制御量を積分する
-	else
-		ctrl_accel_int = 0;
+	float ang_a = mouse::get_ideal_angular_accel();
+	if (get_wall_control_phase())
+		mouse::set_ideal_angular_accel(ang_a+cross_delta_gain(sen_photo));		//壁制御量を角加速度に入れる
 
 	if (right_or_left == MUKI_RIGHT) {			//右のモーターなら
-		return (ctrl_accel_int + control_velocity() - control_angular_velocity());
+		return (control_velocity() - control_angular_velocity());
 	} else {										//左のモーターなら
-		return (ctrl_accel_int + control_velocity() + control_angular_velocity());
+		return (control_velocity() + control_angular_velocity());
 
 	}
 }
@@ -1524,7 +1492,6 @@ void control::reset_delta() {
 	reset_delta(sen_photo);
 	reset_delta(sen_encoder);
 	reset_delta(sen_accel);
-	ctrl_accel_int = 0;
 
 }
 

@@ -279,7 +279,6 @@ class control {
 private:
 	//TODO D項はいらないらしいハセシュン曰く
 	static volatile float cross_delta_gain(SEN_TYPE sensor);		//P_GAIN*P_DELTA+・・・を行う
-	static float ctrl_accel_int;			//加速度のFB制御量の積分値
 
 	static bool wall_control_flag;		//壁制御をかけてればtrue、切ってればfalse。
 	static bool control_phase;		//姿勢制御をかけてるか否か。かけていればtrue
@@ -293,7 +292,7 @@ private:
 	static float get_feedforward(const signed char right_or_left);//FFを掛けた後のDutyを返す。
 
 	static bool is_FF_CONTROL, is_FB_CONTROL;	//FFとFBの制御かけるかどうか。かけるならTrue
-	static bool is_accel_CONTROL;		//加速度のFB制御かけるかどうか
+
 	control();
 
 public:

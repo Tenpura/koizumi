@@ -418,12 +418,12 @@ const float my_math::log_table[LOG_N+1]={-2.30259, -2.30159, -2.3006, -2.29961, 
 float my_math::sin(const float radian) {
 	float temp_radian = radian;
 	float temp_degree;
-	unsigned char degree_index;
+	uint16_t degree_index;
 	float answer = 0, answer_sign = 1;
 
 	//-π ~ π の間に落とし込む
 	while (ABS(temp_radian) > PI()) {
-		temp_radian -= (SIGN(radian) * PI());
+		temp_radian -= (SIGN(radian) * 2 * PI());
 	}
 
 	temp_degree = degree(temp_radian);
@@ -437,7 +437,7 @@ float my_math::sin(const float radian) {
 		temp_degree = 180 - temp_degree;
 
 	}
-	degree_index = (char) temp_degree;		//charになる時に小数点以下は切り捨てられるはず
+	degree_index = static_cast<uint16_t>(temp_degree);		//charになる時に小数点以下は切り捨てられるはず
 	answer = sin_table[degree_index];	//テーブルの内、目的の値に近い奴を入れる
 	//線形近似
 	answer += (temp_degree - degree_index)
@@ -459,7 +459,7 @@ float my_math::log(float x){
 
 	//配列の要素番号を計算
 	float index = c*(10-1/x);
-	uint16_t index_int = static_cast<int>(index);
+	uint16_t index_int = static_cast<uint16_t>(index);
 
 	//大丈夫なはずだけど念のため、例外をはじく
 	if(index_int < 0)	return log_table[0];
