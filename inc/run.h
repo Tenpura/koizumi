@@ -32,11 +32,12 @@ private:
 
 	//理想値から計算した距離と角度
 	static float ideal_distance;
-	static float ideal_angle;
-
-	static float velocity;		//マウスの実際の速度[m/s]
-
-	static float run_distance;			//マウスの走行距離[m]
+	static float ideal_angle_degree;
+	//マウスの実際の速度[m/s]と距離[m]
+	static float velocity;
+	static float run_distance;
+	//マウスの絶対位置[m]
+	static COORDINATE place;
 
 	static unsigned long mouse_count_ms;			//マウスの時間[msec].基本リセットしない
 
@@ -47,6 +48,7 @@ private:
 
 	static void cal_velocity();		//加速を行う。速度の加減算
 	static void cal_distance();		//距離計算
+	static void cal_place();		//位置を計算する　迷路の座標と軸の方向は同じ
 
 	mouse();
 
@@ -66,19 +68,20 @@ public:
 
 	static float get_ideal_velocity();
 	static void set_ideal_velocity(const float set_value_m_s);
+	static float get_velocity();
 
 	static float get_ideal_angular_velocity();
 	static void set_ideal_angular_velocity(const float set_value_rad_s);
+	static float get_angular_velocity();
+
+	static void set_ideal_ang(const float ang_a, const float ang_omega);
+	static float get_ideal_angle_degree();
+	static float get_ideal_angle_radian();
+	static float get_angle_degree();
+	static float get_angle_radian();
+	static void reset_angle();
 
 	static void set_ideal(const float accel, const float vel, const float dis);
-	static void set_ideal_ang(const float ang_a, const float ang_omega);
-
-	static void set_velocity(float v);		//現在速度を更新
-	static float get_velocity();			//現在速度を取得
-
-	static float get_angle_degree();
-	static float get_ideal_angle_degree();
-	static void reset_angle();
 
 	static float get_distance_m();		//距離を取得
 	static void set_distance_m(const float set_value_m);		//距離をセット
@@ -86,6 +89,10 @@ public:
 	static unsigned char get_x_position();
 	static unsigned char get_y_position();
 	static void set_position(const uint8_t set_x, const uint8_t set_y);
+
+	static void set_place(const COORDINATE set_place);
+	static void set_place(const float x, const float y);
+	static COORDINATE get_place();
 
 	static unsigned char get_direction();	//defineされたMUKI_??で返す
 	static void get_direction(signed char *direction_x,
@@ -164,7 +171,7 @@ private:
 			unsigned char target_y);
 
 	//引数に応じて次の行動をマウスが実行する（実際に動く部分）
-	static volatile void run_next_action(ACTION_TYPE next_action, bool slalom);
+	static volatile void run_next_action(const ACTION_TYPE next_action, bool slalom);
 	static void simulate_next_action(ACTION_TYPE next_action);//機体は動かない。仮想的に変数とか更新。デバック用
 
 	//次行く方向と今の向きを与えると、次に取る行動を返す。優先度は、直進、右ターン、左ターン、バックの順

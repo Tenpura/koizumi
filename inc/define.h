@@ -228,4 +228,10 @@ typedef enum {
 	sen_all
 } SEN_TYPE;
 
+//座標軸。マス単位でなく、厳密に距離とかを扱う用
+typedef struct {
+	float x;
+	float y;
+} COORDINATE;
+
 #endif /* DEFINE_H_ */

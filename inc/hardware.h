@@ -170,7 +170,7 @@ public:
 	static void set_gyro_ref();
 
 	static void reset_angle();
-	static float get_angle();
+	static float get_angle_radian();
 	static float get_angular_velocity();
 
 	~gyro();
@@ -277,8 +277,6 @@ typedef struct {
 
 class control {
 private:
-	//TODO D項はいらないらしいハセシュン曰く
-	static volatile float cross_delta_gain(SEN_TYPE sensor);		//P_GAIN*P_DELTA+・・・を行う
 
 	static bool wall_control_flag;		//壁制御をかけてればtrue、切ってればfalse。
 	static bool control_phase;		//姿勢制御をかけてるか否か。かけていればtrue
@@ -297,6 +295,8 @@ private:
 
 public:
 	static PID gyro_delta, photo_delta, encoder_delta, accel_delta;	//各種Δ
+
+	static volatile float cross_delta_gain(SEN_TYPE sensor);		//P_GAIN*P_DELTA+・・・を行う
 
 	static void cal_delta();	//割り込み関数内で、偏差を計算する
 

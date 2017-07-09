@@ -543,7 +543,7 @@ const float gyro::REF_TIME = 2;							//リファレンスとる時間[s]
 
 void gyro::interrupt() {
 	gyro_value = -mpu6000::get_mpu_val(sen_gyro, axis_z);	//Z方向のジャイロを見る。時計回り正
-	gyro::cal_angular_velocity();	//gyroから角速度を計算[°/s]
+	gyro::cal_angular_velocity();	//gyroから角速度を計算[rad/s]
 	gyro::cal_angle();				//gyroから角度を計算
 
 }
@@ -573,7 +573,7 @@ void gyro::set_least_square_slope() {
 
 	while (mouse::get_count_ms() < LEAST_SQUARE_TIME) {
 		temp_count = (float) mouse::get_count_ms();
-		temp_gyro = gyro::get_angle();
+		temp_gyro = gyro::get_angle_radian();
 
 		y_sum += temp_gyro;
 		x_sum += temp_count;
@@ -614,7 +614,7 @@ void gyro::cal_angle() {
 	//angle = default_angle	- (least_square_slope * (float) mouse::get_count_ms());
 }
 
-float gyro::get_angle() {
+float gyro::get_angle_radian() {
 	return angle;	//°
 }
 
@@ -762,9 +762,9 @@ volatile float encoder::raw_to_correct(ENC_SIDE enc_side, int16_t raw_delta) {
 volatile void encoder::yi_correct(ENC_SIDE enc_side) {
 	mouse::run_init(false, false);
 	if (enc_side == enc_right)
-		motor::set_duty(MOTOR_SIDE::m_right, 20);
+		motor::set_duty(MOTOR_SIDE::m_right, 25);
 	else
-		motor::set_duty(MOTOR_SIDE::m_left, 20);
+		motor::set_duty(MOTOR_SIDE::m_left, 25);
 
 	//補正テーブルを全消去
 	isCorrect[enc_side] = false;	//Y.I.式補正は中止
@@ -799,8 +799,8 @@ volatile void encoder::yi_correct(ENC_SIDE enc_side) {
 	}
 	for (int i = 4096; i >= 0; i--) {	//おしりから値が入っていないところを探していく
 		if (correct[enc_side][i] != -1) {		//値が入っていたら
-			if (bigger_val - i <= 1)
-				;	//値が入っているのが連続なら線系補完はしない(4096に値が入っている場合のために不等号)
+			if (bigger_val - i <= 1);
+					//値が入っているのが連続なら線系補完はしない(4096に値が入っている場合のために不等号)
 			else {
 				//間のやつらを線形補完する
 				float a = (bigger_time - correct[enc_side][i])
@@ -1048,7 +1048,8 @@ void photo::interrupt(bool is_light) {
 	photo::set_ad(right, get_ad(right) - get_ref(right));		//差分を代入
 	photo::set_ad(left, get_ad(left) - get_ref(left));		//差分を代入
 	photo::turn_off(right);
-
+//FIX_ME 左右の発光時間を延ばすために、斜めセンサは切ってる
+	/*
 	if (is_light) {
 		photo::light(front_right);
 		for (int i = 0; i < wait_number; i++) {
@@ -1064,7 +1065,7 @@ void photo::interrupt(bool is_light) {
 	}
 	photo::set_ad(front_left, get_ad(front_left) - get_ref(front_left));//差分を代入
 	photo::turn_off(front_left);
-
+*/
 	if (is_light) {
 		photo::light(front);
 		for (int i = 0; i < wait_number; i++) {
@@ -1275,7 +1276,7 @@ photo::~photo() {
 //XXX 各種ゲイン
 //control関連
 const PID gyro_gain = { 15, 750, 0.015 };//{ 15, 600, 0};		//限界感度法、限界感度30、限界周期0.01[s]
-const PID photo_gain = { 0.5, 0, 0 };
+const PID photo_gain = { 0.4, 0, 0 };
 const PID encoder_gain = { 200, 1000, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
 const PID accel_gain = { 0, 0, 0 };	//{50, 0, 0 };
 
@@ -1330,18 +1331,15 @@ void control::cal_delta() {
 	if(control::get_wall_control_phase()){
 		if (photo::check_wall(PHOTO_TYPE::right)) {
 			photo_right_delta = photo::get_displacement_from_center(PHOTO_TYPE::right);		//中心からのずれてる距離[mm]
-			if (photo::check_wall_gap(right, 15))
+			if (photo::check_wall_gap(right, 5))
 				photo_right_delta = 0;		//壁の切れ目では制御を切る
-	//		if (delta < 0)
-	//			photo_right_delta = 0;	//近づく方向には制御しない
+			if(ABS(photo_right_delta)>20) photo_right_delta=0;
 		}
-
 		if (photo::check_wall(PHOTO_TYPE::left)) {
-			photo_right_delta = photo::get_displacement_from_center(PHOTO_TYPE::left);		//中心からのずれてる距離[mm]
-			if (photo::check_wall_gap(left, 15))
+			photo_left_delta = photo::get_displacement_from_center(PHOTO_TYPE::left);		//中心からのずれてる距離[mm]
+			if (photo::check_wall_gap(left, 5))
 				photo_left_delta = 0;		//壁の切れ目では制御を切る
-			//	if (delta < 0)
-			//		photo_left_delta = 0;	//近づく方向には制御しない
+			if(ABS(photo_left_delta)>20) photo_left_delta=0;
 		}
 
 		//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
@@ -1350,7 +1348,24 @@ void control::cal_delta() {
 			photo_right_delta = 0;
 		}
 
-		photo_delta.P = (photo_right_delta - photo_left_delta);
+
+		photo_delta.P = (photo_right_delta + photo_left_delta)/2;
+
+		//FIX_ME フォトセンサでなくオドメトリに対して制御かける
+		float odm_pos=0;
+		//どっちかといえば、X方向むいていれば
+		if(ABS(PI()/2 - ABS(mouse::get_angle_radian())) < PI()/4)
+			odm_pos = mouse::get_place().y;
+		else
+			odm_pos = mouse::get_place().x;
+		static const float half_section = 0.045*MOUSE_MODE;	//1区間の半分の長さ
+		while(odm_pos > half_section*2){
+			odm_pos -= half_section*2;
+		}
+		photo_delta.P = (odm_pos - half_section);
+
+
+
 		photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
 		photo_delta.D = (photo_delta.P - before_p_delta) / CONTROL_PERIOD;
 
@@ -1361,11 +1376,11 @@ void control::cal_delta() {
 		photo_delta.D = 0;
 	}
 
-
 	//ジャイロのΔ計算
 	before_p_delta = gyro_delta.P;	//積分用
 	gyro_delta.P = (mouse::get_ideal_angular_velocity()
 			- gyro::get_angular_velocity());
+	gyro_delta.P -= cross_delta_gain(sen_photo);		//壁制御量を目標角速度に追加
 	gyro_delta.I += (gyro_delta.P * CONTORL_PERIOD);
 	gyro_delta.D = (gyro_delta.P - before_p_delta) * 1000;
 
@@ -1414,10 +1429,6 @@ void control::stop_control() {
 }
 
 float control::get_feedback(signed char right_or_left) {
-	float ang_a = mouse::get_ideal_angular_accel();
-	if (get_wall_control_phase())
-		mouse::set_ideal_angular_accel(ang_a+cross_delta_gain(sen_photo));		//壁制御量を角加速度に入れる
-
 	if (right_or_left == MUKI_RIGHT) {			//右のモーターなら
 		return (control_velocity() - control_angular_velocity());
 	} else {										//左のモーターなら
