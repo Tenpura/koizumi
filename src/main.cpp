@@ -27,7 +27,7 @@ void abort(void);
 
 uint32_t wait_counter = 0;
 static const int16_t flog_number = 2000;
-float flog[2][flog_number] = { 0 };
+float flog[3][flog_number] = { 0 };
 
 void interrupt_timer();			//CONTROL_PERIODÇ≤Ç∆Ç…äÑÇËçûÇﬁä÷êî
 
@@ -94,24 +94,19 @@ int main(void) {
 
 		select = mode::select_mode(7, PHOTO_TYPE::right);
 
+
+		GPIO_SetBits(GPIOC, GPIO_Pin_3);	//LED2
+
 		switch (select) {
 		case 0:		//ï«ÇÃílÇì«ÇﬁÇæÇØ	éñåÃñhé~ÇÃÇΩÇﬂÇ…ÉÇÅ[Éh0ÇÕé¿äQÇ»Ç¢ìzÇ…ÇµÇ∆Ç≠
 			while (1) {
 
-				myprintf("r_dis %4.4f  ", photo::get_displacement_from_center(right));
-				myprintf("l_dis y %4.4f", photo::get_displacement_from_center(left));
-
-				myprintf("\n\r");
-
-
-				/*
 				myprintf("right %d  ", photo::get_value(right));
 				myprintf("left %d  ", photo::get_value(left));
 				myprintf("f_r %d  ", photo::get_value(front_right));
 				myprintf("f_l %d  ", photo::get_value(front_left));
 				myprintf("front %d  ", photo::get_value(front));
 				myprintf("\n\r");
-				 */
 
 				wait::ms(100);
 				if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0) {
@@ -150,34 +145,34 @@ int main(void) {
 					break;
 			}
 			my7seg::count_down(3, 500);
-			mouse::run_init(true, true);
+			mouse::run_init(true, false);
 			//run::accel_run_wall_eage(0.09 * 2, SEARCH_VELOCITY, 0, 0.09);
 
 			flog[0][0] = -1;
-			//run::accel_run(0.09 * 4, 0, 0);
+			run::accel_run(0.09 * 4, 0, 0);
 
-			run::accel_run(0.045+0.09, SEARCH_VELOCITY,0);
-			run::slalom_for_search(small, MUKI_LEFT, 0);
+			//run::accel_run(0.045+0.09, SEARCH_VELOCITY,0);
+			//run::slalom_for_search(small, MUKI_LEFT, 0);
 			//flog[0][0] = mouse::get_angle_degree();
-			//run::accel_run_wall_eage(0.09*5, SEARCH_VELOCITY, 0, 0.09*4.5);
-			control::stop_wall_control();
+	//		run::accel_run_wall_eage(0.09 * 5, SEARCH_VELOCITY, 0, 0.09 * 4.5);
+	//		run::accel_run(0.045, 0, 0);
+			//control::stop_wall_control();
 			//run::accel_run(0.045 * 2, 0, 0);
 			//run::spin_turn(-180);
-			run::accel_run(0.09+0.045, 0, 0);
-
-			//run::fit_run(0);
+			//run::accel_run(0.09+0.045, 0, 0);
 
 			wait::ms(2000);
 
 			motor::sleep_motor();
 			my7seg::turn_off();
 
+			GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 			while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
 			}
 			//map::draw_map(false);
 
 			for (int i = 0; i < flog_number; i++) {
-				myprintf("%f,%f\n\r", flog[0][i], flog[1][i]);
+				myprintf("%f,%f,%f\n\r", flog[0][i], flog[1][i], flog[2][i]);
 			}
 			break;
 
@@ -197,6 +192,7 @@ int main(void) {
 			motor::sleep_motor();
 			my7seg::turn_off();
 
+			GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 			while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
 			}
 
@@ -211,6 +207,15 @@ int main(void) {
 			break;
 
 		}
+
+
+		GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
+
+		COORDINATE pl = mouse::get_place();
+		float deg = mouse::get_angle_degree();
+		while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
+		}
+		myprintf("\n\rx->%fm, y=%fm, degree=%fÅã \n\r", pl.x, pl.y, deg);
 
 	}
 	return 1;
@@ -234,7 +239,7 @@ void interrupt_timer() {
 	control::cal_delta();			//épê®êßå‰Ç…ópÇ¢ÇÈïŒç∑ÇåvéZ
 	control::posture_control();
 
-//	control::fail_safe();
+	control::fail_safe();
 
 	static volatile uint16_t i = 0;
 	if (i == 0) {
@@ -242,8 +247,9 @@ void interrupt_timer() {
 			i++;
 		}
 	} else if (i < flog_number) {
-		flog[0][i] = photo::get_value(left);//encoder::get_velocity();//mouse::get_velocity();//gyro::get_angular_velocity();
-		flog[1][i] = photo::get_value(right);//accelmeter::get_accel(axis_y);//mouse::get_ideal_angular_velocity();
+		flog[0][i] = mouse::get_place().y;
+		flog[1][i] = photo::get_displacement_from_center(left);	//accelmeter::get_accel(axis_y);//mouse::get_ideal_angular_velocity();
+		flog[2][i] = photo::get_displacement_from_center(right);
 		i++;
 	}
 

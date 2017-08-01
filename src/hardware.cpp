@@ -45,7 +45,6 @@ void my7seg::light(const unsigned char number) {
 		GPIO_SetBits(GPIOB, GPIO_Pin_4);	//LED7
 		GPIO_ResetBits(GPIOB, GPIO_Pin_12);	//LED3
 		GPIO_ResetBits(GPIOC, GPIO_Pin_2);	//LED8
-		GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 		GPIO_ResetBits(GPIOC, GPIO_Pin_14);	//LED5
 		GPIO_ResetBits(GPIOC, GPIO_Pin_15);	//LED6
 		GPIO_ResetBits(GPIOH, GPIO_Pin_0);	//LED9
@@ -55,7 +54,6 @@ void my7seg::light(const unsigned char number) {
 		GPIO_SetBits(GPIOB, GPIO_Pin_4);	//LED7
 		GPIO_ResetBits(GPIOB, GPIO_Pin_12);	//LED3
 		GPIO_SetBits(GPIOC, GPIO_Pin_2);	//LED8
-		GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 		GPIO_SetBits(GPIOC, GPIO_Pin_14);	//LED5
 		GPIO_SetBits(GPIOC, GPIO_Pin_15);	//LED6
 		GPIO_SetBits(GPIOH, GPIO_Pin_0);	//LED9
@@ -65,7 +63,6 @@ void my7seg::light(const unsigned char number) {
 		GPIO_ResetBits(GPIOB, GPIO_Pin_4);	//LED7
 		GPIO_SetBits(GPIOB, GPIO_Pin_12);	//LED3
 		GPIO_ResetBits(GPIOC, GPIO_Pin_2);	//LED8
-		GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 		GPIO_ResetBits(GPIOC, GPIO_Pin_14);	//LED5
 		GPIO_SetBits(GPIOC, GPIO_Pin_15);	//LED6
 		GPIO_ResetBits(GPIOH, GPIO_Pin_0);	//LED9
@@ -75,7 +72,6 @@ void my7seg::light(const unsigned char number) {
 		GPIO_ResetBits(GPIOB, GPIO_Pin_4);	//LED7
 		GPIO_ResetBits(GPIOB, GPIO_Pin_12);	//LED3
 		GPIO_ResetBits(GPIOC, GPIO_Pin_2);	//LED8
-		GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 		GPIO_SetBits(GPIOC, GPIO_Pin_14);	//LED5
 		GPIO_SetBits(GPIOC, GPIO_Pin_15);	//LED6
 		GPIO_ResetBits(GPIOH, GPIO_Pin_0);	//LED9
@@ -85,7 +81,6 @@ void my7seg::light(const unsigned char number) {
 		GPIO_ResetBits(GPIOB, GPIO_Pin_4);	//LED7
 		GPIO_ResetBits(GPIOB, GPIO_Pin_12);	//LED3
 		GPIO_SetBits(GPIOC, GPIO_Pin_2);	//LED8
-		GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 		GPIO_SetBits(GPIOC, GPIO_Pin_14);	//LED5
 		GPIO_ResetBits(GPIOC, GPIO_Pin_15);	//LED6
 		GPIO_SetBits(GPIOH, GPIO_Pin_0);	//LED9
@@ -95,7 +90,6 @@ void my7seg::light(const unsigned char number) {
 		GPIO_ResetBits(GPIOB, GPIO_Pin_4);	//LED7
 		GPIO_ResetBits(GPIOB, GPIO_Pin_12);	//LED3
 		GPIO_ResetBits(GPIOC, GPIO_Pin_2);	//LED8
-		GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 		GPIO_SetBits(GPIOC, GPIO_Pin_14);	//LED5
 		GPIO_ResetBits(GPIOC, GPIO_Pin_15);	//LED6
 		GPIO_ResetBits(GPIOH, GPIO_Pin_0);	//LED9
@@ -105,7 +99,6 @@ void my7seg::light(const unsigned char number) {
 		GPIO_ResetBits(GPIOB, GPIO_Pin_4);	//LED7
 		GPIO_ResetBits(GPIOB, GPIO_Pin_12);	//LED3
 		GPIO_ResetBits(GPIOC, GPIO_Pin_2);	//LED8
-		GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 		GPIO_ResetBits(GPIOC, GPIO_Pin_14);	//LED5
 		GPIO_ResetBits(GPIOC, GPIO_Pin_15);	//LED6
 		GPIO_ResetBits(GPIOH, GPIO_Pin_0);	//LED9
@@ -115,7 +108,6 @@ void my7seg::light(const unsigned char number) {
 		GPIO_SetBits(GPIOB, GPIO_Pin_4);	//LED7
 		GPIO_ResetBits(GPIOB, GPIO_Pin_12);	//LED3
 		GPIO_SetBits(GPIOC, GPIO_Pin_2);	//LED8
-		GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 		GPIO_SetBits(GPIOC, GPIO_Pin_14);	//LED5
 		GPIO_ResetBits(GPIOC, GPIO_Pin_15);	//LED6
 		GPIO_ResetBits(GPIOH, GPIO_Pin_0);	//LED9
@@ -125,7 +117,6 @@ void my7seg::light(const unsigned char number) {
 		GPIO_ResetBits(GPIOB, GPIO_Pin_4);	//LED7
 		GPIO_ResetBits(GPIOB, GPIO_Pin_12);	//LED3
 		GPIO_ResetBits(GPIOC, GPIO_Pin_2);	//LED8
-		GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 		GPIO_ResetBits(GPIOC, GPIO_Pin_14);	//LED5
 		GPIO_ResetBits(GPIOC, GPIO_Pin_15);	//LED6
 		GPIO_ResetBits(GPIOH, GPIO_Pin_0);	//LED9
@@ -135,7 +126,6 @@ void my7seg::light(const unsigned char number) {
 		GPIO_ResetBits(GPIOB, GPIO_Pin_4);	//LED7
 		GPIO_ResetBits(GPIOB, GPIO_Pin_12);	//LED3
 		GPIO_ResetBits(GPIOC, GPIO_Pin_2);	//LED8
-		GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 		GPIO_SetBits(GPIOC, GPIO_Pin_14);	//LED5
 		GPIO_ResetBits(GPIOC, GPIO_Pin_15);	//LED6
 		GPIO_ResetBits(GPIOH, GPIO_Pin_0);	//LED9
@@ -148,7 +138,6 @@ void my7seg::turn_off() {
 	GPIO_SetBits(GPIOB, GPIO_Pin_4);	//LED7
 	GPIO_SetBits(GPIOB, GPIO_Pin_12);	//LED3
 	GPIO_SetBits(GPIOC, GPIO_Pin_2);	//LED8
-	GPIO_SetBits(GPIOC, GPIO_Pin_3);	//LED2
 	GPIO_SetBits(GPIOC, GPIO_Pin_14);	//LED5
 	GPIO_SetBits(GPIOC, GPIO_Pin_15);	//LED6
 	GPIO_SetBits(GPIOH, GPIO_Pin_0);	//LED9
@@ -159,7 +148,6 @@ void my7seg::light_error() {
 	GPIO_ResetBits(GPIOB, GPIO_Pin_4);	//LED7
 	GPIO_SetBits(GPIOB, GPIO_Pin_12);	//LED3
 	GPIO_ResetBits(GPIOC, GPIO_Pin_2);	//LED8
-	GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 	GPIO_ResetBits(GPIOC, GPIO_Pin_14);	//LED5
 	GPIO_ResetBits(GPIOC, GPIO_Pin_15);	//LED6
 	GPIO_ResetBits(GPIOH, GPIO_Pin_0);	//LED9
@@ -799,8 +787,9 @@ volatile void encoder::yi_correct(ENC_SIDE enc_side) {
 	}
 	for (int i = 4096; i >= 0; i--) {	//おしりから値が入っていないところを探していく
 		if (correct[enc_side][i] != -1) {		//値が入っていたら
-			if (bigger_val - i <= 1);
-					//値が入っているのが連続なら線系補完はしない(4096に値が入っている場合のために不等号)
+			if (bigger_val - i <= 1)
+				;
+			//値が入っているのが連続なら線系補完はしない(4096に値が入っている場合のために不等号)
 			else {
 				//間のやつらを線形補完する
 				float a = (bigger_time - correct[enc_side][i])
@@ -825,9 +814,13 @@ volatile void encoder::yi_correct(ENC_SIDE enc_side) {
 }
 
 void encoder::yi_correct() {
+	control::ignore_failsafe(true);		//補正中はフェイルセーフを切る
+
 	//左右で補正を行う
 	yi_correct(enc_right);
 	yi_correct(enc_left);
+
+	control::ignore_failsafe(false);		//フェイルセーフを復活
 }
 
 void encoder::draw_correct(bool right, bool left) {
@@ -1041,7 +1034,7 @@ void photo::interrupt(bool is_light) {
 	if (is_light) {
 		photo::light(right);
 		photo::light(left);
-		for (int i = 0; i < wait_number; i++) {
+		for (int i = 0; i < wait_number * 2; i++) {
 
 		}
 	}
@@ -1050,25 +1043,25 @@ void photo::interrupt(bool is_light) {
 	photo::turn_off(right);
 //FIX_ME 左右の発光時間を延ばすために、斜めセンサは切ってる
 	/*
-	if (is_light) {
-		photo::light(front_right);
-		for (int i = 0; i < wait_number; i++) {
-		}
-	}
-	photo::set_ad(front_right, get_ad(front_right) - get_ref(front_right));	//差分を代入
-	photo::turn_off(front_right);
+	 if (is_light) {
+	 photo::light(front_right);
+	 for (int i = 0; i < wait_number; i++) {
+	 }
+	 }
+	 photo::set_ad(front_right, get_ad(front_right) - get_ref(front_right));	//差分を代入
+	 photo::turn_off(front_right);
 
-	if (is_light) {
-		photo::light(front_left);
-		for (int i = 0; i < wait_number; i++) {
-		}
-	}
-	photo::set_ad(front_left, get_ad(front_left) - get_ref(front_left));//差分を代入
-	photo::turn_off(front_left);
-*/
+	 if (is_light) {
+	 photo::light(front_left);
+	 for (int i = 0; i < wait_number; i++) {
+	 }
+	 }
+	 photo::set_ad(front_left, get_ad(front_left) - get_ref(front_left));//差分を代入
+	 photo::turn_off(front_left);
+	 */
 	if (is_light) {
 		photo::light(front);
-		for (int i = 0; i < wait_number; i++) {
+		for (int i = 0; i < wait_number * 2; i++) {
 		}
 	}
 	photo::set_ad(front, get_ad(front) - get_ref(front));	//差分を代入
@@ -1166,15 +1159,15 @@ float photo::get_displacement_from_center(PHOTO_TYPE sensor_type) {
 	float f_c = parameter::get_ideal_photo(sensor_type);	//中心位置におけるセンサ値
 
 	//XXX フォトセンサの特性を示すパラメータ
-	float a=0;
+	float a = 0;
 
 	switch (sensor_type) {
 	case PHOTO_TYPE::right:
-		a = 0.06;
+		a = 0.058;
 		break;
 
 	case PHOTO_TYPE::left:
-		a = -0.055;
+		a = -0.056;
 		break;
 
 	case PHOTO_TYPE::front_right:
@@ -1195,11 +1188,10 @@ float photo::get_displacement_from_center(PHOTO_TYPE sensor_type) {
 
 	//センサ値fは f=f_c*exp(a*x) と仮定し、xを求める。-> x = 1/a*log(f/f_c)
 	//f_c:中心のセンサ値、x:中心からのずれ[mm]
-	float displace = my_math::log(f/f_c)/a;
+	float displace = my_math::log(f / f_c) / a;
 
-	return displace;
+	return displace*0.001;		//[m]
 }
-
 
 bool photo::check_wall(unsigned char muki) {
 
@@ -1276,7 +1268,7 @@ photo::~photo() {
 //XXX 各種ゲイン
 //control関連
 const PID gyro_gain = { 15, 750, 0.015 };//{ 15, 600, 0};		//限界感度法、限界感度30、限界周期0.01[s]
-const PID photo_gain = { 0.4, 0, 0 };
+const PID photo_gain = { 400, 0, 0 };
 const PID encoder_gain = { 200, 1000, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
 const PID accel_gain = { 0, 0, 0 };	//{50, 0, 0 };
 
@@ -1284,6 +1276,7 @@ PID control::gyro_delta, control::photo_delta, control::encoder_delta,
 		control::accel_delta;
 bool control::control_phase = false;
 bool control::wall_control_flag = false;
+bool control::ignore_fail_safe = false;
 //XXX FF制御とFB制御やるかやらないか決める場所
 bool control::is_FF_CONTROL = false;
 bool control::is_FB_CONTROL = true;
@@ -1328,48 +1321,69 @@ void control::cal_delta() {
 	//センサーのΔ計算
 	before_p_delta = photo_delta.P;
 
-	if(control::get_wall_control_phase()){
+	//FIX_ME オドメトリから、柱付近は制御かけない
+	float odm_pos_wall = 0;	//進行方向垂直の距離
+	float odm_pos_go = 0;		//進行方向の距離
+	//どっちかといえば、X方向むいていれば
+	if (ABS(PI()/2 - ABS(mouse::get_angle_radian())) < PI() / 4) {
+		odm_pos_wall = mouse::get_place().y;
+		odm_pos_go = mouse::get_place().x;
+	} else {
+		odm_pos_wall = mouse::get_place().x;
+		odm_pos_go = mouse::get_place().y;
+	}
+	static const float half_section = 0.045 * MOUSE_MODE;	//1区間の半分の長さ
+	while ((odm_pos_wall > half_section * 2)
+			|| (odm_pos_go > half_section * 2)) {
+		if (odm_pos_wall > half_section * 2)
+			odm_pos_wall -= half_section * 2;
+		if (odm_pos_go > half_section * 2)
+			odm_pos_go -= half_section * 2;
+	}
+	//東向きor南向きの時は壁からの距離の軸の向きがセンサと逆になる　時計回り正でとって、π/4 < θ < π*5/4 -> 0< θ-π/4 < π
+	float mouse_ang = mouse::get_angle_radian() - PI()/4;
+	if(mouse_ang < -PI())	mouse_ang += 2*PI();
+	if(mouse_ang > 0)
+		odm_pos_wall = - odm_pos_wall;	//今、角度は -π < θ < π　のはずなので、正ならば南か東向き
+
+	if (control::get_wall_control_phase()) {
 		if (photo::check_wall(PHOTO_TYPE::right)) {
-			photo_right_delta = photo::get_displacement_from_center(PHOTO_TYPE::right);		//中心からのずれてる距離[mm]
-			if (photo::check_wall_gap(right, 5))
-				photo_right_delta = 0;		//壁の切れ目では制御を切る
-			if(ABS(photo_right_delta)>20) photo_right_delta=0;
+			photo_right_delta = photo::get_displacement_from_center(
+					PHOTO_TYPE::right);		//中心からのずれてる距離[mm]
+
+			//if (ABS(photo_right_delta) > 20)
+			//	photo_right_delta = 0;
 		}
 		if (photo::check_wall(PHOTO_TYPE::left)) {
-			photo_left_delta = photo::get_displacement_from_center(PHOTO_TYPE::left);		//中心からのずれてる距離[mm]
-			if (photo::check_wall_gap(left, 5))
-				photo_left_delta = 0;		//壁の切れ目では制御を切る
-			if(ABS(photo_left_delta)>20) photo_left_delta=0;
+			photo_left_delta = photo::get_displacement_from_center(
+					PHOTO_TYPE::left);		//中心からのずれてる距離[mm]
+
+			//if (ABS(photo_left_delta) > 20)
+			//	photo_left_delta = 0;
 		}
+
+		photo_delta.P = (photo_right_delta + photo_left_delta) / 2;
+
+
+
+		//柱近傍はセンサ値を信用しない。 区画の中央部分
+		if (ABS(odm_pos_go-half_section) < half_section/2)
+			photo_delta.P = 0;//(odm_pos_wall - half_section);		//オドメトリに合わせるように制御する
+		//else if(photo_delta.P ==0)		//両壁ないときも
+		//	photo_delta.P = (odm_pos_wall - half_section);		//オドメトリに合わせるように制御する
+
+		//photo_delta.P = (odm_pos_wall - half_section);		//オドメトリに合わせるように制御する
 
 		//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
 		if (mouse::get_ideal_velocity() < (SEARCH_VELOCITY * 0.2)) {
-			photo_left_delta = 0;
-			photo_right_delta = 0;
+			photo_delta.P=0;
 		}
-
-
-		photo_delta.P = (photo_right_delta + photo_left_delta)/2;
-
-		//FIX_ME フォトセンサでなくオドメトリに対して制御かける
-		float odm_pos=0;
-		//どっちかといえば、X方向むいていれば
-		if(ABS(PI()/2 - ABS(mouse::get_angle_radian())) < PI()/4)
-			odm_pos = mouse::get_place().y;
-		else
-			odm_pos = mouse::get_place().x;
-		static const float half_section = 0.045*MOUSE_MODE;	//1区間の半分の長さ
-		while(odm_pos > half_section*2){
-			odm_pos -= half_section*2;
-		}
-		photo_delta.P = (odm_pos - half_section);
-
 
 
 		photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
 		photo_delta.D = (photo_delta.P - before_p_delta) / CONTROL_PERIOD;
 
-	}else{
+	} else {
 		//壁制御かけないときは初期化し続ける。
 		photo_delta.P = 0;
 		photo_delta.I = 0;
@@ -1384,13 +1398,12 @@ void control::cal_delta() {
 	gyro_delta.I += (gyro_delta.P * CONTORL_PERIOD);
 	gyro_delta.D = (gyro_delta.P - before_p_delta) * 1000;
 
-
 	/*
-	if (photo_delta.P != 0 && get_wall_control_phase())
-		gyro_delta.I = 0;		//壁制御かけるときはGyroのIは使わない
-	else
-		photo_delta.I = 0;
-	*/
+	 if (photo_delta.P != 0 && get_wall_control_phase())
+	 gyro_delta.I = 0;		//壁制御かけるときはGyroのIは使わない
+	 else
+	 photo_delta.I = 0;
+	 */
 
 	//加速度の偏差計算
 	before_p_delta = accel_delta.P;	//積分用
@@ -1461,7 +1474,7 @@ float control::get_feedforward(const signed char right_or_left) {
 	// V = v[m/s]/2πr[m] * ギア比  / 電圧特性[回/s/V]
 	Vinv = (velocity / (2 * PI() * tire_R) * SPAR / PINION / MOTOR_CONST);
 
-	float mu = 0.000755/3;	//摩擦力
+	float mu = 0.000755 / 3;	//摩擦力
 	// V = 加速に必要な分 + 摩擦力を打ち消す分
 	Vt = ((PI() * tire_R * MASS * MOTOR_ORM * MOTOR_CONST) * accel
 			+ (2 * PI() * MOTOR_ORM * MOTOR_CONST * mu)) * PINION / SPAR;
@@ -1539,12 +1552,22 @@ volatile void control::reset_delta(SEN_TYPE type) {
 }
 
 void control::fail_safe() {
+
+	//フェイルセーフを無視するなら何もしない
+	if(ignore_fail_safe)
+		return;
+
 	//TODO 閾値どのくらいかわからない。Gyroも参照すべき？
-	if (ABS(encoder_delta.P) > 0.7) {
+	if (ABS(encoder_delta.P) > 0.3) {
 		motor::sleep_motor();
 		mouse::set_fail_flag(true);
 	}
 }
+
+void control::ignore_failsafe(bool ignore) {
+	ignore_fail_safe = ignore;
+}
+
 
 control::control() {
 }

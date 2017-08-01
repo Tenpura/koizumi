@@ -151,6 +151,7 @@ public:
 
 	static float log(float x);			//logを返す関数　自然対数　0.1<x<10の範囲にしか対応していないことに注意！
 
+	static float sqrt(float x);			//平方根を返す関数　ニュートン法
 
 };
 #endif /* USER_H_ */

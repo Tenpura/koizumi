@@ -252,7 +252,7 @@ public:
 
 	static int16_t get_value(PHOTO_TYPE sensor_type);
 
-	//センサ値から距離に変換し、区画中心からどれだけずれているのか[mm]を返す。右側正
+	//センサ値から距離に変換し、区画中心からどれだけずれているのか[m]を返す。右側正
 	static float get_displacement_from_center(PHOTO_TYPE sensor_type);
 
 	//TODO この関数はマウスclassにあるべきかも
@@ -280,6 +280,7 @@ private:
 
 	static bool wall_control_flag;		//壁制御をかけてればtrue、切ってればfalse。
 	static bool control_phase;		//姿勢制御をかけてるか否か。かけていればtrue
+	static bool ignore_fail_safe;	//フェイルセーフを無視するか否か。無視するならtrue  エンコーダー補正時など
 
 	//加速度はカスケード接続ではなく、速度とは独立に制御量を出し、それの積分を速度制御量に足す
 	static float control_accel();		//加速度に関するPID制御(加速度センサのみ)。戻り値は[Duty/時間]？
@@ -315,6 +316,7 @@ public:
 	static volatile void reset_delta(SEN_TYPE type);	//特定のセンサーの偏差だけ0にする
 
 	static void fail_safe();	//Iゲインが一定以上いったらモーターを止める
+	static void ignore_failsafe(bool ignore);		//フェイルセーフを無視するかどうか
 
 	~control();
 };

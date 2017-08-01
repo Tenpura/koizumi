@@ -94,6 +94,8 @@ public:
 	static void set_place(const float x, const float y);
 	static COORDINATE get_place();
 
+	static float get_odm_displace_from_wall();		//オドメトリから取得した壁との距離[m] 右側正
+
 	static unsigned char get_direction();	//defineされたMUKI_??で返す
 	static void get_direction(signed char *direction_x,
 			signed char *direction_y);		//引数の値をポインタ経由で変更する
@@ -135,6 +137,9 @@ public:
 	static void accel_run_wall_eage(const float distance_m,
 			const float end_velocity, const unsigned char select_mode,
 			const float check_distance);
+	static void accel_run_by_place(const COORDINATE delta, const float end_velocity,
+			const unsigned char select_mode);	//絶対座標を基準に走る。 現在座標と目標座標の距離で考える
+
 
 	static void fit_run(const unsigned char select_mode);//前壁に対してうまく合うように調整して止まる
 
@@ -185,6 +190,8 @@ public:
 			const unsigned char target_y, bool is_FULUKAWA);
 	static bool adachi_method_spin(unsigned char target_x,
 			unsigned char target_y, bool is_FULUKAWA);
+	static bool adachi_method_place(unsigned char target_x,
+			unsigned char target_y, bool is_FULUKAWA);		//直進時の距離の管理をオドメトリから求めた絶対座標にしたVer
 
 	static bool left_hand_method(const uint8_t target_x,
 			const uint8_t target_y);
