@@ -18,7 +18,7 @@ unsigned long mouse::mouse_count_ms;
 MAP_DATA mouse::now_map;
 
 POSITION mouse::position;
-unsigned char mouse::mouse_direction;
+unsigned char mouse::mouse_direction = MUKI_UP;
 
 bool mouse::fail_flag = false;
 
@@ -138,6 +138,38 @@ void mouse::set_place(float x_m, float y_m) {
 
 COORDINATE mouse::get_place() {
 	return place;
+}
+
+float mouse::get_odm_displace_from_wall() {
+	float wall_dis = 0;
+	signed char dir_x, dir_y;		//マウスの方向
+	mouse::get_direction(&dir_x, &dir_y);
+
+	if (dir_x == 0) {	//Y方向に移動している場合
+		wall_dis = mouse::get_place().x;
+		//mod1区画を行う。　座標×1区画を引けばよいが最短のとき座標管理しなくちゃいけなくて面倒なので愚直に実装
+		while (wall_dis > 0.09 * MOUSE_MODE) {
+			wall_dis -= 0.09 * MOUSE_MODE;
+		}
+
+		wall_dis -= 0.045 * MOUSE_MODE;		//壁との距離なので区画の中心を基準にとる
+		return (wall_dis * dir_y);		//北南のどちらを向くかで壁との距離の座標軸が反転する
+
+	} else if (dir_y == 0) {		//X方向に移動している場合
+		wall_dis = mouse::get_place().y;
+		//mod1区画を行う。　座標×1区画を引けばよいが最短のとき座標管理しなくちゃいけなくて面倒なので愚直に実装
+		while (wall_dis > 0.09 * MOUSE_MODE) {
+			wall_dis -= 0.09 * MOUSE_MODE;
+		}
+
+		wall_dis -= 0.045 * MOUSE_MODE;		//壁との距離なので区画の中心を基準にとる
+		return (wall_dis * dir_x);		//東西のどちらを向くかで壁との距離の座標軸が反転する
+
+	} else {			//斜めに移動中の場合
+		//TODO 斜めに移動中のオドメトリ制御は要検討
+	}
+
+	return 0;
 }
 
 unsigned char mouse::get_direction() {
@@ -629,8 +661,8 @@ mouse::~mouse() {
 
 //XXX 壁キレの距離[m]
 // right left front_right front_left front
-float run::WALL_EAGE_DISTANCE[PHOTO_TYPE::element_count] =
-		{ 0.045, 0.045, 0, 0, 0 };
+float run::WALL_EAGE_DISTANCE[PHOTO_TYPE::element_count] = { 0.045, 0.045, 0, 0,
+		0 };
 
 void run::accel_run(const float distance_m, const float end_velocity,
 		const unsigned char select_mode) {
@@ -725,7 +757,8 @@ void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 	//壁キレを待つ前にそもそも壁キレが起こるのかを判断
 	if (photo::get_value(PHOTO_TYPE::left) > wall_eage[PHOTO_TYPE::left])
 		left_flag = true;
-	if (photo::get_displacement_from_center(PHOTO_TYPE::right) > wall_eage[PHOTO_TYPE::right])
+	if (photo::get_displacement_from_center(PHOTO_TYPE::right)
+			> wall_eage[PHOTO_TYPE::right])
 		right_flag = true;
 
 	while (mouse::get_distance_m() < target_distance) {
