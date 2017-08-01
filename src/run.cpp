@@ -1149,10 +1149,9 @@ void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 			right_or_left, select_mode);
 	float de_accel_angle = 0;
 
-	static float slalom_front_wall = 3500;		//XXX スラロームの前距離を無視する値
+	static float slalom_front_wall = 35000;		//XXX スラロームの前距離を無視する値
 	//		(parameter::get_ideal_photo(front)- parameter::get_min_wall_photo(front)) / 2;//スラローム時にこの値より前壁の値が大きければ前距離を無視する。
 
-	bool wall_flag = control::get_wall_control_phase();
 
 	if (slalom_type == none) {
 		return;
@@ -1171,7 +1170,7 @@ void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 		accel_run(distance, slalom_velocity, select_mode);
 	}
 
-//mouse::slalom_flag = true;
+	bool wall_flag = control::get_wall_control_phase();
 	control::stop_wall_control();
 
 //時計回りが正
@@ -1247,6 +1246,8 @@ void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 	mouse::set_ideal_angular_accel(0);
 	mouse::set_ideal_angular_velocity(0);
 
+	mouse::turn_direction(right_or_left);	//向きを90°変える
+
 //後ろ距離分走る
 	if (wall_flag)
 		control::start_wall_control();	//もともと壁制御がかかってたら復活させる
@@ -1256,7 +1257,7 @@ void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 			right_or_left, select_mode);
 	accel_run(distance, slalom_velocity, select_mode);
 
-//mouse::slalom_flag = false;
+	//TODO スラロームのたびに角速度の偏差をリセットするかは要検討
 	control::reset_delta(sen_gyro);
 
 }
@@ -1588,8 +1589,8 @@ volatile void adachi::run_next_action(const ACTION_TYPE next_action,
 			run::accel_run((0.045 * MOUSE_MODE), 0, 0);
 			run::spin_turn(90);
 			run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
+			mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
 		}
-		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
 		break;
 
 	case turn_left:
@@ -1601,8 +1602,8 @@ volatile void adachi::run_next_action(const ACTION_TYPE next_action,
 			run::accel_run((0.045 * MOUSE_MODE), 0, 0);
 			run::spin_turn(270);
 			run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
+			mouse::turn_direction(MUKI_LEFT);	//向きを90°変える
 		}
-		direction_turn(&direction_x, &direction_y, MUKI_LEFT);	//向きを90°変える
 		break;
 
 	case back:
@@ -1634,8 +1635,8 @@ volatile void adachi::run_next_action(const ACTION_TYPE next_action,
 		 */
 		run::spin_turn(180);
 
-		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
-		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
+		mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
+		mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
 		run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);	//半区間直進
 		break;
 
@@ -1655,18 +1656,18 @@ void adachi::simulate_next_action(ACTION_TYPE next_action) {
 
 	case turn_right:
 		//半区間⇒超信地⇒半区間
-		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
+		mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
 		break;
 
 	case turn_left:
 		//半区間⇒超信地⇒半区間
-		direction_turn(&direction_x, &direction_y, MUKI_LEFT);	//向きを90°変える
+		mouse::turn_direction(MUKI_LEFT);	//向きを90°変える
 		break;
 
 	case back:
 		//半区間進んで180°ターンして半区間直進
-		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
-		direction_turn(&direction_x, &direction_y, MUKI_RIGHT);	//向きを90°変える
+		mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
+		mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
 		break;
 
 	case stop:
@@ -1765,14 +1766,13 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 			adachi_flag = false;
 			break;
 		}
+//向きを取得
+		mouse::get_direction(&direction_x, &direction_y);
 
 //座標を更新
 		now_x = mouse::get_x_position() + direction_x;
 		now_y = mouse::get_y_position() + direction_y;
 		mouse::set_position(now_x, now_y);
-
-//向きも
-		mouse::set_direction(direction_x, direction_y);
 
 //壁情報更新
 		mouse::look_wall(false);
@@ -1862,9 +1862,6 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 			adachi_flag = false;
 		}
 
-//方向更新
-		mouse::set_direction(direction_x, direction_y);
-
 	}
 
 	if (adachi_flag) {
@@ -1917,16 +1914,13 @@ bool adachi::adachi_method_spin(unsigned char target_x, unsigned char target_y,
 			adachi_flag = false;
 			break;
 		}
-
-		my7seg::light(3);
+//向きを取得
+		mouse::get_direction(&direction_x, &direction_y);
 
 //座標を更新
 		now_x = mouse::get_x_position() + direction_x;
 		now_y = mouse::get_y_position() + direction_y;
 		mouse::set_position(now_x, now_y);
-
-//向きも
-		mouse::set_direction(direction_x, direction_y);
 
 //壁情報更新
 		mouse::velify_wall();
@@ -2017,9 +2011,6 @@ bool adachi::adachi_method_spin(unsigned char target_x, unsigned char target_y,
 			adachi_flag = false;
 		}
 
-//方向更新
-		mouse::set_direction(direction_x, direction_y);
-
 	}
 
 	if (adachi_flag) {
@@ -2075,15 +2066,13 @@ bool adachi::adachi_method_place(unsigned char target_x, unsigned char target_y,
 			break;
 		}
 
-		my7seg::light(3);
+//向きを取得
+		mouse::get_direction(&direction_x, &direction_y);
 
 //座標を更新
 		now_x = mouse::get_x_position() + direction_x;
 		now_y = mouse::get_y_position() + direction_y;
 		mouse::set_position(now_x, now_y);
-
-//向きも
-		mouse::set_direction(direction_x, direction_y);
 
 //壁情報更新
 		mouse::velify_wall();
@@ -2184,9 +2173,6 @@ bool adachi::adachi_method_place(unsigned char target_x, unsigned char target_y,
 		if (next_action == stop) {
 			adachi_flag = false;
 		}
-
-//方向更新
-		mouse::set_direction(direction_x, direction_y);
 
 	}
 

@@ -94,7 +94,7 @@ public:
 	static void set_place(const float x, const float y);
 	static COORDINATE get_place();
 
-	static float get_odm_displace_from_wall();		//オドメトリから取得した壁との距離[m] 右側正
+	static float get_odm_displace_from_wall();		//オドメトリから取得した壁との距離[m] マウスから見て右側正
 
 	static unsigned char get_direction();	//defineされたMUKI_??で返す
 	static void get_direction(signed char *direction_x,
