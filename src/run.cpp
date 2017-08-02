@@ -13,6 +13,7 @@ float mouse::ideal_velocity, mouse::ideal_angular_velocity,
 float mouse::velocity;
 float mouse::run_distance;
 COORDINATE mouse::place;
+COORDINATE mouse::relative;
 unsigned long mouse::mouse_count_ms;
 
 MAP_DATA mouse::now_map;
@@ -127,56 +128,61 @@ void mouse::set_position(const uint8_t set_x, const uint8_t set_y) {
 	position.bit.x = set_x;
 }
 
-void mouse::set_place(COORDINATE set_place) {
-	place = set_place;
+void mouse::set_place(COORDINATE set) {
+	set_place(set.x, set.y);
 }
 
 void mouse::set_place(float x_m, float y_m) {
 	place.x = x_m;
 	place.y = y_m;
+
+	//相対位置を計算する
+	relative.x = x_m;
+	relative.y = y_m;
+	//mod1区間を行う
+	while ((relative.x > 0.09 * MOUSE_MODE) || (relative.y > 0.09 * MOUSE_MODE)) {
+		if (relative.x > 0.09 * MOUSE_MODE)
+			relative.x -= 0.09 * MOUSE_MODE;
+		if (relative.y > 0.09 * MOUSE_MODE)
+			relative.y -= 0.09 * MOUSE_MODE;
+	}
+	//区画の中心が原点
+	relative.x -= 0.045 * MOUSE_MODE;
+	relative.y -= 0.045 * MOUSE_MODE;
 }
 
 COORDINATE mouse::get_place() {
 	return place;
 }
 
-float mouse::get_odm_displace_from_wall() {
-	float wall_dis = 0;
+float mouse::get_relative_displace() {
 	signed char dir_x, dir_y;		//マウスの方向
 	mouse::get_direction(&dir_x, &dir_y);
 
-	if (dir_x == 0) {	//Y方向に移動している場合
-		wall_dis = mouse::get_place().x;
-		//mod1区画を行う。　座標×1区画を引けばよいが最短のとき座標管理しなくちゃいけなくて面倒なので愚直に実装
-		while (wall_dis > 0.09 * MOUSE_MODE) {
-			wall_dis -= 0.09 * MOUSE_MODE;
-		}
+	//TODO 斜めのときオドメトリから計算したずれをどう扱うかは要検討
+	if ((dir_x != 0) && (dir_y != 0))
+		return 0;
 
-		wall_dis -= 0.045 * MOUSE_MODE;		//壁との距離なので区画の中心を基準にとる
-		return (wall_dis * dir_y);		//北南のどちらを向くかで壁との距離の座標軸が反転する
+	return (dir_y * relative.x - dir_x * relative.y);
+}
 
-	} else if (dir_y == 0) {		//X方向に移動している場合
-		wall_dis = mouse::get_place().y;
-		//mod1区画を行う。　座標×1区画を引けばよいが最短のとき座標管理しなくちゃいけなくて面倒なので愚直に実装
-		while (wall_dis > 0.09 * MOUSE_MODE) {
-			wall_dis -= 0.09 * MOUSE_MODE;
-		}
+float mouse::get_relative_go() {
+	signed char dir_x, dir_y;		//マウスの方向
+	mouse::get_direction(&dir_x, &dir_y);
 
-		wall_dis -= 0.045 * MOUSE_MODE;		//壁との距離なので区画の中心を基準にとる
-		return (wall_dis * dir_x);		//東西のどちらを向くかで壁との距離の座標軸が反転する
+	//TODO 斜めのときオドメトリから計算した相対位置をどう扱うかは要検討
+	if ((dir_x != 0) && (dir_y != 0))
+		return 0;
 
-	} else {			//斜めに移動中の場合
-		//TODO 斜めに移動中のオドメトリ制御は要検討
-	}
-
-	return 0;
+	return (dir_x * relative.x + dir_y * relative.y);
 }
 
 unsigned char mouse::get_direction() {
 	return mouse_direction;
 }
 
-void mouse::get_direction(signed char *direction_x, signed char *direction_y) {
+inline void mouse::get_direction(signed char *direction_x,
+		signed char *direction_y) {
 	switch (mouse_direction) {
 	case MUKI_RIGHT:
 		*direction_x = 1;
@@ -262,10 +268,21 @@ void mouse::cal_distance() {
 
 void mouse::cal_place() {
 	float theta = get_angle_radian();		//マウスの角度を取得
-	float dL = velocity * CONTORL_PERIOD;	//微小時間にマウスが進む距離
+	//微小時間にマウスが進む距離
+	float dx = velocity * CONTORL_PERIOD * my_math::sin(theta);
+	float dy = velocity * CONTORL_PERIOD * my_math::cos(theta);
 
-	place.x += dL * my_math::sin(theta);
-	place.y += dL * my_math::cos(theta);
+	place.x += dx;
+	place.y += dy;
+
+	//相対的位置も、逐次更新して、範囲外に出たらオーバーフロー処理
+	relative.x += dx;
+	relative.y += dy;
+	//+-半区間の範囲から出たら、中に戻す
+	if (ABS(relative.x) > 0.045 * MOUSE_MODE)
+		relative.x -= SIGN(relative.x) * 0.09 * MOUSE_MODE;
+	if (ABS(relative.y) > 0.045 * MOUSE_MODE)
+		relative.y -= SIGN(relative.y) * 0.09 * MOUSE_MODE;
 
 }
 
@@ -638,6 +655,40 @@ void mouse::turn_direction(const unsigned char right_or_left) {
 			mouse_direction = MUKI_DOWN;
 			break;
 		}
+	}
+}
+
+void mouse::turn_direction_slalom(const SLALOM_TYPE slalom_type,
+		const unsigned char right_or_left) {
+	switch (slalom_type) {
+	case none:
+	case spin_turn:
+	case slalom_type_count:
+		break;
+
+	case small:
+	case big_90:
+		turn_direction(right_or_left);
+		break;
+
+	case big_180:
+		turn_direction(right_or_left);
+		turn_direction(right_or_left);
+		break;
+
+	case begin_45:
+	case end_45:
+		//FIX_ME 斜めの方向管理方法が確立されてない
+		break;
+
+	case begin_135:
+	case end_135:
+		//FIX_ME 斜めの方向管理方法が確立されてない
+		break;
+
+	case oblique_90:
+		//FIX_ME 斜めの方向管理方法が確立されてない
+		break;
 	}
 }
 
@@ -1118,6 +1169,8 @@ void run::slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
 	mouse::set_ideal_angular_accel(0);
 	mouse::set_ideal_angular_velocity(0);
 
+	mouse::turn_direction_slalom(slalom_type, right_or_left);	//マウスの向きを変える
+
 //後ろ距離分走る
 	if (wall_flag)
 		control::start_wall_control();	//もともと壁制御がかかってたら復活させる
@@ -1151,7 +1204,6 @@ void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 
 	static float slalom_front_wall = 35000;		//XXX スラロームの前距離を無視する値
 	//		(parameter::get_ideal_photo(front)- parameter::get_min_wall_photo(front)) / 2;//スラローム時にこの値より前壁の値が大きければ前距離を無視する。
-
 
 	if (slalom_type == none) {
 		return;
@@ -2203,7 +2255,6 @@ bool adachi::adachi_method_place(unsigned char target_x, unsigned char target_y,
 
 bool adachi::left_hand_method(const uint8_t target_x, const uint8_t target_y) {
 	bool search_flag = true;	//途中でミスがあったらfalseに
-	uint8_t now_x, now_y;	//座標一時保存用。見易さのため
 	ACTION_TYPE next_action;	//次の行動を管理
 
 	my7seg::turn_off();
@@ -2233,6 +2284,11 @@ bool adachi::left_hand_method(const uint8_t target_x, const uint8_t target_y) {
 		run_next_action(next_action, true);
 
 	}
+
+	if (mouse::get_fail_flag())
+		return false;
+
+	return true;
 
 }
 

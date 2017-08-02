@@ -750,9 +750,9 @@ volatile float encoder::raw_to_correct(ENC_SIDE enc_side, int16_t raw_delta) {
 volatile void encoder::yi_correct(ENC_SIDE enc_side) {
 	mouse::run_init(false, false);
 	if (enc_side == enc_right)
-		motor::set_duty(MOTOR_SIDE::m_right, 25);
+		motor::set_duty(MOTOR_SIDE::m_right, 30);
 	else
-		motor::set_duty(MOTOR_SIDE::m_left, 25);
+		motor::set_duty(MOTOR_SIDE::m_left, 20);
 
 	//補正テーブルを全消去
 	isCorrect[enc_side] = false;	//Y.I.式補正は中止
@@ -1320,32 +1320,6 @@ void control::cal_delta() {
 
 	//センサーのΔ計算
 	before_p_delta = photo_delta.P;
-
-	//FIX_ME オドメトリから、柱付近は制御かけない
-	float odm_pos_wall = 0;	//進行方向垂直の距離
-	float odm_pos_go = 0;		//進行方向の距離
-	//どっちかといえば、X方向むいていれば
-	if (ABS(PI()/2 - ABS(mouse::get_angle_radian())) < PI() / 4) {
-		odm_pos_wall = mouse::get_place().y;
-		odm_pos_go = mouse::get_place().x;
-	} else {
-		odm_pos_wall = mouse::get_place().x;
-		odm_pos_go = mouse::get_place().y;
-	}
-	static const float half_section = 0.045 * MOUSE_MODE;	//1区間の半分の長さ
-	while ((odm_pos_wall > half_section * 2)
-			|| (odm_pos_go > half_section * 2)) {
-		if (odm_pos_wall > half_section * 2)
-			odm_pos_wall -= half_section * 2;
-		if (odm_pos_go > half_section * 2)
-			odm_pos_go -= half_section * 2;
-	}
-	//東向きor南向きの時は壁からの距離の軸の向きがセンサと逆になる　時計回り正でとって、π/4 < θ < π*5/4 -> 0< θ-π/4 < π
-	float mouse_ang = mouse::get_angle_radian() - PI()/4;
-	if(mouse_ang < -PI())	mouse_ang += 2*PI();
-	if(mouse_ang > 0)
-		odm_pos_wall = - odm_pos_wall;	//今、角度は -π < θ < π　のはずなので、正ならば南か東向き
-
 	if (control::get_wall_control_phase()) {
 		if (photo::check_wall(PHOTO_TYPE::right)) {
 			photo_right_delta = photo::get_displacement_from_center(
@@ -1365,14 +1339,15 @@ void control::cal_delta() {
 		photo_delta.P = (photo_right_delta + photo_left_delta) / 2;
 
 
+		static const float half_section = 0.045 * MOUSE_MODE;	//1区間の半分の長さ
 
 		//柱近傍はセンサ値を信用しない。 区画の中央部分
-		if (ABS(odm_pos_go-half_section) < half_section/2)
-			photo_delta.P = 0;//(odm_pos_wall - half_section);		//オドメトリに合わせるように制御する
+		if (ABS(mouse::get_relative_go()) < half_section/2)
+			photo_delta.P = 0;//mouse::get_relative_displace();		//オドメトリに合わせるように制御する
 		//else if(photo_delta.P ==0)		//両壁ないときも
-		//	photo_delta.P = (odm_pos_wall - half_section);		//オドメトリに合わせるように制御する
+		//	photo_delta.P = mouse::get_relative_displace();		//オドメトリに合わせるように制御する
 
-		//photo_delta.P = (odm_pos_wall - half_section);		//オドメトリに合わせるように制御する
+		//photo_delta.P = mouse::get_relative_displace();		//オドメトリに合わせるように制御する
 
 		//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
 		if (mouse::get_ideal_velocity() < (SEARCH_VELOCITY * 0.2)) {

@@ -38,6 +38,8 @@ private:
 	static float run_distance;
 	//マウスの絶対位置[m]
 	static COORDINATE place;
+	//マウスの区画内に対する相対位置[m] 原点は区画中央
+	static COORDINATE relative;
 
 	static unsigned long mouse_count_ms;			//マウスの時間[msec].基本リセットしない
 
@@ -90,14 +92,16 @@ public:
 	static unsigned char get_y_position();
 	static void set_position(const uint8_t set_x, const uint8_t set_y);
 
-	static void set_place(const COORDINATE set_place);
+	static void set_place(const COORDINATE set);
 	static void set_place(const float x, const float y);
 	static COORDINATE get_place();
 
-	static float get_odm_displace_from_wall();		//オドメトリから取得した壁との距離[m] マウスから見て右側正
+	//TODO 関数名をもっとわかりやすくしたい
+	static float get_relative_displace();		//進行方向と垂直方向にどれだけずれているか[m] マウスから見て右側正
+	static float get_relative_go();		//区画中心を原点としたとき、進行方向にどれだけ進んでいるか[m]
 
 	static unsigned char get_direction();	//defineされたMUKI_??で返す
-	static void get_direction(signed char *direction_x,
+	static inline void get_direction(signed char *direction_x,
 			signed char *direction_y);		//引数の値をポインタ経由で変更する
 	static void set_direction(const unsigned char muki);
 	static void set_direction(const signed char direction_x,
@@ -118,6 +122,7 @@ public:
 	static void velify_wall();
 
 	static void turn_direction(const unsigned char right_or_left);
+	static void turn_direction_slalom(const SLALOM_TYPE slalom_type, const unsigned char right_or_left);
 
 	static void error();	//フェイルセーフとか、かかった時に、ここに飛びますよ
 
