@@ -53,6 +53,7 @@ int main(void) {
 
 	my7seg::turn_off();
 
+
 	//マップをリセットする
 	map::reset_wall();
 	map::output_map_data(&mouse::now_map);
@@ -66,9 +67,6 @@ int main(void) {
 		if (get_battery() < 3.5) {
 			while (1) {
 				my7seg::light_error();
-				wait::ms(200);
-				my7seg::turn_off();
-				wait::ms(200);
 				if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0) {
 					wait::ms(100);
 					break;
@@ -94,13 +92,13 @@ int main(void) {
 
 		select = mode::select_mode(7, PHOTO_TYPE::right);
 
-
 		GPIO_SetBits(GPIOC, GPIO_Pin_3);	//LED2
+		mouse::set_direction(0,1);	//スラロームで方向が変化するので初期化を忘れずに
+		mouse::set_place(0.045 * MOUSE_MODE, 0.045 * MOUSE_MODE);		//(0,0)の中心
 
 		switch (select) {
 		case 0:		//壁の値を読むだけ	事故防止のためにモード0は実害ない奴にしとく
 			while (1) {
-
 				myprintf("right %d  ", photo::get_value(right));
 				myprintf("left %d  ", photo::get_value(left));
 				myprintf("f_r %d  ", photo::get_value(front_right));
@@ -145,21 +143,22 @@ int main(void) {
 					break;
 			}
 			my7seg::count_down(3, 500);
-			mouse::run_init(true, false);
-			//run::accel_run_wall_eage(0.09 * 2, SEARCH_VELOCITY, 0, 0.09);
+			mouse::run_init(true, true);
 
+			//flog[0][0] = -1;
+			//run::accel_run(0.09 * 7, 0, 0);
+			//run::accel_run(-0.09 * 2, 0, 0);
+
+			run::accel_run(0.045+0.09, SEARCH_VELOCITY,0);
+			//run::slalom_for_search(small, MUKI_RIGHT, 0);
 			flog[0][0] = -1;
-			run::accel_run(0.09 * 4, 0, 0);
-
-			//run::accel_run(0.045+0.09, SEARCH_VELOCITY,0);
-			//run::slalom_for_search(small, MUKI_LEFT, 0);
-			//flog[0][0] = mouse::get_angle_degree();
-	//		run::accel_run_wall_eage(0.09 * 5, SEARCH_VELOCITY, 0, 0.09 * 4.5);
-	//		run::accel_run(0.045, 0, 0);
+			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
+			//run::accel_run(0.045, 0, 0);
 			//control::stop_wall_control();
 			//run::accel_run(0.045 * 2, 0, 0);
-			//run::spin_turn(-180);
-			//run::accel_run(0.09+0.045, 0, 0);
+			//run::spin_turn(-360);
+			//run::spin_turn( 1800);
+			run::accel_run(0.09 * 5, 0, 0);
 
 			wait::ms(2000);
 
@@ -169,7 +168,6 @@ int main(void) {
 			GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 			while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
 			}
-			//map::draw_map(false);
 
 			for (int i = 0; i < flog_number; i++) {
 				myprintf("%f,%f,%f\n\r", flog[0][i], flog[1][i], flog[2][i]);
@@ -179,13 +177,14 @@ int main(void) {
 		case 5:		//調整用
 			while (1) {
 				my7seg::blink(8, 500, 1);
-				if (photo::check_wall(PHOTO_TYPE::front))
+				if (photo::check_wall(PHOTO_TYPE::left))
 					break;
 			}
 			my7seg::count_down(3, 500);
 			//	mouse::run_init(true, false);
 
 			flog[0][0] = -1;
+
 
 			wait::ms(2000);
 
@@ -197,7 +196,7 @@ int main(void) {
 			}
 
 			for (int i = 0; i < flog_number; i++) {
-				myprintf("%f,%f\n\r", flog[0][i], flog[1][i]);
+				myprintf("%f,%f,%f\n\r", flog[0][i], flog[1][i], flog[2][i]);
 			}
 			break;
 
@@ -211,12 +210,6 @@ int main(void) {
 
 		GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 
-		COORDINATE pl = mouse::get_place();
-		float deg = mouse::get_angle_degree();
-		while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
-		}
-		myprintf("\n\rx->%fm, y=%fm, degree=%f° \n\r", pl.x, pl.y, deg);
-
 	}
 	return 1;
 }
@@ -224,6 +217,8 @@ int main(void) {
 void interrupt_timer() {
 
 	GPIO_SetBits(GPIOA, GPIO_Pin_14);
+
+	GPIO_SetBits(GPIOA, GPIO_Pin_9);	//FLA_GND
 
 	wait_counter++;	//ms(ミリ秒)のカウントを1増加
 	mouse::add_one_count_ms();
@@ -247,9 +242,9 @@ void interrupt_timer() {
 			i++;
 		}
 	} else if (i < flog_number) {
-		flog[0][i] = mouse::get_place().y;
-		flog[1][i] = photo::get_displacement_from_center(left);	//accelmeter::get_accel(axis_y);//mouse::get_ideal_angular_velocity();
-		flog[2][i] = photo::get_displacement_from_center(right);
+		flog[0][i] = photo::get_value(left);
+		flog[1][i] = mouse::get_relative_displace();
+		flog[2][i] = control::photo_delta.P;//mouse::get_ideal_velocity();//mouse::get_relative_go();//photo::get_displacement_from_center(right);
 		i++;
 	}
 

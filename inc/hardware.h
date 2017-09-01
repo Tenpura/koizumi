@@ -250,7 +250,7 @@ public:
 	//割り込み内で行う処理
 	static void interrupt(bool is_light);
 
-	static int16_t get_value(PHOTO_TYPE sensor_type);
+	static float get_value(PHOTO_TYPE sensor_type);
 
 	//センサ値から距離に変換し、区画中心からどれだけずれているのか[m]を返す。右側正
 	static float get_displacement_from_center(PHOTO_TYPE sensor_type);

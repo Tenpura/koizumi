@@ -752,7 +752,7 @@ volatile void encoder::yi_correct(ENC_SIDE enc_side) {
 	if (enc_side == enc_right)
 		motor::set_duty(MOTOR_SIDE::m_right, 30);
 	else
-		motor::set_duty(MOTOR_SIDE::m_left, 20);
+		motor::set_duty(MOTOR_SIDE::m_left, 25);
 
 	//補正テーブルを全消去
 	isCorrect[enc_side] = false;	//Y.I.式補正は中止
@@ -819,6 +819,7 @@ void encoder::yi_correct() {
 	//左右で補正を行う
 	yi_correct(enc_right);
 	yi_correct(enc_left);
+	control::reset_delta(sen_encoder);
 
 	control::ignore_failsafe(false);		//フェイルセーフを復活
 }
@@ -1124,33 +1125,34 @@ void photo::set_ref(PHOTO_TYPE sensor_type, int16_t set_value) {
 	}
 }
 
-int16_t photo::get_value(PHOTO_TYPE sensor_type) {
+float photo::get_value(PHOTO_TYPE sensor_type) {
+	int16_t ad = 0;
 	switch (sensor_type) {
 	case PHOTO_TYPE::right:
-		return right_ad;
+		ad = right_ad;
 		break;
 
 	case PHOTO_TYPE::left:
-		return left_ad;
+		ad = left_ad;
 		break;
 
 	case PHOTO_TYPE::front_right:
-		return front_right_ad;
+		ad = front_right_ad;
 		break;
 
 	case PHOTO_TYPE::front_left:
-		return front_left_ad;
+		ad = front_left_ad;
 		break;
 
 	case PHOTO_TYPE::front:
-		return front_ad;
+		ad = front_ad;
 		break;
 
 	default:
 		break;
 	}
 
-	return 0;
+	return ad * 4.0 / get_battery();		//XXX 電圧で値が減っている気がするので補正
 }
 
 float photo::get_displacement_from_center(PHOTO_TYPE sensor_type) {
@@ -1179,7 +1181,7 @@ float photo::get_displacement_from_center(PHOTO_TYPE sensor_type) {
 		break;
 
 	case PHOTO_TYPE::front:
-		a = 0;
+		a = 0.0398;
 		break;
 
 	default:
@@ -1190,7 +1192,7 @@ float photo::get_displacement_from_center(PHOTO_TYPE sensor_type) {
 	//f_c:中心のセンサ値、x:中心からのずれ[mm]
 	float displace = my_math::log(f / f_c) / a;
 
-	return displace*0.001;		//[m]
+	return displace * 0.001;		//[m]
 }
 
 bool photo::check_wall(unsigned char muki) {
@@ -1226,7 +1228,6 @@ bool photo::check_wall(unsigned char muki) {
 }
 
 bool photo::check_wall(PHOTO_TYPE type) {
-
 	return (photo::get_value(type) >= parameter::get_min_wall_photo(type));
 
 }
@@ -1278,7 +1279,7 @@ bool control::control_phase = false;
 bool control::wall_control_flag = false;
 bool control::ignore_fail_safe = false;
 //XXX FF制御とFB制御やるかやらないか決める場所
-bool control::is_FF_CONTROL = false;
+bool control::is_FF_CONTROL = true;
 bool control::is_FB_CONTROL = true;
 
 volatile float control::cross_delta_gain(SEN_TYPE sensor) {
@@ -1310,7 +1311,6 @@ volatile float control::cross_delta_gain(SEN_TYPE sensor) {
 //XXX 偏差を計算してる場所
 void control::cal_delta() {
 	float before_p_delta;
-	float photo_right_delta = 0, photo_left_delta = 0;
 
 	//エンコーダーのΔ計算
 	before_p_delta = encoder_delta.P;	//積分用
@@ -1319,50 +1319,55 @@ void control::cal_delta() {
 	encoder_delta.D = (encoder_delta.P - before_p_delta) / CONTORL_PERIOD;
 
 	//センサーのΔ計算
+
+	float photo_right_delta = 0, photo_left_delta = 0;
+	static kalman odm_kal(1, 0.00001);		//オドメトリとセンサ値のカルマンフィルタ  （オドメトリ,フォト)
+	float photo_correct = 1;		//フォトセンサから推定する現在位置
 	before_p_delta = photo_delta.P;
 	if (control::get_wall_control_phase()) {
 		if (photo::check_wall(PHOTO_TYPE::right)) {
 			photo_right_delta = photo::get_displacement_from_center(
-					PHOTO_TYPE::right);		//中心からのずれてる距離[mm]
-
-			//if (ABS(photo_right_delta) > 20)
-			//	photo_right_delta = 0;
+					PHOTO_TYPE::right);		//中心からのずれてる距離[m]
 		}
 		if (photo::check_wall(PHOTO_TYPE::left)) {
 			photo_left_delta = photo::get_displacement_from_center(
-					PHOTO_TYPE::left);		//中心からのずれてる距離[mm]
-
-			//if (ABS(photo_left_delta) > 20)
-			//	photo_left_delta = 0;
+					PHOTO_TYPE::left);		//中心からのずれてる距離[m]
 		}
 
-		photo_delta.P = (photo_right_delta + photo_left_delta) / 2;
+		if (photo_right_delta == 0)
+			photo_left_delta *= 2;
+		else if (photo_left_delta == 0)
+			photo_right_delta *= 2;
 
+		//photo_correct = (photo_right_delta + photo_left_delta) / 2;		//センサ値から推定した値をカルマンフィルタの推定値とする
+		photo_delta.P = (photo_right_delta + photo_left_delta) / 2;		//センサ値から推定した値をカルマンフィルタの推定値とする
 
 		static const float half_section = 0.045 * MOUSE_MODE;	//1区間の半分の長さ
 
 		//柱近傍はセンサ値を信用しない。 区画の中央部分
-		if (ABS(mouse::get_relative_go()) < half_section/2)
-			photo_delta.P = 0;//mouse::get_relative_displace();		//オドメトリに合わせるように制御する
-		//else if(photo_delta.P ==0)		//両壁ないときも
-		//	photo_delta.P = mouse::get_relative_displace();		//オドメトリに合わせるように制御する
-
-		//photo_delta.P = mouse::get_relative_displace();		//オドメトリに合わせるように制御する
-
-		//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
-		if (mouse::get_ideal_velocity() < (SEARCH_VELOCITY * 0.2)) {
-			photo_delta.P=0;
+		if (ABS(mouse::get_relative_go() + 0.005 * MOUSE_MODE)
+				< half_section*0.5){
+			//photo_correct = mouse::get_relative_displace();		//センサを信用しない　= 推定値を突っ込んどく
+			photo_delta.P = 0;
 		}
 
+		odm_kal.update(mouse::get_relative_displace(),photo_correct);		//今のオドメトリの値とセンサからの推定値でカルマンフィルタ
+		//mouse::set_relative_go(odm_kal.get_value());		//カルマンフィルタによって推定した値をセットする
+		//photo_delta.P = mouse::get_relative_displace();		//オドメトリに対して制御をかける
 
+		//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
+		if (mouse::get_ideal_velocity() < SEARCH_VELOCITY*0.3) {
+			photo_delta.P = 0;
+		}
 		photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
 		photo_delta.D = (photo_delta.P - before_p_delta) / CONTROL_PERIOD;
 
-	} else {
+	}else {
 		//壁制御かけないときは初期化し続ける。
 		photo_delta.P = 0;
 		photo_delta.I = 0;
 		photo_delta.D = 0;
+		photo_correct = mouse::get_relative_displace();
 	}
 
 	//ジャイロのΔ計算
@@ -1372,13 +1377,6 @@ void control::cal_delta() {
 	gyro_delta.P -= cross_delta_gain(sen_photo);		//壁制御量を目標角速度に追加
 	gyro_delta.I += (gyro_delta.P * CONTORL_PERIOD);
 	gyro_delta.D = (gyro_delta.P - before_p_delta) * 1000;
-
-	/*
-	 if (photo_delta.P != 0 && get_wall_control_phase())
-	 gyro_delta.I = 0;		//壁制御かけるときはGyroのIは使わない
-	 else
-	 photo_delta.I = 0;
-	 */
 
 	//加速度の偏差計算
 	before_p_delta = accel_delta.P;	//積分用
@@ -1449,7 +1447,7 @@ float control::get_feedforward(const signed char right_or_left) {
 	// V = v[m/s]/2πr[m] * ギア比  / 電圧特性[回/s/V]
 	Vinv = (velocity / (2 * PI() * tire_R) * SPAR / PINION / MOTOR_CONST);
 
-	float mu = 0.000755 / 3;	//摩擦力
+	float mu = 0.00035;	//摩擦力
 	// V = 加速に必要な分 + 摩擦力を打ち消す分
 	Vt = ((PI() * tire_R * MASS * MOTOR_ORM * MOTOR_CONST) * accel
 			+ (2 * PI() * MOTOR_ORM * MOTOR_CONST * mu)) * PINION / SPAR;
@@ -1529,20 +1527,21 @@ volatile void control::reset_delta(SEN_TYPE type) {
 void control::fail_safe() {
 
 	//フェイルセーフを無視するなら何もしない
-	if(ignore_fail_safe)
+	if (ignore_fail_safe)
 		return;
 
 	//TODO 閾値どのくらいかわからない。Gyroも参照すべき？
-	if (ABS(encoder_delta.P) > 0.3) {
-		motor::sleep_motor();
-		mouse::set_fail_flag(true);
+	if (ABS(encoder_delta.P) > 0.8) {
+		if (ABS(mouse::get_velocity()) > SEARCH_VELOCITY * 0.9) {
+			motor::sleep_motor();
+			mouse::set_fail_flag(true);
+		}
 	}
 }
 
 void control::ignore_failsafe(bool ignore) {
 	ignore_fail_safe = ignore;
 }
-
 
 control::control() {
 }

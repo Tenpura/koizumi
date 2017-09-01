@@ -92,7 +92,7 @@ bool mode::search_mode() {
 	case 1:		//1‚Í•’Ê‚Ì‘«—§–@
 		mouse::set_position(0, 0);
 		mouse::set_direction(MUKI_UP);
-		adachi::adachi_method_place(GOAL_x, GOAL_y, false);
+		adachi::adachi_method(GOAL_x, GOAL_y, false);
 		break;
 
 	case 2:		//2‚Í‹A‚è‚à‚ ‚é‚æ
@@ -130,6 +130,7 @@ bool mode::search_mode() {
 		mouse::set_position(0, 0);
 		mouse::set_direction(MUKI_UP);
 		if (adachi::adachi_method(GOAL_x, GOAL_y, true)) {	//‘«—§–@‚ª¬Œ÷‚µ‚½‚ç
+
 		}
 		break;
 

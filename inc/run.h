@@ -99,6 +99,9 @@ public:
 	//TODO 関数名をもっとわかりやすくしたい
 	static float get_relative_displace();		//進行方向と垂直方向にどれだけずれているか[m] マウスから見て右側正
 	static float get_relative_go();		//区画中心を原点としたとき、進行方向にどれだけ進んでいるか[m]
+	static void set_relative_go(float set_value);
+	static void set_relative_displacement(float set_value);
+
 
 	static unsigned char get_direction();	//defineされたMUKI_??で返す
 	static inline void get_direction(signed char *direction_x,

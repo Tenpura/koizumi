@@ -77,8 +77,8 @@ void init_gpio(void) {
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;	//プルアップかプルダウンか
 	GPIO_Init(GPIOB, &GPIO_InitStructure);	//設定
 
-	//先頭のLED
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14;	//設定するピンを決める
+	//先頭のLED & Flag_LED
+	GPIO_InitStructure.GPIO_Pin = (GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_14);	//設定するピンを決める
 	GPIO_Init(GPIOA, &GPIO_InitStructure);	//設定
 
 	//スイッチよう
@@ -134,7 +134,6 @@ void init_gpio(void) {
 	GPIO_ResetBits(GPIOC, GPIO_Pin_11);	//F_RIGHT
 	GPIO_ResetBits(GPIOC, GPIO_Pin_12);	//FRONT
 	GPIO_ResetBits(GPIOD, GPIO_Pin_2);	//SIDE
-
 
 }
 
