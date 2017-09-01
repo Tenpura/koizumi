@@ -216,13 +216,16 @@ public:
 };
 
 //光学センサー関連
-#define GAP_AVE_COUNT 10	//XXX 壁の切れ目対策にいくつの平均をとるか
 class photo {
 private:
-public:
+	static const int16_t PHOTO_AVERAGE_TIME = 5;	//XXX ad値のいくつの移動平均をとるか
+	static const uint16_t GAP_AVE_COUNT=10;		//XXX 壁の切れ目対策にいくつの平均をとるか
+
 	static int16_t ave_buf[element_count][GAP_AVE_COUNT];	//センサー値（平均取ったやつ）のバッファ　壁の切れ目チェックとかで使う
 	static float diff_buf[element_count][GAP_AVE_COUNT];	//今のセンサー値とave_bufの差　壁の切れ目チェックとかで使う
 	static uint8_t gap_buf[element_count][GAP_AVE_COUNT];		//count_wall_gapで数え上げた値を保存しておく
+
+
 
 	static signed int right_ad, left_ad, front_right_ad, front_left_ad,
 			front_ad;

@@ -960,7 +960,6 @@ void photo::turn_off_all() {
 
 void photo::set_ad(PHOTO_TYPE sensor_type, int16_t set_value) {
 
-	static const int16_t PHOTO_AVERAGE_TIME = 5;	//いくつの移動平均をとるか
 	static int16_t buf[element_count][PHOTO_AVERAGE_TIME] = { 0 };
 
 	int16_t sum = 0;
@@ -1152,7 +1151,7 @@ float photo::get_value(PHOTO_TYPE sensor_type) {
 		break;
 	}
 
-	return ad * 4.0 / get_battery();		//XXX 電圧で値が減っている気がするので補正
+	return ad * 4.0 / get_battery();		//電圧で値が減っている気がするので補正
 }
 
 float photo::get_displacement_from_center(PHOTO_TYPE sensor_type) {
@@ -1253,9 +1252,6 @@ bool photo::check_wall_gap(PHOTO_TYPE type, int16_t threshold) {
 		return true;
 	}
 
-	//if (ABS(count_wall_gap(type)) < (GAP_AVE_COUNT * 0.8))
-	//return false;
-
 	return false;
 
 }
@@ -1321,17 +1317,27 @@ void control::cal_delta() {
 	//センサーのΔ計算
 
 	float photo_right_delta = 0, photo_left_delta = 0;
-	static kalman odm_kal(1, 0.00001);		//オドメトリとセンサ値のカルマンフィルタ  （オドメトリ,フォト)
+	static kalman odm_kal(1, 1);		//オドメトリとセンサ値のカルマンフィルタ  （オドメトリ,フォト)
 	float photo_correct = 1;		//フォトセンサから推定する現在位置
 	before_p_delta = photo_delta.P;
 	if (control::get_wall_control_phase()) {
 		if (photo::check_wall(PHOTO_TYPE::right)) {
-			photo_right_delta = photo::get_displacement_from_center(
-					PHOTO_TYPE::right);		//中心からのずれてる距離[m]
+			if (!photo::check_wall_gap(right, 10))		//壁キレでないなら
+				photo_right_delta = photo::get_value(right)
+						- parameter::get_ideal_photo(right);
+			/*
+			 photo_right_delta = photo::get_displacement_from_center(
+			 PHOTO_TYPE::right);		//中心からのずれてる距離[m]
+			 */
 		}
 		if (photo::check_wall(PHOTO_TYPE::left)) {
-			photo_left_delta = photo::get_displacement_from_center(
-					PHOTO_TYPE::left);		//中心からのずれてる距離[m]
+			if (!photo::check_wall_gap(left, 10))		//壁キレでないなら
+				photo_left_delta = -(photo::get_value(left)
+						- parameter::get_ideal_photo(left));
+			/*
+			 photo_left_delta = photo::get_displacement_from_center(
+			 PHOTO_TYPE::left);		//中心からのずれてる距離[m]
+			 */
 		}
 
 		if (photo_right_delta == 0)
@@ -1340,29 +1346,29 @@ void control::cal_delta() {
 			photo_right_delta *= 2;
 
 		//photo_correct = (photo_right_delta + photo_left_delta) / 2;		//センサ値から推定した値をカルマンフィルタの推定値とする
-		photo_delta.P = (photo_right_delta + photo_left_delta) / 2;		//センサ値から推定した値をカルマンフィルタの推定値とする
+		photo_delta.P = (photo_right_delta + photo_left_delta) / 2;
 
+		/*
 		static const float half_section = 0.045 * MOUSE_MODE;	//1区間の半分の長さ
+		 //柱近傍はセンサ値を信用しない。 区画の中央部分
+		 if (ABS(mouse::get_relative_go() + 0.005 * MOUSE_MODE)
+		 < half_section*0.5){
+		 //photo_correct = mouse::get_relative_displace();		//センサを信用しない　= 推定値を突っ込んどく
+		 photo_delta.P = 0;
+		 }
+		 */
 
-		//柱近傍はセンサ値を信用しない。 区画の中央部分
-		if (ABS(mouse::get_relative_go() + 0.005 * MOUSE_MODE)
-				< half_section*0.5){
-			//photo_correct = mouse::get_relative_displace();		//センサを信用しない　= 推定値を突っ込んどく
-			photo_delta.P = 0;
-		}
-
-		odm_kal.update(mouse::get_relative_displace(),photo_correct);		//今のオドメトリの値とセンサからの推定値でカルマンフィルタ
+		//odm_kal.update(mouse::get_relative_displace(),photo_correct);		//今のオドメトリの値とセンサからの推定値でカルマンフィルタ
 		//mouse::set_relative_go(odm_kal.get_value());		//カルマンフィルタによって推定した値をセットする
 		//photo_delta.P = mouse::get_relative_displace();		//オドメトリに対して制御をかける
-
 		//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
-		if (mouse::get_ideal_velocity() < SEARCH_VELOCITY*0.3) {
+		if (mouse::get_ideal_velocity() < SEARCH_VELOCITY * 0.2) {
 			photo_delta.P = 0;
 		}
 		photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
 		photo_delta.D = (photo_delta.P - before_p_delta) / CONTROL_PERIOD;
 
-	}else {
+	} else {
 		//壁制御かけないときは初期化し続ける。
 		photo_delta.P = 0;
 		photo_delta.I = 0;
