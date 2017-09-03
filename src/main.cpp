@@ -143,13 +143,13 @@ int main(void) {
 					break;
 			}
 			my7seg::count_down(3, 500);
-			mouse::run_init(true, true);
+			mouse::run_init(true, false);
 
 			//flog[0][0] = -1;
 			//run::accel_run(0.09 * 7, 0, 0);
 			//run::accel_run(-0.09 * 2, 0, 0);
 
-			run::accel_run(0.045+0.09, SEARCH_VELOCITY,0);
+			//run::accel_run(0.045+0.09, SEARCH_VELOCITY,0);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
 			flog[0][0] = -1;
 			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
@@ -243,8 +243,8 @@ void interrupt_timer() {
 		}
 	} else if (i < flog_number) {
 		flog[0][i] = photo::get_value(left);
-		flog[1][i] = mouse::get_relative_displace();
-		flog[2][i] = control::photo_delta.P;//mouse::get_ideal_velocity();//mouse::get_relative_go();//photo::get_displacement_from_center(right);
+		flog[1][i] = photo::get_value(right);//mouse::get_relative_displace();
+		flog[2][i] = photo::get_displacement_from_center(right);//control::photo_delta.P;//mouse::get_ideal_velocity();//mouse::get_relative_go();//photo::get_displacement_from_center(right);
 		i++;
 	}
 

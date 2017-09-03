@@ -12,6 +12,7 @@
 #include"hardware.h"
 #include"parameter.h"
 #include"map.h"
+#include <queue>
 
 //position
 typedef union {
@@ -190,8 +191,7 @@ private:
 	//次行く方向と今の向きを与えると、次に取る行動を返す。優先度は、直進、右ターン、左ターン、バックの順
 	static ACTION_TYPE get_next_action(DIRECTION next_direction,
 			uint8_t now_muki);
-
-	adachi();
+	static ACTION_TYPE get_next_action(compas next, compas now);
 
 public:
 	static bool adachi_method(const unsigned char target_x,
@@ -203,8 +203,13 @@ public:
 
 	static bool left_hand_method(const uint8_t target_x,
 			const uint8_t target_y);
+
+	static bool node_adachi(std::vector< std::pair<uint8_t, uint8_t> > finish, weight_algo method);		//ノード型歩数マップで足立法
+
+	adachi();
 	~adachi();
 
 };
+
 
 #endif /* RUN_H_ */

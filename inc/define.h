@@ -234,4 +234,12 @@ typedef struct {
 	float y;
 } COORDINATE;
 
+typedef enum {
+	east=0, west=1, north=2, south=3
+} compas;
+
+typedef enum {
+	adachi, based_distance, priority_straight,T_Wataru_method
+} weight_algo;
+
 #endif /* DEFINE_H_ */

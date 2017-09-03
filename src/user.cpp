@@ -214,7 +214,7 @@ mode::mode() {
 mode::~mode() {
 
 }
-
+/*
 char log::buf[buf_count] = { 0 };
 uint16_t log::length = 0;
 bool log::available_flag = true;
@@ -330,7 +330,7 @@ int_log::int_log(int initialize_number) {
 
 int_log::~int_log() {
 }
-
+*/
 /*
  float float_log::log_case[LOG_DIMENSION][LOG_COUNT];
  unsigned int float_log::log_counter;

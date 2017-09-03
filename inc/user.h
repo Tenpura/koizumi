@@ -76,7 +76,7 @@ public:
 //ログというよりバッファ。掲示板的
 //入力を文字列として保管
 //extern "C" void putnbyte(char *buf, int16_t len);	//printf_logで使用
-
+/*
 class log{
 private:
 	static char buf[buf_count];	//バッファ。+100はメモリオーバーフロー対策でとってある(暗黙で1回のログは100byte以下だと仮定)。
@@ -112,7 +112,7 @@ public:
 	int_log(int initialize_number);//もし初期化する数を0以外にしたかったら、ここで変更してね
 	~int_log();
 };
-
+*/
 /*
 class float_log {
 private:

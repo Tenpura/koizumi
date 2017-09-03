@@ -338,7 +338,9 @@ void mouse::run_init(bool posture_ctrl, bool wall_ctrl) {
 	gyro::set_gyro_ref();
 	mouse::reset_angle();
 	mouse::set_distance_m(0);
+	mouse::set_ideal_accel(0);
 	mouse::set_ideal_velocity(0);
+	mouse::set_ideal_angular_accel(0);
 	mouse::set_ideal_angular_velocity(0);
 	static const float half_section = 0.045 * MOUSE_MODE;	//半区画分の長さ
 	mouse::set_place(half_section * (1 + 2 * mouse::get_x_position()),
@@ -1892,6 +1894,39 @@ ACTION_TYPE adachi::get_next_action(DIRECTION next_direction,
 	return stop;
 }
 
+ACTION_TYPE adachi::get_next_action(compas next,compas now) {
+	std::pair<int8_t, int8_t> next_dir = compas_to_direction(next);
+	std::pair<int8_t, int8_t> now_dir = compas_to_direction(now);
+
+	//nextとnowの内積をとる
+	switch(next_dir.first*now_dir.first+next_dir.second*now_dir.second){
+	case 1:		//同じ方向
+		return go_straight;
+		break;
+	case -1:	//逆方向
+		return back;
+		break;
+	case 0:		//左右どちらかのターン
+		//回転行列を考えて、0でない成分の符号がどう変化しているかで左右どちらの回転かわかるはず
+		if(now_dir.first == 0){		//xが0の時
+			if(next_dir.first*now_dir.second==1)
+				return turn_right;
+			else
+				return turn_left;
+		}else if(now_dir.second == 0){	//ｙが0の時
+			if(next_dir.second*now_dir.first==-1)
+				return turn_right;
+			else
+				return turn_left;
+		}
+		break;
+	}
+
+//ここにたどり着くのは、次行く方向がないか、予期せぬ例外なので、マウスを止める。
+	return stop;
+}
+
+
 bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 		bool is_FULUKAWA) {
 	bool adachi_flag = true;	//途中でミスがあったらfalseに
@@ -2392,6 +2427,123 @@ bool adachi::left_hand_method(const uint8_t target_x, const uint8_t target_y) {
 		return false;
 
 	return true;
+
+}
+
+bool adachi::node_adachi(std::vector< std::pair<uint8_t, uint8_t> > finish, weight_algo method){
+	node_search search;
+
+
+	search.input_map_data(&mouse::now_map);		//保存していたマップを読みだす
+	search.set_weight_algo(method);		//重みづけの方法を設定
+	search.spread_step(finish,false);		//歩数マップを作製
+
+	bool success_flag = true;	//途中でミスがあったらfalseに
+	unsigned char now_x, now_y;	//座標一時保存用。見易さのため
+	compas next_compas;		//方角一時保存用。見やすさのため。
+	uint16_t next_step = search.init_step;		//次の歩数保存用。見やすさのため。
+	ACTION_TYPE next_action;	//次の行動を管理
+
+	my7seg::turn_off();
+
+	search.spread_step(finish,false);		//歩数マップを作製
+
+	mouse::get_direction(&direction_x, &direction_y);	//向きを取得
+
+	mouse::run_init(true, true);
+
+	my7seg::count_down(3, 500);
+
+	run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
+
+	//半区間進んだノードが0なら、目の前のマスがゴールなので終了
+	if( search.get_step(now_x,now_y,muki_to_compas(mouse::get_direction())) == 0){
+		run_next_action(stop,true);
+		//足立法成功なのでマップを保存する
+		map::output_map_data(&mouse::now_map);
+		return true;				//足立法完了!!
+	}
+
+
+	while (success_flag) {
+//フェイルセーフが掛かっていればそこで抜ける
+		if (mouse::get_fail_flag()) {
+			success_flag = false;
+			break;
+		}
+
+//向きを取得
+		mouse::get_direction(&direction_x, &direction_y);
+
+//座標を更新
+		now_x = mouse::get_x_position() + direction_x;
+		now_y = mouse::get_y_position() + direction_y;
+		mouse::set_position(now_x, now_y);
+
+//壁情報更新
+		mouse::velify_wall();
+		mouse::look_wall(false);
+
+//前回、歩数0に移動していたら終了
+		if (next_step == 0) {
+			run_next_action(stop, false);
+			break;
+		}
+
+//歩数マップ作製
+		search.spread_step(finish,false);		//歩数マップを作製
+
+//最も歩数の小さいノードへ向かう
+		next_compas = search.get_min_compas(now_x,now_y);
+		next_step = search.get_step(now_x,now_y,next_compas);
+		if(next_step == search.init_step){	//最小歩数が初期値は迷路がふさがれてる
+			success_flag = false;
+			run_next_action(stop, false);
+			break;
+		}
+
+//next_dirrctionから次行く方向を選び、行動する
+		next_action = get_next_action(next_compas, muki_to_compas(mouse::get_direction()));
+		run_next_action(next_action, true);
+
+		//もし止まるべきと出たならココで足立法をやめる
+		if (next_action == stop) {
+			success_flag = false;
+		}
+
+	}
+
+	if (success_flag) {
+		//足立法成功なのでマップを保存する
+		map::output_map_data(&mouse::now_map);
+		return true;				//足立法完了!!
+
+	} else {
+//ここに来るということは足立法が失敗してる
+		COORDINATE fin_pl = mouse::get_place();
+		COORDINATE rel_pl;
+		rel_pl.x = mouse::get_relative_displace();
+		rel_pl.y = mouse::get_relative_go();
+		motor::sleep_motor();
+//TODO わかりやすい何かが欲しい
+		mouse::error();
+		myprintf("Adachi method failed!\n\r");
+		if (mouse::get_fail_flag()) {
+			myprintf("fail safe!\n\r");
+		}
+		if (next_step == search.init_step){	//最小歩数が初期値は迷路がふさがれてる
+			myprintf("next step is init step %d !\n\r", search.init_step);
+			myprintf("	Thus, maze is closed !\n\r");
+		}
+
+		myprintf("now -> (%d,%d)\n\r", mouse::get_x_position(),
+				mouse::get_y_position());
+		myprintf("ABSpostion (x,y)=(%f,%f)\n\r", fin_pl.x, fin_pl.y);
+		myprintf("RELpostion (side,go)=(%f,%f)\n\r", rel_pl.x, rel_pl.y);
+	}
+
+	return false;
+
 
 }
 
