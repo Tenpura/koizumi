@@ -1812,11 +1812,28 @@ volatile void adachi::run_next_action(const ACTION_TYPE next_action,
 	bool check_left = photo::check_wall(PHOTO_TYPE::left);
 	static uint8_t str_score= 0;	//壁制御をかけれる直線が何連続したか数える
 
+	//直線でないor 串みたいな両壁ないときは壁制御信用できないのでスコアリセット
+	if(next_action != go_straight)
+		str_score = 0;
+	else if(!(check_right || check_left))
+		str_score = 0;
+
 	switch (next_action) {
 	case go_straight:
+		//壁があれば制御がかかるので姿勢が直されるため、スコア加算
+		if(check_right)
+			str_score++;
+		if(check_left)
+			str_score++;
+
 		//1区間直進
 		run::accel_run_wall_eage((0.09 * MOUSE_MODE), SEARCH_VELOCITY, 0,
 				(0.03 * MOUSE_MODE));
+
+		//両壁あり直線が連続2回　くらいの補正がかかっていたら姿勢が正されていると判断し角度を修正
+		if(str_score >= 4){
+			mouse::set_relative_rad(mouse::get_relative_rad()*0.9,true);
+		}
 		break;
 
 	case turn_right:
