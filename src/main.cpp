@@ -123,7 +123,6 @@ int main(void) {
 			path::create_path();
 			//map::draw_map(false);
 			mode::shortest_mode();
-			//run::path(0, 0);
 			//path::draw_path();
 			motor::sleep_motor();
 			break;
@@ -143,15 +142,15 @@ int main(void) {
 					break;
 			}
 			my7seg::count_down(3, 500);
-			mouse::run_init(true, false);
+			mouse::run_init(true, true);
 
 			//flog[0][0] = -1;
 			//run::accel_run(0.09 * 7, 0, 0);
-			//run::accel_run(-0.09 * 2, 0, 0);
 
+			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
 			//run::accel_run(0.045+0.09, SEARCH_VELOCITY,0);
-			//run::slalom_for_search(small, MUKI_RIGHT, 0);
 			flog[0][0] = -1;
+			//run::slalom_for_search(small, MUKI_RIGHT, 0);
 			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
 			//run::accel_run(0.045, 0, 0);
 			//control::stop_wall_control();
@@ -242,9 +241,9 @@ void interrupt_timer() {
 			i++;
 		}
 	} else if (i < flog_number) {
-		flog[0][i] = photo::get_value(left);
-		flog[1][i] = photo::get_value(right);//mouse::get_relative_displace();
-		flog[2][i] = photo::get_displacement_from_center(right);//control::photo_delta.P;//mouse::get_ideal_velocity();//mouse::get_relative_go();//photo::get_displacement_from_center(right);
+		flog[0][i] = mouse::get_relative_displace();//mouse::get_velocity();
+		flog[1][i] = photo::get_displacement_from_center(right);//mouse::get_ideal_angular_velocity();
+		flog[2][i] = photo::get_displacement_from_center(left);//mouse::get_angular_velocity();
 		i++;
 	}
 

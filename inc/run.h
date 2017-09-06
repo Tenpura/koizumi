@@ -34,6 +34,8 @@ private:
 	//理想値から計算した距離と角度
 	static float ideal_distance;
 	static float ideal_angle_degree;
+	//マウスの進行方向に対しての相対角度[rad]の基準　この角度と絶対角度の差が相対角度
+	static float relative_base_rad;
 	//マウスの実際の速度[m/s]と距離[m]
 	static float velocity;
 	static float run_distance;
@@ -78,6 +80,7 @@ public:
 	static float get_angular_velocity();
 
 	static void set_ideal_ang(const float ang_a, const float ang_omega);
+	static void set_ang(const float set_rad);
 	static float get_ideal_angle_degree();
 	static float get_ideal_angle_radian();
 	static float get_angle_degree();
@@ -100,9 +103,12 @@ public:
 	//TODO 関数名をもっとわかりやすくしたい
 	static float get_relative_displace();		//進行方向と垂直方向にどれだけずれているか[m] マウスから見て右側正
 	static float get_relative_go();		//区画中心を原点としたとき、進行方向にどれだけ進んでいるか[m]
-	static void set_relative_go(float set_value);
-	static void set_relative_displacement(float set_value);
+	static void set_relative_go(float set_value, bool updata_abs);		//updata_abs は絶対座標を更新するかどうか
+	static void set_relative_displacement(float set_value, bool updata_abs);		//updata_abs は絶対座標を更新するかどうか
 
+	static float get_relative_rad();		//進行方向を0としたときにどれだけずれているか
+	static void set_relative_rad(float set_rad, bool updata_abs);		//relative_radがset_radになるように修正する
+	static void set_relative_base_rad(SLALOM_TYPE sla, bool is_right);	//ターン時の、相対角度の基準変更用
 
 	static unsigned char get_direction();	//defineされたMUKI_??で返す
 	static inline void get_direction(signed char *direction_x,

@@ -155,7 +155,7 @@ private:
 	static float angular_velocity;
 
 	static float get_gyro_ref();
-	static void set_least_square_slope();				//最小二乗法をまわして補正項を計算
+	//static void set_least_square_slope();				//最小二乗法をまわして補正項を計算
 
 	static void cal_angular_velocity();				//角速度計算[rad/s]
 	static void cal_angle();				//角度計算[rad]
@@ -168,6 +168,7 @@ public:
 	static void interrupt();		//割り込み内で呼ばれる
 	static int16_t get_gyro();
 	static void set_gyro_ref();
+	static void set_angle(float set_rad);
 
 	static void reset_angle();
 	static float get_angle_radian();
@@ -196,11 +197,7 @@ private:
 
 	static volatile float raw_to_correct(ENC_SIDE enc_side, int16_t raw_delta);	//補正テーブルで生値を補正する,返り値はコンバートした後の差分値
 
-
-
 public:
-
-
 	static float right_velocity, left_velocity, velocity;
 	static int16_t raw_count[2];	//エンコーダ―の生値
 
@@ -221,7 +218,7 @@ private:
 	static const int16_t PHOTO_AVERAGE_TIME = 5;	//XXX ad値のいくつの移動平均をとるか
 	static const uint16_t GAP_AVE_COUNT=10;		//XXX 壁の切れ目対策にいくつの平均をとるか
 
-	static int16_t ave_buf[element_count][GAP_AVE_COUNT];	//センサー値（平均取ったやつ）のバッファ　壁の切れ目チェックとかで使う
+	static float ave_buf[element_count][GAP_AVE_COUNT];	//センサー値（平均取ったやつ）のバッファ　壁の切れ目チェックとかで使う
 	static float diff_buf[element_count][GAP_AVE_COUNT];	//今のセンサー値とave_bufの差　壁の切れ目チェックとかで使う
 	static uint8_t gap_buf[element_count][GAP_AVE_COUNT];		//count_wall_gapで数え上げた値を保存しておく
 
@@ -263,7 +260,7 @@ public:
 	static bool check_wall(PHOTO_TYPE type);
 
 	static int8_t count_wall_gap(PHOTO_TYPE);	//diff_gapに保存されてる値の正負を数え上げて返す。
-	static bool check_wall_gap(PHOTO_TYPE type, int16_t threshold);	//移動平均をとったやつでGAP_AVE_COUNT前と比較して絶対値がthreshold以上なら、壁の切れ目だからtrue
+	static bool check_wall_gap(PHOTO_TYPE type, float threshold);	//移動平均をとったやつでGAP_AVE_COUNT前と比較して絶対値がthreshold以上なら、壁の切れ目だからtrue
 
 	~photo();
 

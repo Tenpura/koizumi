@@ -75,6 +75,12 @@ uint8_t mode::select_mode(const unsigned char mode_number,
 }
 
 bool mode::search_mode() {
+	//ゴール座標を変数に
+	std::vector< std::pair<uint8_t, uint8_t> > goal_vect;
+	goal_vect.emplace_back(std::make_pair(GOAL_x, GOAL_y));
+	goal_vect.emplace_back(std::make_pair(GOAL_x+1, GOAL_y));
+	goal_vect.emplace_back(std::make_pair(GOAL_x, GOAL_y+1));
+	goal_vect.emplace_back(std::make_pair(GOAL_x+1, GOAL_y+1));
 
 	uint8_t select = select_mode(7, PHOTO_TYPE::right);
 	encoder::yi_correct();		//YI式補正
@@ -111,19 +117,10 @@ bool mode::search_mode() {
 
 		break;
 
-	case 3:
+	case 3:			//ノード型足立法
 		mouse::set_position(0, 0);
 		mouse::set_direction(MUKI_UP);
-		if (adachi::adachi_method_spin(GOAL_x, GOAL_y, false)) {	//足立法が成功したら
-			wait::ms(100);
-			mouse::set_position(GOAL_x, GOAL_y);
-			run::spin_turn(180);
-			mouse::turn_direction(MUKI_RIGHT);
-			mouse::turn_direction(MUKI_RIGHT);
-			wait::ms(100);
-
-			adachi::adachi_method_spin(0, 0, false);
-		}
+		adachi::node_adachi(goal_vect, adachi);
 		break;
 
 	case 4:
@@ -184,21 +181,8 @@ bool mode::shortest_mode() {
 	case 0:		//0はメニューに戻る
 		break;
 
-	case 1:		//1は普通の足立法
-		run::path(0, 0);
-		break;
-
-	case 2:		//2は帰りもあるよ
-		run::path(0, 1);
-
-		break;
-
-	case 3:
-		run::path(0, 2);
-		break;
-
-	case 4:
-		run::path(0, 3);
+	default:	//それぞれのモードで走る
+		run::path(0, select-1);
 		break;
 
 	}

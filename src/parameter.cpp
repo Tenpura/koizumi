@@ -8,15 +8,15 @@
 #include"parameter.h"
 //ideal_photo[x][y]	xは0がハーフ,1がクラシック	yが光学センサの向きに対応。
 //right left front_right front_left,front
-const unsigned int parameter::ideal_photo[2][5] = { { 190, 300, 0, 1900, 400 },
+const unsigned int parameter::ideal_photo[2][5] = { { 150, 290, 0, 1900, 400 },
 		{ 3250, 3200, 10815, 10100, 0 } };
 const int16_t parameter::min_wall_photo[2][5] = { { 45, 100, 1400, 130, 200 }, {
 		20000, 20000, 0, 0, 0 } };
 
 //0番目は探索用
-const TRAPEZOID parameter::straight_run[RUN_MODE_NUMBER] = { { 2.0,
-SEARCH_VELOCITY, 2.0 }, { 5.0, SEARCH_VELOCITY * 2, 5.0 }, { 10.0,
-SEARCH_VELOCITY * 2, 10.0 }, { 5.0,
+const TRAPEZOID parameter::straight_run[RUN_MODE_NUMBER] = { { 3.0,
+SEARCH_VELOCITY, 3.0 }, { 8.0, SEARCH_VELOCITY * 2, 8.0 }, { 10.0,
+SEARCH_VELOCITY * 2.5, 10.0 }, { 5.0,
 SEARCH_VELOCITY * 3, 5.0 }, { 0 } };
 
 const INIT_SLALOM parameter::right_slalom[slalom_type_count][RUN_MODE_NUMBER] =
@@ -31,24 +31,20 @@ const INIT_SLALOM parameter::left_slalom[slalom_type_count][RUN_MODE_NUMBER] = {
 //速度、角度、加速角度、前距離、後ろ距離、角加速度、最高角速度
 const INIT_SLALOM parameter::right_slalom_half[slalom_type_count][RUN_MODE_NUMBER] =
 		{ { { 0 } },	//none
-				{ { SEARCH_VELOCITY, 91, 30, 0.005, 0.01, 119.1789, 11.17156, 0 },
-						{ SEARCH_VELOCITY, 90, 30, 0.005, 0.01, 121.389, 11.275,
-								0 },
-//				{ { SEARCH_VELOCITY, 90, 30, 0.01, 0.005, 92.939, 9.865, 0 }, { 0 },
-						{ SEARCH_VELOCITY, 90, 30, 0.005, 0.08, 121.389, 11.275,
-								0 }, { SEARCH_VELOCITY, 90, 30, 0.005, 0.01,
-								121.389, 11.275, 0 }, { 0 } }	//small
+				{ { SEARCH_VELOCITY, 90, 30, 0.008, 0.012, 119.1789, 11.17156, 0 },
+					{ SEARCH_VELOCITY, 90, 30, 0.008, 0.012, 119.1789, 11.17156, 0 },
+					{ SEARCH_VELOCITY, 90, 30, 0.008, 0.012, 119.1789, 11.17156, 0 },
+					{ SEARCH_VELOCITY, 90, 30, 0.008, 0.012, 119.1789, 11.17156, 0 },
+					{ SEARCH_VELOCITY, 90, 30, 0.008, 0.012, 119.1789, 11.17156, 0 }, }	//small
 		};
 
 const INIT_SLALOM parameter::left_slalom_half[slalom_type_count][RUN_MODE_NUMBER] =
 		{ { { 0 } },	//none
-				{ { SEARCH_VELOCITY, 90, 30, 0.01, 0.01, 119.1789, 11.17156, 0 },
-						{ SEARCH_VELOCITY, 90, 30, 0.009, 0.01, 121.389, 11.275,
-								0 },
-						//			{ { SEARCH_VELOCITY, 90, 30, 0.01, 0.005, 92.939, 9.865, 0 }, { 0 },
-						{ SEARCH_VELOCITY, 90, 30, 0.009, 0.01, 121.389, 11.275,
-								0 }, { SEARCH_VELOCITY, 90, 30, 0.009, 0.01,
-								121.389, 11.275, 0 }, { 0 } }	//small
+				{ { SEARCH_VELOCITY, 90, 30, 0.015, 0.01, 119.1789, 11.17156, 0 },
+					{ SEARCH_VELOCITY, 90, 30, 0.015, 0.01, 119.1789, 11.17156, 0 },
+					{ SEARCH_VELOCITY, 90, 30, 0.015, 0.01, 119.1789, 11.17156, 0 },
+					{ SEARCH_VELOCITY, 90, 30, 0.015, 0.01, 119.1789, 11.17156, 0 },
+					{ SEARCH_VELOCITY, 90, 30, 0.015, 0.01, 119.1789, 11.17156, 0 } }	//small
 		};
 
 float parameter::get_run_acceleration(const unsigned char select_mode) {

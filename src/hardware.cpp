@@ -550,7 +550,7 @@ float gyro::get_gyro_ref() {
 
 	return (gyro_sum / (i + 1));
 }
-
+/*
 void gyro::set_least_square_slope() {
 	//x,yとかはWikiの最小二乗法と同じ。xは時間[ms],yは角度[°]
 	float x_square_sum = 0, x_sum = 0, y_sum = 0, xy_sum = 0;
@@ -580,14 +580,18 @@ void gyro::set_least_square_slope() {
 	least_square_slope += (float) ((LEAST_SQUARE_TIME * xy_sum - x_sum * y_sum)
 			/ (LEAST_SQUARE_TIME * x_square_sum - x_sum * x_sum));
 }
-
+*/
 void gyro::set_gyro_ref() {
 	gyro_ref = get_gyro_ref();
-	//XXX ジャイロの補正に最小二乗法は使ってない
-	/*
+
+	/*	ジャイロの補正に最小二乗法は使ってない
 	 set_least_square_slope();	//最小二乗法による補正項導出
 	 mouse::reset_count();
 	 */
+}
+
+void gyro::set_angle(float set_rad){
+	angle = set_rad;
 }
 
 void gyro::reset_angle() {
@@ -603,7 +607,7 @@ void gyro::cal_angle() {
 }
 
 float gyro::get_angle_radian() {
-	return angle;	//°
+	return angle;
 }
 
 void gyro::cal_angular_velocity() {
@@ -845,7 +849,7 @@ encoder::~encoder() {
 
 }
 
-int16_t photo::ave_buf[PHOTO_TYPE::element_count][GAP_AVE_COUNT] = { 0 };
+float photo::ave_buf[PHOTO_TYPE::element_count][GAP_AVE_COUNT] = { 0.0f };
 float photo::diff_buf[PHOTO_TYPE::element_count][GAP_AVE_COUNT] = { 0 };
 uint8_t photo::gap_buf[PHOTO_TYPE::element_count][GAP_AVE_COUNT] = { 0 };
 signed int photo::right_ad, photo::left_ad, photo::front_right_ad,
@@ -984,15 +988,6 @@ void photo::set_ad(PHOTO_TYPE sensor_type, int16_t set_value) {
 
 	int16_t now_val = sum / PHOTO_AVERAGE_TIME; 	//見やすさのため名前を付ける
 
-	ave_buf[sensor_type][(GAP_AVE_COUNT - 1)] = now_val;
-	ave_sum += now_val;
-
-	//移動平均をとったセンサ値と、それのさらに平均をとったものとの差分を記録
-	//この値は平均を2回取るので、平均区間の真ん中あたりが強調される＝少し前の真値のようなものと考えることができる
-	//その差分なので、おおよそノイズの影響を除去した傾きが分かると信じてる
-	diff_buf[sensor_type][(GAP_AVE_COUNT - 1)] = ave_sum / GAP_AVE_COUNT
-			- static_cast<float>(now_val);
-	gap_buf[sensor_type][(GAP_AVE_COUNT - 1)] = count_wall_gap(sensor_type);//使ってない
 
 	switch (sensor_type) {
 	case PHOTO_TYPE::right:
@@ -1018,6 +1013,17 @@ void photo::set_ad(PHOTO_TYPE sensor_type, int16_t set_value) {
 	default:
 		break;
 	}
+
+
+	ave_buf[sensor_type][(GAP_AVE_COUNT - 1)] = get_displacement_from_center(sensor_type);
+	ave_sum += get_displacement_from_center(sensor_type);
+
+	//移動平均をとったセンサ値と、それのさらに平均をとったものとの差分を記録
+	//この値は平均を2回取るので、平均区間の真ん中あたりが強調される＝少し前の真値のようなものと考えることができる
+	//その差分なので、おおよそノイズの影響を除去した傾きが分かると信じてる
+	diff_buf[sensor_type][(GAP_AVE_COUNT - 1)] = ave_sum / GAP_AVE_COUNT
+			- static_cast<float>(now_val);
+	gap_buf[sensor_type][(GAP_AVE_COUNT - 1)] = count_wall_gap(sensor_type);//使ってない
 }
 
 void photo::interrupt(bool is_light) {
@@ -1159,7 +1165,7 @@ float photo::get_displacement_from_center(PHOTO_TYPE sensor_type) {
 	float f = photo::get_value(sensor_type);				//現在のセンサ値
 	float f_c = parameter::get_ideal_photo(sensor_type);	//中心位置におけるセンサ値
 
-	//XXX フォトセンサの特性を示すパラメータ
+	//フォトセンサの特性を示すパラメータ
 	float a = 0;
 
 	switch (sensor_type) {
@@ -1241,7 +1247,7 @@ int8_t photo::count_wall_gap(PHOTO_TYPE type) {
 	}
 	return count;
 }
-bool photo::check_wall_gap(PHOTO_TYPE type, int16_t threshold) {
+bool photo::check_wall_gap(PHOTO_TYPE type, float threshold) {
 	//壁の切れ目ならtrue
 	//急に壁が現れた時も制御を切る
 
@@ -1265,7 +1271,7 @@ photo::~photo() {
 //XXX 各種ゲイン
 //control関連
 const PID gyro_gain = { 15, 750, 0.015 };//{ 15, 600, 0};		//限界感度法、限界感度30、限界周期0.01[s]
-const PID photo_gain = { 400, 0, 0 };
+const PID photo_gain = { 300, 0, 0.005 };
 const PID encoder_gain = { 200, 1000, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
 const PID accel_gain = { 0, 0, 0 };	//{50, 0, 0 };
 
@@ -1320,25 +1326,21 @@ void control::cal_delta() {
 	static kalman odm_kal(1, 1);		//オドメトリとセンサ値のカルマンフィルタ  （オドメトリ,フォト)
 	float photo_correct = 1;		//フォトセンサから推定する現在位置
 	before_p_delta = photo_delta.P;
+	static float before_displace=0;	//D制御をかけるためにオドメトリから求めた前回の中心からのずれを記録
 	if (control::get_wall_control_phase()) {
 		if (photo::check_wall(PHOTO_TYPE::right)) {
-			if (!photo::check_wall_gap(right, 10))		//壁キレでないなら
-				photo_right_delta = photo::get_value(right)
-						- parameter::get_ideal_photo(right);
-			/*
-			 photo_right_delta = photo::get_displacement_from_center(
-			 PHOTO_TYPE::right);		//中心からのずれてる距離[m]
-			 */
+			//if (!photo::check_wall_gap(right, 0.005))		//壁キレでないなら
+				photo_right_delta = photo::get_displacement_from_center(
+					PHOTO_TYPE::right);		//中心からのずれてる距離[m]
+
 		}
 		if (photo::check_wall(PHOTO_TYPE::left)) {
-			if (!photo::check_wall_gap(left, 10))		//壁キレでないなら
-				photo_left_delta = -(photo::get_value(left)
-						- parameter::get_ideal_photo(left));
-			/*
-			 photo_left_delta = photo::get_displacement_from_center(
-			 PHOTO_TYPE::left);		//中心からのずれてる距離[m]
-			 */
+			//if (!photo::check_wall_gap(left, 0.025))		//壁キレでないなら
+				photo_left_delta = photo::get_displacement_from_center(
+					PHOTO_TYPE::left);		//中心からのずれてる距離[m]
+
 		}
+
 
 		if (photo_right_delta == 0)
 			photo_left_delta *= 2;
@@ -1348,25 +1350,24 @@ void control::cal_delta() {
 		//photo_correct = (photo_right_delta + photo_left_delta) / 2;		//センサ値から推定した値をカルマンフィルタの推定値とする
 		photo_delta.P = (photo_right_delta + photo_left_delta) / 2;
 
-		/*
+
 		static const float half_section = 0.045 * MOUSE_MODE;	//1区間の半分の長さ
 		 //柱近傍はセンサ値を信用しない。 区画の中央部分
-		 if (ABS(mouse::get_relative_go() + 0.005 * MOUSE_MODE)
-		 < half_section*0.5){
-		 //photo_correct = mouse::get_relative_displace();		//センサを信用しない　= 推定値を突っ込んどく
-		 photo_delta.P = 0;
+		 if (ABS(mouse::get_relative_go() - 0.01 * MOUSE_MODE)
+		 < (half_section*0.5)){
+			 photo_correct = mouse::get_relative_displace();		//センサを信用しない　= 推定値を突っ込んどく
 		 }
-		 */
 
 		//odm_kal.update(mouse::get_relative_displace(),photo_correct);		//今のオドメトリの値とセンサからの推定値でカルマンフィルタ
 		//mouse::set_relative_go(odm_kal.get_value());		//カルマンフィルタによって推定した値をセットする
 		//photo_delta.P = mouse::get_relative_displace();		//オドメトリに対して制御をかける
 		//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
-		if (mouse::get_ideal_velocity() < SEARCH_VELOCITY * 0.2) {
+		if (mouse::get_ideal_velocity() < SEARCH_VELOCITY * 0.5) {
 			photo_delta.P = 0;
 		}
 		photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
-		photo_delta.D = (photo_delta.P - before_p_delta) / CONTROL_PERIOD;
+		photo_delta.D = (mouse::get_relative_displace() - before_displace) / CONTROL_PERIOD;	//センサ値はそこまで信用できるか怪しいのでオドメトリを使用
+		before_displace = mouse::get_relative_displace();		//値を更新
 
 	} else {
 		//壁制御かけないときは初期化し続ける。
@@ -1374,6 +1375,8 @@ void control::cal_delta() {
 		photo_delta.I = 0;
 		photo_delta.D = 0;
 		photo_correct = mouse::get_relative_displace();
+		before_displace = mouse::get_relative_displace();		//値を更新
+
 	}
 
 	//ジャイロのΔ計算
@@ -1382,7 +1385,7 @@ void control::cal_delta() {
 			- gyro::get_angular_velocity());
 	gyro_delta.P -= cross_delta_gain(sen_photo);		//壁制御量を目標角速度に追加
 	gyro_delta.I += (gyro_delta.P * CONTORL_PERIOD);
-	gyro_delta.D = (gyro_delta.P - before_p_delta) * 1000;
+	gyro_delta.D = (gyro_delta.P - before_p_delta) / CONTROL_PERIOD;
 
 	//加速度の偏差計算
 	before_p_delta = accel_delta.P;	//積分用
@@ -1536,9 +1539,9 @@ void control::fail_safe() {
 	if (ignore_fail_safe)
 		return;
 
-	//TODO 閾値どのくらいかわからない。Gyroも参照すべき？
+	//閾値どのくらいかわからない。Gyroも参照すべき？
 	if (ABS(encoder_delta.P) > 0.8) {
-		if (ABS(mouse::get_velocity()) > SEARCH_VELOCITY * 0.9) {
+		if (ABS(mouse::get_velocity()) > SEARCH_VELOCITY * 0.5) {
 			motor::sleep_motor();
 			mouse::set_fail_flag(true);
 		}

@@ -1888,13 +1888,27 @@ bool node_search::create_big_path(std::vector< std::pair<uint8_t, uint8_t> > fin
 	return false;
 }
 
+void node_search::reset_finish(){
+	//目的地情報をすべてリセット
+	for (int i = 0; i < MAZE_SIZE; i++) {
+		x_finish[i].all = 0;
+		y_finish[i].all = 0;
+	}
+}
+
+void node_search::set_finish(std::pair<uint8_t, uint8_t> finish, compas dir){
+
+}
+
 node_search::node_search() {
 	set_weight_algo(weight_algo::adachi);
+	reset_finish();
 }
 
 node_search::node_search(uint16_t init_step) {
 	node_step::reset_step(init_step);
 	set_weight_algo(weight_algo::adachi);
+	reset_finish();
 }
 
 node_search::~node_search() {

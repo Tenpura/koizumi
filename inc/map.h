@@ -182,6 +182,8 @@ public:
 
 class node_search :virtual public node_step, virtual public  node_path {
 private:
+	MAZE_WALL x_finish[MAZE_SIZE],y_finish[MAZE_SIZE];//目的地の座標管理用
+
 	bool set_step_double(uint8_t double_x, uint8_t double_y, uint16_t step_val, bool by_known);	//XY方向両方に倍取った座標軸での歩数代入関数
 	bool set_step_double(std::pair<uint8_t, uint8_t> xy, uint16_t step_val, bool by_known);		//XY方向両方に倍取った座標軸での歩数代入関数
 	uint16_t get_step_double(uint8_t double_x, uint8_t double_y);		//2倍座標系から歩数を取り出す
@@ -200,6 +202,10 @@ public:
 	//基本的には最短走行か既知区間加速で使うので歩数の小さい方が今行くべき方向と一致しているが、最小歩数が複数あるとヤバいので最初の向きを要求している
 	bool create_big_path(std::vector< std::pair<uint8_t, uint8_t> > finish, std::pair<uint8_t, uint8_t> init, compas mouse_direction);
 	//大回りパス作製
+
+	void reset_finish();		//目的地情報をすべてリセットする
+	void set_finish(std::pair<uint8_t, uint8_t> finish);		//目標座標を設定する  そのマスの東西南北全て目標となる
+	void set_finish(std::pair<uint8_t, uint8_t> finish, compas dir);	//目標座標の特定の方角を指定する
 
 
 	node_search();
