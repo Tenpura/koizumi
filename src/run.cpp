@@ -1808,8 +1808,9 @@ unsigned int adachi::count_unknown_wall(unsigned char target_x,
 
 volatile void adachi::run_next_action(const ACTION_TYPE next_action,
 		bool slalom) {
-	bool check_right = false;
-	bool check_left = false;
+	bool check_right = photo::check_wall(PHOTO_TYPE::right);
+	bool check_left = photo::check_wall(PHOTO_TYPE::left);
+	static uint8_t str_score= 0;	//壁制御をかけれる直線が何連続したか数える
 
 	switch (next_action) {
 	case go_straight:
@@ -1846,8 +1847,7 @@ volatile void adachi::run_next_action(const ACTION_TYPE next_action,
 
 	case back: {
 		//半区間進んで180°ターンして半区間直進
-		check_right = photo::check_wall(PHOTO_TYPE::right);
-		check_left = photo::check_wall(PHOTO_TYPE::left);
+
 		//前壁があれば前壁制御
 		float correct = 0;	//補正項
 		if (photo::check_wall(PHOTO_TYPE::front)) {
@@ -1875,9 +1875,10 @@ volatile void adachi::run_next_action(const ACTION_TYPE next_action,
 
 		wait::ms(500);
 		control::reset_delta();
-		run::spin_turn(-180);
+		run::spin_turn(180 - degree(mouse::get_relative_rad()));	//相対角度から上手く合うように変更する
 		mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
 		mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
+		mouse::set_relative_base_rad(big_180,true);		//180°基準角度変更
 		mouse::set_relative_displacement(-mouse::get_relative_displace(),
 				false);	//相対座標を反転させる
 		mouse::set_relative_go(-mouse::get_relative_go(), false);	//相対座標を反転させる

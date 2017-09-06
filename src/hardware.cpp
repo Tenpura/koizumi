@@ -1366,8 +1366,9 @@ void control::cal_delta() {
 			photo_delta.P = 0;
 		}
 		photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
-		photo_delta.D = (mouse::get_relative_displace() - before_displace) / CONTROL_PERIOD;	//センサ値はそこまで信用できるか怪しいのでオドメトリを使用
-		before_displace = mouse::get_relative_displace();		//値を更新
+		photo_delta.D = mouse::get_velocity() * my_math::sin(mouse::get_relative_rad());	//V sinθ オドメトリから求めたD項
+		//photo_delta.D = (mouse::get_relative_displace() - before_displace) / CONTROL_PERIOD;	//センサ値はそこまで信用できるか怪しいのでオドメトリを使用
+		//before_displace = mouse::get_relative_displace();		//値を更新
 
 	} else {
 		//壁制御かけないときは初期化し続ける。
@@ -1375,7 +1376,7 @@ void control::cal_delta() {
 		photo_delta.I = 0;
 		photo_delta.D = 0;
 		photo_correct = mouse::get_relative_displace();
-		before_displace = mouse::get_relative_displace();		//値を更新
+		//before_displace = mouse::get_relative_displace();		//値を更新
 
 	}
 
