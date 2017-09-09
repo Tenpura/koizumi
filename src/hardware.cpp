@@ -1272,8 +1272,8 @@ photo::~photo() {
 //XXX 各種ゲイン
 //control関連
 const PID gyro_gain = { 15, 750, 0.015 };//{ 15, 600, 0};		//限界感度法、限界感度30、限界周期0.01[s]
-const PID photo_gain = { 300, 0, 0.005 };
-const PID encoder_gain = { 400, 1000, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
+const PID photo_gain = { 300, 0, 0.05 };
+const PID encoder_gain = { 200, 1200, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
 const PID accel_gain = { 0, 0, 0 };	//{50, 0, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta,
@@ -1337,7 +1337,6 @@ void control::cal_delta() {
 			//if (!photo::check_wall_gap(left, 0.025))		//壁キレでないなら
 				photo_left_delta = photo::get_displacement_from_center(
 					PHOTO_TYPE::left);		//中心からのずれてる距離[m]
-
 		}
 
 		if (photo_right_delta == 0)
@@ -1348,12 +1347,11 @@ void control::cal_delta() {
 		//photo_correct = (photo_right_delta + photo_left_delta) / 2;		//センサ値から推定した値をカルマンフィルタの推定値とする
 		photo_delta.P = (photo_right_delta + photo_left_delta) / 2;
 
-
 		static const float half_section = 0.045 * MOUSE_MODE;	//1区間の半分の長さ
 		 //柱近傍はセンサ値を信用しない。 区画の中央部分
 		 if (ABS(mouse::get_relative_go() - 0.01 * MOUSE_MODE)
 		 < (half_section*0.5)){
-			 photo_delta.P = 0;//mouse::get_relative_displace();		//センサを信用しない　= 推定値を突っ込んどく
+			 photo_delta.P = mouse::get_relative_displace();		//センサを信用しない　= 推定値を突っ込んどく
 		 }
 
 		//odm_kal.update(mouse::get_relative_displace(),photo_correct);		//今のオドメトリの値とセンサからの推定値でカルマンフィルタ
@@ -1373,7 +1371,6 @@ void control::cal_delta() {
 		photo_delta.P = 0;
 		photo_delta.I = 0;
 		photo_delta.D = 0;
-		//before_displace = mouse::get_relative_displace();		//値を更新
 
 	}
 

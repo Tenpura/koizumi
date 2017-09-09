@@ -1681,15 +1681,14 @@ void node_step::draw_step() {
 
 	myprintf("\n-----start draw_step-------\n\r");
 
-
 	for (tekitou_y = MAZE_SIZE - 1; tekitou_y >= 0; tekitou_y--) {
 		//////////////////////////////////////////迷路の壁の行
 		for (tekitou_x = 0; tekitou_x < MAZE_SIZE; tekitou_x++) {
 			myprintf("+");	//柱
-			if (get_wall(tekitou_x, tekitou_y, MUKI_UP)) {//壁があるなら
+			if (get_wall(tekitou_x, tekitou_y, MUKI_UP)) {	//壁があるなら
 				myprintf("---");
 			} else {
-				myprintf("%3d",get_step(tekitou_x,tekitou_y,north));	//なければ歩数を書く
+				myprintf("%3d", get_step(tekitou_x, tekitou_y, north));	//なければ歩数を書く
 			}
 		}
 		myprintf("+\n\r");
@@ -1701,7 +1700,7 @@ void node_step::draw_step() {
 			if (get_wall(tekitou_x, tekitou_y, MUKI_RIGHT)) {//今書いたマスの右の壁があれば壁を書く
 				myprintf(" | ");
 			} else {
-				myprintf("%3d",get_step(tekitou_x,tekitou_y,east));	//なければ歩数を書く
+				myprintf("%3d", get_step(tekitou_x, tekitou_y, east));//なければ歩数を書く
 			}
 		}
 		myprintf("\n\r");
@@ -1760,7 +1759,45 @@ uint16_t node_search::get_step_double(uint8_t double_x, uint8_t double_y) {
 }
 
 void node_search::set_weight_algo(weight_algo weight) {
+	static const std::vector<uint8_t> temp_s { 21, 20, 19, 18, 17, 16, 9, 4 }; //直進方向の重みづけ
+	static const std::vector<uint8_t> temp_o { 15, 14, 13, 12, 11, 10, 9, 4 }; //斜め方向の重みづけ
+	static const std::vector<uint8_t> temp_c { 0, 10, 14 };	//カーブに関する重みづけ、0°,45°,90°の順番
+
 	algo = weight;
+
+	switch (get_weight_algo()) {
+	case weight_algo::adachi:
+		//斜めも直進も重みは1
+		std::vector<uint8_t>().swap(straight_w);
+		straight_w.emplace_back(1);
+		std::vector<uint8_t>().swap(oblique_w);
+		oblique_w.emplace_back(1);
+		curve_w = std::vector<uint8_t> { 0, 0, 0 };
+		break;
+
+	case weight_algo::based_distance:
+		//斜めと直進は1:√2の重み
+		std::vector<uint8_t>().swap(straight_w);
+		straight_w.emplace_back(7);
+		std::vector<uint8_t>().swap(oblique_w);
+		oblique_w.emplace_back(5);
+		curve_w = std::vector<uint8_t> { 0, 0, 0 };
+		break;
+
+	case weight_algo::priority_straight:
+		straight_w = (temp_s);	//staright_wに代入
+		oblique_w = (temp_o);	//oblique_wに代入
+		curve_w = std::vector<uint8_t> { 0, 0, 0 };
+		break;
+
+	case weight_algo::T_Wataru_method:		//斜めにも重みがある
+		straight_w = (temp_s);	//staright_wに代入
+		oblique_w = (temp_o);	//oblique_wに代入
+		curve_w = temp_c;
+		break;
+
+	}
+
 }
 
 weight_algo node_search::get_weight_algo() {
@@ -1778,9 +1815,9 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 	//歩数をリセット
 	node_step::reset_step(init_step);
 	//目標座標を最初にキューにぶち込む
-	for (int index = 0; index < finish.size(); index++) {
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
+	for (uint16_t index = 0; index < finish.size(); index++) {
+		for (int i = 0; i <= 2; i++) {
+			for (int j = 0; j <= 2; j++) {
 				if ((i + j) % 2 != 0) {			//2倍座標系では区画の間は奇数にしかありえない
 					temp = std::make_pair<uint8_t, uint8_t>(
 							2 * finish.at(index).first + i,
@@ -1798,40 +1835,14 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 	}
 
 	uint16_t step = 0;	//現在の歩数
+	uint16_t next_step = 0;	//次の歩数
 	uint8_t x, y;	//2倍座標
 	int8_t dir_x, dir_y = 0;		//現在の方向
-	int8_t dir_size;		//規格化していないので、判定時に規格化するため
+	int8_t dx, dy;			//次に行く方向
+	int8_t curve_index;		//ターンの種類を判別する
 
-	//歩数の重みを管理
+	//直進する歩数の重みを管理
 	uint8_t straight;
-	uint8_t oblique;
-	std::vector<uint8_t> straight_w;
-	std::vector<uint8_t> oblique_w;
-	std::vector<uint8_t> curve_w { 0, 0, 0 };
-
-	static const std::vector<uint8_t> temp_s { 21, 20, 19, 18, 17, 16, 9, 4 };//直進方向の重みづけ
-	static const std::vector<uint8_t> temp_o { 15, 14, 13, 12, 11, 10, 9, 4 };//斜め方向の重みづけ
-	static const std::vector<uint8_t> temp_c { 14, 10, 0 };	//カーブに関する重みづけ、90°,45°,0°の順番
-
-	switch (get_weight_algo()) {
-	case weight_algo::adachi:
-		straight_w.emplace_back(1);
-		oblique_w.emplace_back(1);
-		break;
-
-	case weight_algo::based_distance:
-		straight_w.emplace_back(7);
-		oblique_w.emplace_back(5);
-		break;
-
-	case weight_algo::T_Wataru_method:
-		curve_w = temp_c;
-	case weight_algo::priority_straight:
-		straight_w = (temp_s);	//staright_wに代入
-		oblique_w = (temp_o);	//oblique_wに代入
-		break;
-
-	}
 
 	while (!que.empty()) {
 		//キューから座標を取り出す
@@ -1845,93 +1856,47 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 		dir_x = dir.front().first;
 		dir_y = dir.front().second;
 		dir.pop();	//取り出したので削除
-		dir_size = dir_x * dir_x + dir_y * dir_y;		//おおきさを2乗で計算
 
-		//斜め方向
-		for (int dx = -1; dx <= 1; dx++) {
-			for (int dy = -1; dy <= 1; dy++) {
-				if (dx == 0 && dy == 0) {
-					//自分の今いるところなので何もしない
-				} else if ((dx + dy) % 2 == 0) {//区画の間はXY合計が奇数なので、変化幅はXY軸合計して偶数でないとダメ
-					if ((dx * dir_x + dy * dir_y) >= 0) {//現在の方向に対して、0°、45°、90°の方向だけチェックすればよい　135°180°は負になる
-						dir_size *= (dx * dx + dy * dy);	//内積相手のサイズも考慮する
-						step += curve_w.at(
-								(dx * dir_x + dy * dir_y)
-										* (dx * dir_x + dy * dir_y) * 2
-										/ dir_size);
-						;	//カーブすることに対する重みを足す	添え字は内積の2乗 2をかけているのは分数を整数にするため
-						//その直線方向に、書き込めなくなるまで書き込んでいく
-						for (int i = 0;; i++) {
-							//直線が続くと足していく歩数は小さくなっていく
-							if (i < oblique_w.size())
-								oblique = oblique_w.at(i);//要素外に出る場合は値を更新しない＝最後の値が続く
-							//歩数を書き込めたら、書き込んだ座標をQueueにぶっこむ
-							if (set_step_double(x + dx * (i + 1),
-									y + dy * (i + 1), step + oblique,
-									by_known)) {
-								step += oblique;		//ステップを更新
-								que.push(
-										std::make_pair<uint8_t, uint8_t>(
-												x + (i + 1) * dx,
-												y + (i + 1) * dy));
-								dir.push(
-										std::make_pair<int8_t, int8_t>(
-												static_cast<int8_t>(dx),
-												static_cast<int8_t>(dy)));//方向も記録
-							} else
-								break;	//書き込めなくなったらループを抜ける
-						}
-						dir_size /= (dx * dx + dy * dy);	//内積相手のサイズは引いておく
-
-					}
-					step = get_step_double(x, y);		//ステップをリセット
-
-				}
+		for (int n = -1; n <= 1; n++) {
+			//次に行く方向は3パターンしか見ない　区画中心より今の方向側にある3種　ex.now(1,1)ならdx>0の(1,1)(2,0)(-1,0)
+			//つまるところ、ここの歩数にたどり着く直前で候補にあったやつらは、その時に行ったほうが早いに決まってるので無視
+			if (x % 2 == 0) {		//縦壁の時
+				dx = (2 - ABS(n)) * SIGN(dir_x);
+				dy = n;
+				curve_index = ABS(dir_y - dy);		//0が直進、1が45°、2が90°
+			} else {			//縦でなければ横（y%2==0）しかない
+				dx = n;
+				dy = (2 - ABS(n)) * SIGN(dir_y);
+				curve_index = ABS(dir_x - dx);		//0が直進、1が45°、2が90°
 			}
-		}
-		//直進方向　Xが2の倍数（縦壁）のときはX方向にだけ±2がある　横壁のときはYだけに　 ※XY両方が偶数になることはないはず
-		//その直線方向に、書き込めなくなるまで書き込んでいく
-		for (int sign = -1; sign < 2; sign += 2) {
-			int delta_x, delta_y;	//座標代入時の変数（見やすさのため）
-			int dx = (1 - x % 2) * sign;		//方向管理用
-			int dy = (1 - y % 2) * sign;		//方向管理用
 
-			if ((dx * dir_x + dy * dir_y) >= 0) {//現在の方向に対して、0°、45°、90°の方向だけチェックすればよい　135°180°は負になる
-				dir_size *= (dx * dx + dy * dy);	//内積相手のサイズも考慮する
-				step += curve_w.at(
-						(dx * dir_x + dy * dir_y) * (dx * dir_x + dy * dir_y)
-								* 2 / dir_size);
-				;			//カーブすることに対する重みを足す	添え字は内積の2乗 2をかけているのは分数を整数にするため
-
-				for (int i = 0;; i++) {
-					//直線が続くと足していく歩数は小さくなっていく
+			next_step = step + curve_w.at(curve_index);	//カーブすることに対する重みを足す
+			//その直線方向に、書き込めなくなるまで書き込んでいく
+			for (uint16_t i = 0;; i++) {
+				//直線が続くと足していく歩数は小さくなっていく
+				if (n == 0) {		//区画を横切るとき
 					if (i < straight_w.size())
 						straight = straight_w.at(i);//要素外に出る場合は値を更新しない＝最後の値が続く
-
-					delta_x = 2 * dx * (i + 1);
-					delta_y = 2 * dy * (i + 1);
-					//歩数を書き込めたら、書き込んだ座標をQueueにぶっこむ
-					if (set_step_double(x + delta_x, y + delta_y,
-							step + straight, by_known)) {
-						step += straight;		//ステップを更新
-						que.push(
-								std::make_pair<uint8_t, uint8_t>(x + delta_x,
-										y + delta_y));
-						dir.push(
-								std::make_pair<int8_t, int8_t>(
-										static_cast<int8_t>(dx),
-										static_cast<int8_t>(dy)));		//方向も記録
-					} else
-						break;	//書き込めなくなったらループを抜ける
+				} else {			//斜め方向の直進のとき
+					if (i < oblique_w.size())
+						straight = oblique_w.at(i);	//要素外に出る場合は値を更新しない＝最後の値が続く
 				}
-				dir_size /= (dx * dx + dy * dy);	//内積相手のサイズは引いておく
-
+				//歩数を書き込めたら、書き込んだ座標をQueueにぶっこむ
+				if (set_step_double(x + dx * (i + 1), y + dy * (i + 1),
+						(next_step + straight), by_known)) {
+					next_step += straight;		//ステップを更新
+					que.push(
+							std::make_pair<uint8_t, uint8_t>(x + (i + 1) * dx,
+									y + (i + 1) * dy));
+					dir.push(
+							std::make_pair<int8_t, int8_t>(
+									static_cast<int8_t>(dx),
+									static_cast<int8_t>(dy)));		//方向も記録
+				} else
+					break;	//書き込めなくなったらループを抜ける
 			}
-			step = get_step_double(x, y);		//ステップをリセット
 		}
-
 	}
-
 }
 
 bool node_search::create_small_path(

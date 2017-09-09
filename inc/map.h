@@ -185,6 +185,11 @@ public:
 class node_search :virtual public node_step, virtual public  node_path {
 private:
 	MAZE_WALL x_finish[MAZE_SIZE],y_finish[MAZE_SIZE];//目的地の座標管理用
+public:
+	//直進、斜め、ターンの重みを管理　set_weight_algo で変更される
+	std::vector<uint8_t> straight_w;
+	std::vector<uint8_t> oblique_w;
+	std::vector<uint8_t> curve_w;
 
 	bool set_step_double(uint8_t double_x, uint8_t double_y, uint16_t step_val, bool by_known);	//XY方向両方に倍取った座標軸での歩数代入関数
 	bool set_step_double(std::pair<uint8_t, uint8_t> xy, uint16_t step_val, bool by_known);		//XY方向両方に倍取った座標軸での歩数代入関数
