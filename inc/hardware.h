@@ -110,7 +110,7 @@ public:
 	mpu6000();
 
 public:
-	static void init_mpu6000();
+	static void init();
 
 	~mpu6000();
 

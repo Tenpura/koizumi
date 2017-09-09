@@ -46,7 +46,8 @@ private:
 
 	static unsigned long mouse_count_ms;			//マウスの時間[msec].基本リセットしない
 
-	static bool fail_flag;		//フェイルセーフがかかるとこのフラグがTRUEに
+	static bool is_fail_safe;		//フェイルセーフがかかるとこのフラグがTRUEに
+	static bool is_spin_turn;
 
 	static POSITION position;		//マウスの位置（座標）
 	static unsigned char mouse_direction;		//マウスの向き
@@ -120,6 +121,9 @@ public:
 	static bool get_fail_flag();		//フェイルセーフがかかったかどうかの判別用
 	static void set_fail_flag(bool set_flag);
 
+	static bool get_spin_flag();		//今超信地旋回しているかどうか
+	static void set_spin_flag(bool is_spin);
+
 	static void interrupt();	//割り込み関数内で実行するよう
 
 	static void run_init(bool posture_ctrl, bool wall_ctrl);	//走る直前に実行するやつ
@@ -191,7 +195,7 @@ private:
 			unsigned char target_y);
 
 	//引数に応じて次の行動をマウスが実行する（実際に動く部分）
-	static volatile void run_next_action(const ACTION_TYPE next_action, bool slalom);
+	static void run_next_action(const ACTION_TYPE next_action, bool slalom);
 	static void simulate_next_action(ACTION_TYPE next_action);//機体は動かない。仮想的に変数とか更新。デバック用
 
 	//次行く方向と今の向きを与えると、次に取る行動を返す。優先度は、直進、右ターン、左ターン、バックの順
@@ -202,13 +206,12 @@ private:
 public:
 	static bool adachi_method(const unsigned char target_x,
 			const unsigned char target_y, bool is_FULUKAWA);
-	static bool adachi_method_spin(unsigned char target_x,
-			unsigned char target_y, bool is_FULUKAWA);
+	//static bool adachi_method_spin(unsigned char target_x,unsigned char target_y, bool is_FULUKAWA);
 	static bool adachi_method_place(unsigned char target_x,
 			unsigned char target_y, bool is_FULUKAWA);		//直進時の距離の管理をオドメトリから求めた絶対座標にしたVer
 
-	static bool left_hand_method(const uint8_t target_x,
-			const uint8_t target_y);
+	//static bool left_hand_method(const uint8_t target_x,const uint8_t target_y);
+
 
 	static bool node_adachi(std::vector< std::pair<uint8_t, uint8_t> > finish, weight_algo method);		//ノード型歩数マップで足立法
 

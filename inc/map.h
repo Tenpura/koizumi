@@ -133,7 +133,7 @@ private:
 	bool is_outside_array(uint8_t x_index, uint8_t y_index);		//配列の添え字でみた座標系（X方向だけ倍）で迷路外（配列外）に出ているか
 
 public:
-	static const uint16_t init_step = 60000;
+	static const uint16_t init_step = 999;
 	virtual bool set_step(uint8_t x, uint8_t y, compas muki, uint16_t step_val, bool by_known);
 	uint16_t get_step(uint8_t x, uint8_t y, compas muki);
 	compas get_min_compas(uint8_t x, uint8_t y);			//（x,y）の4つの歩数の内、最小の歩数がどの方角か
@@ -141,6 +141,8 @@ public:
 	void reset_step(uint16_t reset_val);		//全ての歩数をreset_valでリセット
 
 	uint8_t compas_to_define(compas muki);			//列挙型のcompasをDefineされたMUKIに変換する　統一できてないから仕方なく
+
+	void draw_step();		//myprintfで表示する
 
 	node_step();
 	node_step(uint16_t reset_val);

@@ -42,17 +42,16 @@ int main(void) {
 	init_all();
 	mouse::reset_count();
 
-	my7seg::blink(8, 100, 5);
-
 	myprintf("Compile DATE: %s\n\r", __DATE__);
 	myprintf("Compile TIME: %s\n\r", __TIME__);
 
 	myprintf("vol -> %f\n\r", get_battery());
 
-	mpu6000::init_mpu6000();
+	my7seg::blink(8, 200, 5);
+
+	mpu6000::init();
 
 	my7seg::turn_off();
-
 
 	//マップをリセットする
 	map::reset_wall();
@@ -93,17 +92,17 @@ int main(void) {
 		select = mode::select_mode(7, PHOTO_TYPE::right);
 
 		GPIO_SetBits(GPIOC, GPIO_Pin_3);	//LED2
-		mouse::set_direction(0,1);	//スラロームで方向が変化するので初期化を忘れずに
-		mouse::set_place(0.045 * MOUSE_MODE, 0.045 * MOUSE_MODE);		//(0,0)の中心
+		mouse::set_direction(0, 1);	//スラロームで方向が変化するので初期化を忘れずに
+		mouse::set_place(0.045 * MOUSE_MODE, 0.045 * MOUSE_MODE);	//(0,0)の中心
 
 		switch (select) {
 		case 0:		//壁の値を読むだけ	事故防止のためにモード0は実害ない奴にしとく
 			while (1) {
-				myprintf("right %d  ", photo::get_value(right));
-				myprintf("left %d  ", photo::get_value(left));
-				myprintf("f_r %d  ", photo::get_value(front_right));
-				myprintf("f_l %d  ", photo::get_value(front_left));
-				myprintf("front %d  ", photo::get_value(front));
+				myprintf("right %4.3f  ", photo::get_value(right));
+				myprintf("left %4.3f  ", photo::get_value(left));
+				myprintf("f_r %4.3f  ", photo::get_value(front_right));
+				myprintf("f_l %4.3f  ", photo::get_value(front_left));
+				myprintf("front %4.3f  ", photo::get_value(front));
 				myprintf("\n\r");
 
 				wait::ms(100);
@@ -147,9 +146,9 @@ int main(void) {
 			//flog[0][0] = -1;
 			//run::accel_run(0.09 * 7, 0, 0);
 
-			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
-			//run::accel_run(0.045+0.09, SEARCH_VELOCITY,0);
 			flog[0][0] = -1;
+			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
+			//run::accel_run(0.045 + 0.09, SEARCH_VELOCITY, 0);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
 			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
 			//run::accel_run(0.045, 0, 0);
@@ -157,7 +156,7 @@ int main(void) {
 			//run::accel_run(0.045 * 2, 0, 0);
 			//run::spin_turn(-360);
 			//run::spin_turn( 1800);
-			run::accel_run(0.09 * 5, 0, 0);
+			run::accel_run(0.09 * 4, 0, 0);
 
 			wait::ms(2000);
 
@@ -184,7 +183,6 @@ int main(void) {
 
 			flog[0][0] = -1;
 
-
 			wait::ms(2000);
 
 			motor::sleep_motor();
@@ -201,11 +199,24 @@ int main(void) {
 
 		case 6:
 			map::draw_map(false);
+			/*
+			std::vector<std::pair<uint8_t, uint8_t> > goal_vect;
+			goal_vect.emplace_back(std::make_pair(GOAL_x, GOAL_y));
+			goal_vect.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y));
+			goal_vect.emplace_back(std::make_pair(GOAL_x, GOAL_y + 1));
+			goal_vect.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y + 1));
+			node_search search;
+			search.input_map_data(&mouse::now_map);		//保存していたマップを読みだす
+			search.set_weight_algo(T_Wataru_method);		//重みづけの方法を設定
+			myprintf("%d\n\r", wait::get_count());
+			search.spread_step(goal_vect, false);		//歩数マップを作製
+			myprintf("%d\n\r", wait::get_count());
+			search.draw_step();
+			*/
 			path::draw_path();
 			break;
 
 		}
-
 
 		GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 
@@ -241,9 +252,9 @@ void interrupt_timer() {
 			i++;
 		}
 	} else if (i < flog_number) {
-		flog[0][i] = mouse::get_relative_displace();//mouse::get_velocity();
-		flog[1][i] = photo::get_displacement_from_center(right);//mouse::get_ideal_angular_velocity();
-		flog[2][i] = photo::get_displacement_from_center(left);//mouse::get_angular_velocity();
+		flog[0][i] = mouse::get_velocity();//mouse::get_relative_displace();	//mouse::get_velocity();
+		flog[1][i] = mouse::get_ideal_velocity();//photo::get_displacement_from_center(right);//mouse::get_ideal_angular_velocity();
+		flog[2][i] = photo::get_displacement_from_center(left);	//mouse::get_angular_velocity();
 		i++;
 	}
 

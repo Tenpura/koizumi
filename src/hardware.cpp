@@ -132,6 +132,7 @@ void my7seg::light(const unsigned char number) {
 		GPIO_ResetBits(GPIOH, GPIO_Pin_1);	//LED4
 		break;
 	}
+	return;
 }
 
 void my7seg::turn_off() {
@@ -413,7 +414,7 @@ volatile int16_t mpu6000::get_mpu_val(SEN_TYPE sen, AXIS_t axis) {
 	return data;
 }
 
-void mpu6000::init_mpu6000() {
+void mpu6000::init() {
 	static const uint16_t SIGNAL_PATH_RESET = 0x68;
 	static const uint16_t PWR_MGMT_1 = 0x6B;
 	static const uint16_t PWR_MGMT_2 = 0x6c;
@@ -791,8 +792,8 @@ volatile void encoder::yi_correct(ENC_SIDE enc_side) {
 	}
 	for (int i = 4096; i >= 0; i--) {	//おしりから値が入っていないところを探していく
 		if (correct[enc_side][i] != -1) {		//値が入っていたら
-			if (bigger_val - i <= 1)
-				;
+			if (bigger_val - i <= 1){
+			}
 			//値が入っているのが連続なら線系補完はしない(4096に値が入っている場合のために不等号)
 			else {
 				//間のやつらを線形補完する
@@ -942,7 +943,7 @@ uint16_t photo::get_ad(PHOTO_TYPE sensor_type) {
 	while (ADC_GetFlagStatus(ADCx, ADC_FLAG_EOC) == RESET)
 		;		//終わるまで待つ
 
-	return (ADC_GetConversionValue(ADCx) >> 4);	//XXX 値を取得　4ビットシフトでうまくいってる気がする　右詰めのはずなのに意味わからん。
+	return (ADC_GetConversionValue(ADCx) >> 4);	//値を取得　4ビットシフトでうまくいってる気がする　右詰めのはずなのに意味わからん。
 
 }
 
@@ -1272,7 +1273,7 @@ photo::~photo() {
 //control関連
 const PID gyro_gain = { 15, 750, 0.015 };//{ 15, 600, 0};		//限界感度法、限界感度30、限界周期0.01[s]
 const PID photo_gain = { 300, 0, 0.005 };
-const PID encoder_gain = { 200, 1000, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
+const PID encoder_gain = { 400, 1000, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
 const PID accel_gain = { 0, 0, 0 };	//{50, 0, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta,
@@ -1324,9 +1325,7 @@ void control::cal_delta() {
 
 	float photo_right_delta = 0, photo_left_delta = 0;
 	static kalman odm_kal(1, 1);		//オドメトリとセンサ値のカルマンフィルタ  （オドメトリ,フォト)
-	float photo_correct = 1;		//フォトセンサから推定する現在位置
 	before_p_delta = photo_delta.P;
-	static float before_displace=0;	//D制御をかけるためにオドメトリから求めた前回の中心からのずれを記録
 	if (control::get_wall_control_phase()) {
 		if (photo::check_wall(PHOTO_TYPE::right)) {
 			//if (!photo::check_wall_gap(right, 0.005))		//壁キレでないなら
@@ -1341,7 +1340,6 @@ void control::cal_delta() {
 
 		}
 
-
 		if (photo_right_delta == 0)
 			photo_left_delta *= 2;
 		else if (photo_left_delta == 0)
@@ -1355,13 +1353,13 @@ void control::cal_delta() {
 		 //柱近傍はセンサ値を信用しない。 区画の中央部分
 		 if (ABS(mouse::get_relative_go() - 0.01 * MOUSE_MODE)
 		 < (half_section*0.5)){
-			 photo_correct = mouse::get_relative_displace();		//センサを信用しない　= 推定値を突っ込んどく
+			 photo_delta.P = 0;//mouse::get_relative_displace();		//センサを信用しない　= 推定値を突っ込んどく
 		 }
 
 		//odm_kal.update(mouse::get_relative_displace(),photo_correct);		//今のオドメトリの値とセンサからの推定値でカルマンフィルタ
 		//mouse::set_relative_go(odm_kal.get_value());		//カルマンフィルタによって推定した値をセットする
-		//photo_delta.P = mouse::get_relative_displace();		//オドメトリに対して制御をかける
-		//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
+
+		 //速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
 		if (mouse::get_ideal_velocity() < SEARCH_VELOCITY * 0.5) {
 			photo_delta.P = 0;
 		}
@@ -1375,7 +1373,6 @@ void control::cal_delta() {
 		photo_delta.P = 0;
 		photo_delta.I = 0;
 		photo_delta.D = 0;
-		photo_correct = mouse::get_relative_displace();
 		//before_displace = mouse::get_relative_displace();		//値を更新
 
 	}
@@ -1541,8 +1538,8 @@ void control::fail_safe() {
 		return;
 
 	//閾値どのくらいかわからない。Gyroも参照すべき？
-	if (ABS(encoder_delta.P) > 0.8) {
-		if (ABS(mouse::get_velocity()) > SEARCH_VELOCITY * 0.5) {
+	if (ABS(encoder_delta.P) > 1) {
+		if (ABS(gyro_delta.P) > 3) {
 			motor::sleep_motor();
 			mouse::set_fail_flag(true);
 		}
@@ -1563,9 +1560,7 @@ control::~control() {
 void kalman::update(float EstimateU, float ObserveZ) {
 	float esX = x + EstimateU;		//前回の値に推定分だけずれた値を推定値とする
 	float esP = p + EstP;			//前回の分散に推定分だけ分散を増やす
-
 	float delta = ObserveZ - esX;	//観測量と推定値の差分
-
 	float K = esP / (ObsP + esP);	//カルマンゲイン
 
 	x = esX + K * delta;	//カルマンフィルタで推定値を補正
