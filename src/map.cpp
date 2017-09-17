@@ -244,6 +244,7 @@ void map::remember_exist(unsigned char wall_x, unsigned char wall_y,
 			set_maze_wall(&x_wall_exist[set_y], set_x, true);//x_maze_wall[y]のx番目の右壁に1を代入
 		} else {		//適切でない値が入ってる
 			mouse::error();
+			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
 			myprintf("存在しないx座標に壁の存在を作ろうとしています\n\r");
 			myprintf("remember_exist関数内\n\r");
@@ -262,6 +263,7 @@ void map::remember_exist(unsigned char wall_x, unsigned char wall_y,
 		if (set_y < MAZE_SIZE) {
 			set_maze_wall(&y_wall_exist[set_x], set_y, true);//x_maze_wall[y]のx番目の右壁に1を代入
 		} else {		//適切でない値が入ってる
+			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
 			myprintf("存在しないy座標に壁の存在を作ろうとしています\n\r");
 			myprintf("remember_exist関数内\n\r");
@@ -287,6 +289,7 @@ void map::forget_exist(unsigned char wall_x, unsigned char wall_y,
 		if (set_x < MAZE_SIZE) {
 			set_maze_wall(&x_wall_exist[set_y], set_x, false);//x_maze_wall[y]のx番目の右壁にfalseを代入
 		} else {		//適切でない値が入ってる
+			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
 			myprintf("存在しないx座標の壁の存在を消そうとしています\n\r");
 			myprintf("forget_exist関数内\n\r");
@@ -305,6 +308,7 @@ void map::forget_exist(unsigned char wall_x, unsigned char wall_y,
 		if (set_y < MAZE_SIZE) {
 			set_maze_wall(&y_wall_exist[set_x], set_y, false);//x_maze_wall[y]のx番目の上壁に1false代入
 		} else {		//適切でない値が入ってる
+			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
 			myprintf("存在しないy座標の壁の存在を消そうとしています\n\r");
 			myprintf("forget_exist関数内\n\r");
@@ -334,7 +338,7 @@ bool map::check_exist(unsigned char wall_x, unsigned char wall_y,
 			myprintf("\n\r!!!ERROR!!!\n\r");
 			myprintf("存在しないx座標の壁の存在を読もうとしています\n\r");
 			myprintf("check_exist関数内\n\r");
-			return -1;
+			return false;
 		}
 
 		//y座標方向を変更するとき
@@ -354,7 +358,7 @@ bool map::check_exist(unsigned char wall_x, unsigned char wall_y,
 			myprintf("\n\r!!!ERROR!!!\n\r");
 			myprintf("存在しないy座標の壁の存在を読もうとしています\n\r");
 			myprintf("check_exist関数内\n\r");
-			return -1;
+			return false;
 		}
 	}
 
@@ -380,7 +384,7 @@ bool map::check_exist(unsigned char wall_x, unsigned char wall_y, compas dir) {
 			myprintf("\n\r!!!ERROR!!!\n\r");
 			myprintf("存在しないx座標の壁の存在を読もうとしています\n\r");
 			myprintf("check_exist関数内\n\r");
-			return -1;
+			return false;
 		}
 
 		//y座標方向を変更するとき
@@ -399,7 +403,7 @@ bool map::check_exist(unsigned char wall_x, unsigned char wall_y, compas dir) {
 			myprintf("\n\r!!!ERROR!!!\n\r");
 			myprintf("存在しないy座標の壁の存在を読もうとしています\n\r");
 			myprintf("check_exist関数内\n\r");
-			return -1;
+			return false;
 		}
 	}
 
@@ -423,6 +427,7 @@ void map::create_wall(unsigned char wall_x, unsigned char wall_y,
 		if (set_x < MAZE_SIZE) {
 			set_maze_wall(&x_maze_wall[set_y], set_x, true);//x_maze_wall[y]のx番目の右壁に1を代入
 		} else {		//適切でない値が入ってる
+			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
 			myprintf("存在しないx座標に壁を作ろうとしています\n\r");
 			myprintf("create_wall関数内\n\r");
@@ -441,6 +446,7 @@ void map::create_wall(unsigned char wall_x, unsigned char wall_y,
 		if (set_y < MAZE_SIZE) {
 			set_maze_wall(&y_maze_wall[set_x], set_y, true);//x_maze_wall[y]のx番目の右壁に1を代入
 		} else {		//適切でない値が入ってる
+			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
 			myprintf("存在しないy座標に壁を作ろうとしています\n\r");
 			myprintf("create_wall関数内\n\r");
@@ -466,8 +472,9 @@ void map::destroy_wall(unsigned char wall_x, unsigned char wall_y,
 		if (set_x < MAZE_SIZE) {
 			set_maze_wall(&x_maze_wall[set_y], set_x, false);//x_maze_wall[y]のx番目の右壁にfalseを代入
 		} else {		//適切でない値が入ってる
+			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("存在しないx座標に壁を作ろうとしています\n\r");
+			myprintf("存在しないx座標の壁を壊そうとしています\n\r");
 			myprintf("destroy_wall関数内\n\r");
 		}
 
@@ -484,8 +491,9 @@ void map::destroy_wall(unsigned char wall_x, unsigned char wall_y,
 		if (set_y < MAZE_SIZE) {
 			set_maze_wall(&y_maze_wall[set_x], set_y, false);//x_maze_wall[y]のx番目の上壁に1false代入
 		} else {		//適切でない値が入ってる
+			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("存在しないy座標に壁を作ろうとしています\n\r");
+			myprintf("存在しないy座標の壁を壊そうとしています\n\r");
 			myprintf("destroy_wall関数内\n\r");
 		}
 
@@ -509,10 +517,11 @@ bool map::get_wall(unsigned char wall_x, unsigned char wall_y,
 		if (target_x < MAZE_SIZE) {
 			return get_maze_wall(x_maze_wall[target_y], target_x);
 		} else {		//適切でない値が入ってる
+			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
 			myprintf("存在しないx座標の壁を読もうとしています\n\r");
 			myprintf("get_wall関数内\n\r");
-			return -1;
+			return false;
 		}
 
 		//y座標方向を変更するとき
@@ -528,10 +537,11 @@ bool map::get_wall(unsigned char wall_x, unsigned char wall_y,
 		if (target_y < MAZE_SIZE) {
 			return get_maze_wall(y_maze_wall[target_x], target_y);
 		} else {		//適切でない値が入ってる
+			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
 			myprintf("存在しないy座標の壁を読もうとしています\n\r");
 			myprintf("get_wall関数内\n\r");
-			return -1;
+			return false;
 		}
 	}
 
@@ -698,212 +708,270 @@ void step::step_reset() {
 		}
 	}
 }
+/*
+ void step::set_step(unsigned char target_x, unsigned char target_y) {
+ //座標を管理するための配列
+ unsigned char x_coordinate[965];
+ unsigned char y_coordinate[965];
 
-void step::set_step(unsigned char target_x, unsigned char target_y) {
-	//座標を管理するための配列
-	unsigned char x_coordinate[965];
-	unsigned char y_coordinate[965];
+ //array[x]={0};ってやるとメモリ食うらしいのでForで初期化
+ for (int16_t i = 0; i < 965; i++) {
+ x_coordinate[i] = 0;
+ y_coordinate[i] = 0;
+ }
 
-	//array[x]={0};ってやるとメモリ食うらしいのでForで初期化
-	for (int16_t i = 0; i < 965; i++) {
-		x_coordinate[i] = 0;
-		y_coordinate[i] = 0;
-	}
+ unsigned char x_count = 0, y_count = 0;	//一時的に座標をもっとくよう
+ unsigned char head, tail;		//
+ uint16_t now_step;
 
-	unsigned char x_count = 0, y_count = 0;	//一時的に座標をもっとくよう
-	unsigned char head, tail;		//
+ step_reset();
+ maze_step[target_x][target_y] = 0;
 
+ //coordinate  [tail][][][] -> [][][head]
+
+ head = 1;
+ tail = 0;
+
+ //Qの最初には目標の座標を入れとく
+ x_coordinate[tail] = target_x;
+ y_coordinate[tail] = target_y;
+
+ while (head != tail) {
+ //座標を代入
+ x_count = x_coordinate[tail];
+ y_count = y_coordinate[tail];
+ now_step = maze_step[x_count][y_count];
+
+ tail++;
+
+ //左マス
+ if (set_step(x_count, y_count, MUKI_LEFT, now_step + 1, false)) {
+ //この座標を保持
+ x_coordinate[head] = (x_count - 1);
+ y_coordinate[head] = y_count;
+ head++;
+ }
+
+ //右マス
+ if (set_step(x_count, y_count, MUKI_RIGHT, now_step + 1, false)) {
+ //この座標を保持
+ x_coordinate[head] = (x_count + 1);
+ y_coordinate[head] = y_count;
+ head++;
+ }
+
+ //下マス
+ if (set_step(x_count, y_count, MUKI_DOWN, now_step + 1, false)) {
+ //この座標を保持
+ x_coordinate[head] = x_count;
+ y_coordinate[head] = y_count - 1;
+ head++;
+ }
+
+ //上マス
+ if (set_step(x_count, y_count, MUKI_UP, now_step + 1, false)) {
+ //この座標を保持
+ x_coordinate[head] = x_count;
+ y_coordinate[head] = y_count + 1;
+ head++;
+ }
+
+ if (head > 965) {		//配列越えたらエラー
+ myprintf("エラー!\n\radachi::set_step()内\n\r");
+ break;
+ }
+
+ }
+
+ }
+
+ void step::set_step_by_known(unsigned char target_x, unsigned char target_y) {
+ //座標を管理するための配列
+ unsigned char x_coordinate[965];
+ unsigned char y_coordinate[965];
+
+ //array[x]={0};ってやるとメモリ食うらしいのでForで初期化
+ for (int16_t i = 0; i < 965; i++) {
+ x_coordinate[i] = 0;
+ y_coordinate[i] = 0;
+ }
+
+ unsigned char x_count = 0, y_count = 0;	//一時的に座標をもっとくよう
+ unsigned char head, tail;		//
+
+ step_reset();
+ maze_step[target_x][target_y] = 0;
+
+ //coordinate  [tail][][][] -> [][][head]
+
+ head = 1;
+ tail = 0;
+
+ //Qの最初には目標の座標を入れとく
+ x_coordinate[tail] = target_x;
+ y_coordinate[tail] = target_y;
+
+ while (head != tail) {
+ //座標を代入
+ x_count = x_coordinate[tail];
+ y_count = y_coordinate[tail];
+
+ tail++;
+
+ //左マス
+ if ((x_count - 1) >= 0) {		//座標が迷路内(x-1が0以上)にあり
+ if ((maze_step[x_count - 1][y_count] == STEP_INIT)) {//歩数を入れてない（入ってる歩数がSTEP_INIT）
+ if (map::get_wall(x_count, y_count, MUKI_LEFT) == false) {//元のマスの左壁がないなら
+ if (map::check_exist(x_count, y_count,
+ MUKI_LEFT)) {		//左壁を見ているなら
+ maze_step[x_count - 1][y_count] =
+ maze_step[x_count][y_count] + 1;		//歩数を代入
+ //この座標を保持
+ x_coordinate[head] = (x_count - 1);
+ y_coordinate[head] = y_count;
+ head++;
+ }
+ }
+ }
+ }
+
+ //右マス
+ if ((x_count + 1) < MAZE_SIZE) {	//座標が迷路内(x+1がMAZE_SIZE未満)にあり
+ if ((maze_step[x_count + 1][y_count] == STEP_INIT)) {//歩数を入れてない（入ってる歩数がSTEP_INIT）
+ if (map::get_wall(x_count, y_count, MUKI_RIGHT) == false) {	//元のマスの右壁がない
+ if (map::check_exist(x_count, y_count,
+ MUKI_RIGHT)) {	//右壁を見ているなら
+ maze_step[x_count + 1][y_count] =
+ maze_step[x_count][y_count] + 1;	//歩数を代入
+ //この座標を保持
+ x_coordinate[head] = (x_count + 1);
+ y_coordinate[head] = y_count;
+ head++;
+ }
+ }
+ }
+ }
+
+ //下マス
+ if ((y_count - 1) >= 0) {		//座標が迷路内(y-1が0以上)にあり
+ if ((maze_step[x_count][y_count - 1] == STEP_INIT)) {//歩数を入れてない（入ってる歩数がSTEP_INIT）
+ if (map::get_wall(x_count, y_count, MUKI_DOWN) == false) {//元のマスの下壁がない
+ if (map::check_exist(x_count, y_count,
+ MUKI_DOWN)) {		//下壁が既知なら
+ maze_step[x_count][y_count - 1] =
+ maze_step[x_count][y_count] + 1;	//歩数を代入
+ //この座標を保持
+ x_coordinate[head] = x_count;
+ y_coordinate[head] = (y_count - 1);
+ head++;
+ }
+ }
+ }
+ }
+
+ //上マス
+ if ((y_count + 1) < MAZE_SIZE) {	//x,y+1の座標が迷路内(MAZE_SIZE未満)である
+ if ((maze_step[x_count][y_count + 1] == STEP_INIT)) {//歩数を入れてない（入ってる歩数がSTEP_INIT）
+ if (map::get_wall(x_count, y_count, MUKI_UP) == false) {//元のマスの上壁がない
+ if (map::check_exist(x_count, y_count,
+ MUKI_UP)) {		//上壁が既知なら
+ maze_step[x_count][y_count + 1] =
+ maze_step[x_count][y_count] + 1;	//歩数を代入
+ //この座標を保持
+ x_coordinate[head] = x_count;
+ y_coordinate[head] = (y_count + 1);
+ head++;
+ }
+ }
+ }
+ }
+
+ if (head > 965) {		//配列越えたらエラー
+ myprintf("エラー!\n\radachi::set_step()内\n\r");
+ break;
+ }
+
+ }
+
+ }
+ */
+void step::spread_step(uint8_t tar_x, uint8_t tar_y, bool by_known) {
+	uint8_t x, y;	//一時的に座標をもっとくよう
+	uint16_t now_step;
+
+	my_queue::reset();		//queueをリセット
 	step_reset();
-	maze_step[target_x][target_y] = 0;
-
-	//coordinate  [tail][][][] -> [][][head]
-
-	head = 1;
-	tail = 0;
+	maze_step[tar_x][tar_y] = 0;
 
 	//Qの最初には目標の座標を入れとく
-	x_coordinate[tail] = target_x;
-	y_coordinate[tail] = target_y;
+	my_queue::push(tar_x, tar_y);
 
-	while (head != tail) {
+	while (my_queue::size() != 0) {
 		//座標を代入
-		x_count = x_coordinate[tail];
-		y_count = y_coordinate[tail];
-
-		tail++;
+		x = my_queue::x_front();
+		y = my_queue::y_front();
+		my_queue::pop();		//取り出したので消去
+		now_step = maze_step[x][y];
 
 		//左マス
-		if ((x_count - 1) >= 0) {		//座標が迷路内(x-1が0以上)にあり
-			if ((maze_step[x_count - 1][y_count] == STEP_INIT)) {//歩数を入れてない（入ってる歩数がSTEP_INIT）
-				if (map::get_wall(x_count, y_count, MUKI_LEFT) == false) {//元のマスの左壁がないなら
-					maze_step[x_count - 1][y_count] =
-							maze_step[x_count][y_count] + 1;		//歩数を代入
-					//この座標を保持
-					x_coordinate[head] = (x_count - 1);
-					y_coordinate[head] = y_count;
-					head++;
-				}
-			}
-		}
-
+		if (set_step(x, y, MUKI_LEFT, now_step + 1, by_known))	//書き込めたなら
+			my_queue::push(x - 1, y);		//この座標を保持
 		//右マス
-		if ((x_count + 1) < MAZE_SIZE) {	//座標が迷路内(x+1がMAZE_SIZE未満)にあり
-			if ((maze_step[x_count + 1][y_count] == STEP_INIT)) {//歩数を入れてない（入ってる歩数がSTEP_INIT）
-				if (map::get_wall(x_count, y_count, MUKI_RIGHT) == false) {	//元のマスの右壁がない
-					maze_step[x_count + 1][y_count] =
-							maze_step[x_count][y_count] + 1;	//歩数を代入
-					//この座標を保持
-					x_coordinate[head] = (x_count + 1);
-					y_coordinate[head] = y_count;
-					head++;
-				}
-			}
-		}
-
-		//下マス
-		if ((y_count - 1) >= 0) {		//座標が迷路内(y-1が0以上)にあり
-			if ((maze_step[x_count][y_count - 1] == STEP_INIT)) {//歩数を入れてない（入ってる歩数がSTEP_INIT）
-				if (map::get_wall(x_count, y_count, MUKI_DOWN) == false) {//元のマスの下壁がない
-					maze_step[x_count][y_count - 1] =
-							maze_step[x_count][y_count] + 1;	//歩数を代入
-					//この座標を保持
-					x_coordinate[head] = x_count;
-					y_coordinate[head] = (y_count - 1);
-					head++;
-				}
-			}
-		}
-
-		//上マス
-		if ((y_count + 1) < MAZE_SIZE) {	//x,y+1の座標が迷路内(MAZE_SIZE未満)である
-			if ((maze_step[x_count][y_count + 1] == STEP_INIT)) {//歩数を入れてない（入ってる歩数がSTEP_INIT）
-				if (map::get_wall(x_count, y_count, MUKI_UP) == false) {//元のマスの上壁がない
-					maze_step[x_count][y_count + 1] =
-							maze_step[x_count][y_count] + 1;	//歩数を代入
-					//この座標を保持
-					x_coordinate[head] = x_count;
-					y_coordinate[head] = (y_count + 1);
-					head++;
-				}
-			}
-		}
-
-		if (head > 965) {		//配列越えたらエラー
-			myprintf("エラー!\n\radachi::set_step()内\n\r");
-			break;
-		}
+		if (set_step(x, y, MUKI_RIGHT, now_step + 1, by_known))	//書き込めたなら
+			my_queue::push(x + 1, y);		//この座標を保持
+		//北マス
+		if (set_step(x, y, MUKI_UP, now_step + 1, by_known))	//書き込めたなら
+			my_queue::push(x, y + 1);		//この座標を保持
+		//南マス
+		if (set_step(x, y, MUKI_DOWN, now_step + 1, by_known))	//書き込めたなら
+			my_queue::push(x, y - 1);		//この座標を保持
 
 	}
 
 }
 
-void step::set_step_by_known(unsigned char target_x, unsigned char target_y) {
-	//座標を管理するための配列
-	unsigned char x_coordinate[965];
-	unsigned char y_coordinate[965];
+bool step::set_step(uint8_t _x, uint8_t _y, uint8_t _muki, uint8_t _set_step,
+		bool _by_known) {
 
-	//array[x]={0};ってやるとメモリ食うらしいのでForで初期化
-	for (int16_t i = 0; i < 965; i++) {
-		x_coordinate[i] = 0;
-		y_coordinate[i] = 0;
+	int8_t dx, dy;
+	switch (_muki) {
+	case MUKI_UP:
+		dx = 0;
+		dy = 1;
+		break;
+	case MUKI_DOWN:
+		dx = 0;
+		dy = -1;
+		break;
+	case MUKI_LEFT:
+		dx = -1;
+		dy = 0;
+		break;
+	case MUKI_RIGHT:
+		dx = 1;
+		dy = 0;
+		break;
 	}
 
-	unsigned char x_count = 0, y_count = 0;	//一時的に座標をもっとくよう
-	unsigned char head, tail;		//
+	//配列外に出るパターンを除外
+	if (static_cast<int16_t>(_x) + dx < 0)
+		return false;
+	if (static_cast<int16_t>(_x) + dx > MAZE_SIZE)
+		return false;
+	if (static_cast<int16_t>(_y) + dy < 0)
+		return false;
+	if (static_cast<int16_t>(_y) + dy > MAZE_SIZE)
+		return false;
 
-	step_reset();
-	maze_step[target_x][target_y] = 0;
-
-	//coordinate  [tail][][][] -> [][][head]
-
-	head = 1;
-	tail = 0;
-
-	//Qの最初には目標の座標を入れとく
-	x_coordinate[tail] = target_x;
-	y_coordinate[tail] = target_y;
-
-	while (head != tail) {
-		//座標を代入
-		x_count = x_coordinate[tail];
-		y_count = y_coordinate[tail];
-
-		tail++;
-
-		//左マス
-		if ((x_count - 1) >= 0) {		//座標が迷路内(x-1が0以上)にあり
-			if ((maze_step[x_count - 1][y_count] == STEP_INIT)) {//歩数を入れてない（入ってる歩数がSTEP_INIT）
-				if (map::get_wall(x_count, y_count, MUKI_LEFT) == false) {//元のマスの左壁がないなら
-					if (map::check_exist(x_count, y_count,
-					MUKI_LEFT)) {		//左壁を見ているなら
-						maze_step[x_count - 1][y_count] =
-								maze_step[x_count][y_count] + 1;		//歩数を代入
-						//この座標を保持
-						x_coordinate[head] = (x_count - 1);
-						y_coordinate[head] = y_count;
-						head++;
-					}
-				}
+	if ((maze_step[_x + dx][_y + dy] > _set_step)) {	//入ってる歩数が入れようとする歩数より大きい
+		if (!map::get_wall(_x, _y, _muki)) {	//壁がない
+			if (!_by_known || map::check_exist(_x, _y, _muki)) {	//右壁を見ているなら
+				maze_step[_x + dx][_y + dy] = _set_step;	//歩数を代入
+				return true;	//歩数を書き込めたのでtrueを返す
 			}
 		}
-
-		//右マス
-		if ((x_count + 1) < MAZE_SIZE) {	//座標が迷路内(x+1がMAZE_SIZE未満)にあり
-			if ((maze_step[x_count + 1][y_count] == STEP_INIT)) {//歩数を入れてない（入ってる歩数がSTEP_INIT）
-				if (map::get_wall(x_count, y_count, MUKI_RIGHT) == false) {	//元のマスの右壁がない
-					if (map::check_exist(x_count, y_count,
-					MUKI_RIGHT)) {	//右壁を見ているなら
-						maze_step[x_count + 1][y_count] =
-								maze_step[x_count][y_count] + 1;	//歩数を代入
-						//この座標を保持
-						x_coordinate[head] = (x_count + 1);
-						y_coordinate[head] = y_count;
-						head++;
-					}
-				}
-			}
-		}
-
-		//下マス
-		if ((y_count - 1) >= 0) {		//座標が迷路内(y-1が0以上)にあり
-			if ((maze_step[x_count][y_count - 1] == STEP_INIT)) {//歩数を入れてない（入ってる歩数がSTEP_INIT）
-				if (map::get_wall(x_count, y_count, MUKI_DOWN) == false) {//元のマスの下壁がない
-					if (map::check_exist(x_count, y_count,
-					MUKI_DOWN)) {		//下壁が既知なら
-						maze_step[x_count][y_count - 1] =
-								maze_step[x_count][y_count] + 1;	//歩数を代入
-						//この座標を保持
-						x_coordinate[head] = x_count;
-						y_coordinate[head] = (y_count - 1);
-						head++;
-					}
-				}
-			}
-		}
-
-		//上マス
-		if ((y_count + 1) < MAZE_SIZE) {	//x,y+1の座標が迷路内(MAZE_SIZE未満)である
-			if ((maze_step[x_count][y_count + 1] == STEP_INIT)) {//歩数を入れてない（入ってる歩数がSTEP_INIT）
-				if (map::get_wall(x_count, y_count, MUKI_UP) == false) {//元のマスの上壁がない
-					if (map::check_exist(x_count, y_count,
-					MUKI_UP)) {		//上壁が既知なら
-						maze_step[x_count][y_count + 1] =
-								maze_step[x_count][y_count] + 1;	//歩数を代入
-						//この座標を保持
-						x_coordinate[head] = x_count;
-						y_coordinate[head] = (y_count + 1);
-						head++;
-					}
-				}
-			}
-		}
-
-		if (head > 965) {		//配列越えたらエラー
-			myprintf("エラー!\n\radachi::set_step()内\n\r");
-			break;
-		}
-
 	}
+	return false;
 
 }
 
@@ -1030,7 +1098,9 @@ PATH path::path_memory[PATH_MAX];
 
 void path::set_step_for_shortest(unsigned char target_x,
 		unsigned char target_y) {
-	set_step_by_known(target_x, target_y);		//既知の壁だけで歩数マップを作成
+
+	//set_step_by_known(target_x, target_y);		//既知の壁だけで歩数マップを作成
+	spread_step(target_x, target_y, true);		//既知の壁だけで歩数マップを作成
 	close_dead_end();							//袋小路を潰す
 }
 
@@ -1206,7 +1276,7 @@ void path::create_path() {
 
 	//set_step_for_shortest(GOAL_x,GOAL_y);
 
-	set_step_by_known(GOAL_x, GOAL_y);
+	spread_step(GOAL_x, GOAL_y, true);
 
 	path_reset();
 
@@ -1962,6 +2032,9 @@ PATH node_path::to_PATH(path_element from) {
 	switch (from.turn) {
 	case none:
 		ans.element.flag = TRUE;	//最後の直進で終わりのパターン
+		ans.element.turn = from.turn;
+		break;
+
 	case small:
 	case big_90:
 	case big_180:
@@ -2292,3 +2365,42 @@ node_path::~node_path() {
 
 }
 
+uint8_t my_queue::x_queue[QUEUE_SIZE];
+uint8_t my_queue::y_queue[QUEUE_SIZE];
+uint16_t my_queue::head = 0;
+uint16_t my_queue::tail = 0;
+
+void my_queue::reset() {
+	head = 0;
+	tail = 0;
+}
+
+inline uint16_t my_queue::size() {
+	return (head + QUEUE_SIZE - tail) % QUEUE_SIZE;
+}
+
+inline void my_queue::pop() {
+	tail = (tail + 1) % QUEUE_SIZE;		//リング内でtailを1進める
+}
+
+inline void my_queue::push(uint8_t _x, uint8_t _y) {
+	x_queue[head] = _x;		//Queueにぶち込む
+	y_queue[head] = _y;		//Queueにぶち込む
+	head = (head + 1) % QUEUE_SIZE;		//リング内でtailを1進める
+}
+
+inline uint8_t my_queue::x_front() {
+	return x_queue[tail];		//head=tailだと変な値返すかも
+}
+
+inline uint8_t my_queue::y_front() {
+	return y_queue[tail];		//head=tailだと変な値返すかも
+}
+
+my_queue::my_queue() {
+
+}
+
+my_queue::~my_queue() {
+
+}

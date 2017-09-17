@@ -181,7 +181,7 @@ COORDINATE mouse::get_place() {
 	return place;
 }
 
-float mouse::get_relative_displace() {
+float mouse::get_relative_side() {
 	signed char dir_x, dir_y;		//マウスの方向
 	mouse::get_direction(&dir_x, &dir_y);
 
@@ -219,10 +219,10 @@ void mouse::set_relative_go(float set_value, bool updata_abs) {
 
 }
 
-void mouse::set_relative_displacement(float set_value, bool updata_abs) {
+void mouse::set_relative_side(float set_value, bool updata_abs) {
 	signed char dir_x, dir_y;		//マウスの方向
 	mouse::get_direction(&dir_x, &dir_y);
-	float delta = set_value - get_relative_displace();		//現在値との差分
+	float delta = set_value - get_relative_side();		//現在値との差分
 
 			//相対座標を更新
 	relative.x += dir_y * delta;
@@ -351,7 +351,6 @@ void mouse::set_spin_flag(bool is_spin) {
 	is_spin_turn = is_spin;
 }
 
-
 void mouse::cal_velocity() {
 	//（速度+=加速度）を制御にぶち込む
 	set_ideal_velocity(
@@ -362,8 +361,8 @@ void mouse::cal_velocity() {
 }
 
 void mouse::cal_distance() {
-	run_distance += mouse::get_velocity() * CONTORL_PERIOD;
-	ideal_distance += get_ideal_velocity() * CONTORL_PERIOD;
+	run_distance += velocity * CONTORL_PERIOD;
+	ideal_distance += ideal_velocity * CONTORL_PERIOD;
 }
 
 void mouse::cal_place() {
@@ -804,6 +803,7 @@ void mouse::turn_direction_slalom(const SLALOM_TYPE slalom_type,
 
 void mouse::error() {
 	//TODO エラー処理は必要に応じて書くこと
+	motor::sleep_motor();
 	while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
 		my7seg::light_error();
 		wait::ms(500);
@@ -868,8 +868,9 @@ void run::accel_run(const float distance_m, const float end_velocity,
 	mouse::set_ideal_accel(0);
 	while (1) {
 		//現在速度から減速にかかる距離を計算
-		de_accel_distance = (mouse::get_ideal_velocity() * mouse::get_ideal_velocity()
-				- end_velocity * end_velocity) / (2 * de_accel_value);
+		de_accel_distance = (mouse::get_ideal_velocity()
+				* mouse::get_ideal_velocity() - end_velocity * end_velocity)
+				/ (2 * de_accel_value);
 
 		//減速に距離が必要な距離が足りなくなったら抜ける
 		if (ABS(de_accel_distance)
@@ -887,7 +888,6 @@ void run::accel_run(const float distance_m, const float end_velocity,
 		//速度より先に距離がなくなったら抜ける
 		if (distance_m < mouse::get_distance_m())
 			break;
-
 
 		if (mouse::get_fail_flag())
 			return;
@@ -910,13 +910,11 @@ void run::accel_run(const float distance_m, const float end_velocity,
 
 void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 		const unsigned char select_mode, const float check_distance) {
-
 	float target_distance = check_distance;
 	bool wall_eage_flag = true;
 	float wall_eage[PHOTO_TYPE::element_count];	//この値を下回ったら壁キレ
 
 	GPIO_SetBits(GPIOC, GPIO_Pin_3);	//LED2
-
 	//壁キレのリファレンス
 	wall_eage[PHOTO_TYPE::right] = -0.015;
 	wall_eage[PHOTO_TYPE::left] = 0.02;
@@ -1233,9 +1231,16 @@ void run::slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
 	float init_angle = mouse::get_angle_degree();
 	control::reset_delta(sen_gyro);
 
-//前距離の分走る
-	mouse::set_distance_m(0);
-	accel_run(distance, slalom_velocity, select_mode);
+	float correct = 0;	//補正項
+	if (slalom_type == small) {
+		if (photo::check_wall(front)) {
+			correct = (photo::get_displacement_from_center_debag(front));//この関数で死ぬことあり
+		}
+	}
+
+	if (distance - correct > 0) {	//前距離の分走る
+		accel_run(distance - correct, slalom_velocity, select_mode);
+	}
 
 //mouse::slalom_flag = true;
 	control::stop_wall_control();
@@ -1332,8 +1337,6 @@ void run::slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
 void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 		const signed char right_or_left, const uint8_t select_mode) {
 
-	my7seg::light(4);
-
 	//スラロームのパラメーター取得
 	float distance = parameter::get_slalom(slalom_type, before_distance,
 			right_or_left, select_mode);
@@ -1353,49 +1356,47 @@ void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 		return;
 	}
 
-	my7seg::light(5);
-
-
 	//スラロームの目標角は相対的な角度なので、最初の角度を記録しておく
 	float init_angle = mouse::get_angle_degree();
 	control::reset_delta(sen_gyro);
-	my7seg::light(6);
-
 	float correct = 0;	//補正項
-/*	if (photo::check_wall(front)) {
-		correct = (photo::get_displacement_from_center(front));
+	bool front_b = photo::check_wall(front);		//ifに直接入れると死ぬことあるので経由する
+	if (front_b) {
+		my7seg::light(3);
+		correct = (photo::get_displacement_from_center_debag(front));//この関数で死ぬことあり
+		my7seg::light(6);
+		if (correct > 0)
+			mouse::set_relative_go(correct - 0.045 * MOUSE_MODE, true);
+		else
+			mouse::set_relative_go(correct + 0.045 * MOUSE_MODE, true);
 
-	} else {
-*/
-		if (mouse::get_relative_go() > 0) {
-			correct = 0.045 - mouse::get_relative_go();
-		} else {
-			correct = -0.045 - mouse::get_relative_go();
-		}
-/*	}
-*/
+	}/* else {
+	 if (mouse::get_relative_go() > 0) {
+	 correct = 0.045 - mouse::get_relative_go();
+	 } else {
+	 correct = -0.045 - mouse::get_relative_go();
+	 }
+	 }*/
 	my7seg::light(7);
 
 	if (distance - correct > 0) {	//前距離の分走る
 		accel_run(distance - correct, slalom_velocity, select_mode);
-
 	} else if (distance - correct < -0.045) {	//オーバーし過ぎたときは超信地にする
 		accel_run(distance - correct + 0.045 * MOUSE_MODE, 0, select_mode);
 		mouse::turn_direction(right_or_left);	//向きを90°変える
 		//時計回りが正
 		if (right_or_left == MUKI_RIGHT) {
 			run::spin_turn(90);
-			mouse::set_relative_go(-mouse::get_relative_displace(), false);	//マウスの相対座標も変換する
-			mouse::set_relative_displacement(mouse::get_relative_go(), false);
+			mouse::set_relative_go(-mouse::get_relative_side(), false);	//マウスの相対座標も変換する
+			mouse::set_relative_side(mouse::get_relative_go(), false);
 		} else {
 			run::spin_turn(-90);
-			mouse::set_relative_go(mouse::get_relative_displace(), false);//マウスの相対座標も変換する
-			mouse::set_relative_displacement(-mouse::get_relative_go(), false);
+			mouse::set_relative_go(mouse::get_relative_side(), false);//マウスの相対座標も変換する
+			mouse::set_relative_side(-mouse::get_relative_go(), false);
 		}
 		accel_run(0.045 * MOUSE_MODE, slalom_velocity, select_mode);	//半区画前進
 		return;		//スラロームはしないで終了
 	}
-
 
 	bool wall_flag = control::get_wall_control_phase();
 	control::stop_wall_control();
@@ -1477,12 +1478,12 @@ void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 	//マウスの相対座標も変換する
 	if (right_or_left == MUKI_LEFT) {		//時計回りが正
 		mouse::set_relative_base_rad(slalom_type, false);
-		mouse::set_relative_go(-mouse::get_relative_displace(), false);
-		mouse::set_relative_displacement(mouse::get_relative_go(), false);
+		mouse::set_relative_go(-mouse::get_relative_side(), false);
+		mouse::set_relative_side(mouse::get_relative_go(), false);
 	} else {
 		mouse::set_relative_base_rad(slalom_type, true);
-		mouse::set_relative_go(mouse::get_relative_displace(), false);
-		mouse::set_relative_displacement(-mouse::get_relative_go(), false);
+		mouse::set_relative_go(mouse::get_relative_side(), false);
+		mouse::set_relative_side(-mouse::get_relative_go(), false);
 	}
 
 //後ろ距離分走る
@@ -1495,7 +1496,7 @@ void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 	accel_run(distance, slalom_velocity, select_mode);
 
 	//TODO スラロームのたびに角速度の偏差をリセットするかは要検討
-	//control::reset_delta(sen_gyro);
+	control::reset_delta(sen_gyro);
 
 }
 
@@ -1820,33 +1821,45 @@ unsigned int adachi::count_unknown_wall(unsigned char target_x,
 }
 
 void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
-	my7seg::light(2);
 	static uint8_t str_score = 0;	//壁制御をかけれる直線が何連続したか数える
-
-	my7seg::light(3);
 
 	//直線でないときは壁制御信用できないのでスコアリセット
 	if (next_action != go_straight)
 		str_score = 0;
 
+	my7seg::light(0);
+
 	switch (next_action) {
-	case go_straight:
+	case go_straight: {
+		my7seg::light(1);
+
+		/*
 		//壁があれば制御がかかるので姿勢が直されるため、スコア加算
-		if (photo::check_wall(PHOTO_TYPE::right))
+		bool check = photo::check_wall(PHOTO_TYPE::right);//ifの条件にcheck_wall入れると無限ループにとらわれることがあるので経由させる
+		if (check) {
 			str_score++;
-		if (photo::check_wall(PHOTO_TYPE::left))
+		}
+		check = photo::check_wall(PHOTO_TYPE::left);
+		if (check) {
 			str_score++;
+		}
+		*/
+
+		//caseに入ってからここにたどり着くまでに止まることがある。
+		my7seg::light(2);
 
 		//1区間直進
 		run::accel_run_wall_eage((0.09 * MOUSE_MODE), SEARCH_VELOCITY, 0,
 				(0.09 * MOUSE_MODE));
-		//両壁あり直線が連続2回　くらいの補正がかかっていたら姿勢が正されていると判断し角度を修正
+		//両壁あり直線が連続?回　くらいの補正がかかっていたら姿勢が正されていると判断し角度を修正
 		if (str_score >= 4) {
 			mouse::set_relative_rad(mouse::get_relative_rad() * 0.9, true);
+			str_score -= 2;
 		}
 		break;
-
-	case turn_right:
+	}
+	case turn_right: {
+		my7seg::light(1);
 		//スラロームか超信地旋回か
 		if (slalom) {
 			run::slalom_for_search(small, MUKI_RIGHT, 0);
@@ -1857,8 +1870,9 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 			mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
 		}
 		break;
-
-	case turn_left:
+	}
+	case turn_left: {
+		my7seg::light(1);
 		//スラロームか超信地旋回か
 		if (slalom) {
 			run::slalom_for_search(small, MUKI_LEFT, 0);
@@ -1869,7 +1883,7 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 			mouse::turn_direction(MUKI_LEFT);	//向きを90°変える
 		}
 		break;
-
+	}
 	case back: {
 		//半区間進んで180°ターンして半区間直進
 
@@ -1877,26 +1891,28 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 		float correct = 0;	//補正項
 		if (photo::check_wall(PHOTO_TYPE::front)) {
 			correct = photo::get_displacement_from_center(front);//区画の境目からどれだけずれているか
+			if (correct > 0)
+				mouse::set_relative_go(correct - 0.045 * MOUSE_MODE, true);
+			else
+				mouse::set_relative_go(correct + 0.045 * MOUSE_MODE, true);
 		}
 		if (0.045 * MOUSE_MODE - correct < 0.016)//減速しきる上限を切る　だいたい1/64 2ax=v^2 a=2,v=0.25
 			correct = 0.045 * MOUSE_MODE - 0.016;
 		run::accel_run((0.045 * MOUSE_MODE) - correct, 0, 0);			//半区間直進
-		run::spin_turn(180 - degree(mouse::get_relative_rad()));//相対角度から上手く合うように変更する
+		run::spin_turn(180);// - degree(mouse::get_relative_rad()));//相対角度から上手く合うように変更する
 		mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
 		mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
 		mouse::set_relative_base_rad(big_180, true);		//180°基準角度変更
-		mouse::set_relative_displacement(-mouse::get_relative_displace(),
-				false);	//相対座標を反転させる
+		mouse::set_relative_side(-mouse::get_relative_side(), false);//相対座標を反転させる
 		mouse::set_relative_go(-mouse::get_relative_go(), false);	//相対座標を反転させる
 		mouse::set_distance_m(0);
-		run::accel_run(-(0.02 * MOUSE_MODE), 0, 0);	//半区間直進
+		run::accel_run(-(0.03 * MOUSE_MODE), 0, 0);	//半区間直進
 //		if (check_right | check_left)
 //			run::accel_run_wall_eage((0.065 * MOUSE_MODE), SEARCH_VELOCITY, 0,
 //					(0.03 * MOUSE_MODE));	//半区間直進
 //		else
-		run::accel_run((0.065 * MOUSE_MODE) - mouse::get_relative_go(),
-			SEARCH_VELOCITY, 0);	//半区間直進
-
+		run::accel_run((0.065 * MOUSE_MODE),	// - mouse::get_relative_go(),
+				SEARCH_VELOCITY, 0);	//半区間直進
 		break;
 	}
 	case stop:
@@ -1935,7 +1951,7 @@ void adachi::simulate_next_action(ACTION_TYPE next_action) {
 	}
 }
 
-ACTION_TYPE adachi::get_next_action(DIRECTION next_direction,
+ACTION_TYPE adachi::get_next_action_old(DIRECTION next_direction,
 		uint8_t now_muki) {
 	switch (now_muki) {
 	case MUKI_RIGHT:
@@ -2033,10 +2049,11 @@ ACTION_TYPE adachi::get_next_action(compas next, compas now) {
 
 bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 		bool is_FULUKAWA) {
+
 	bool adachi_flag = true;	//途中でミスがあったらfalseに
-	unsigned char now_x, now_y;	//座標一時保存用。見易さのため
+	uint8_t now_x, now_y;	//座標一時保存用。見易さのため
 	DIRECTION next_direction, priority_direction;	//次に行く方向を管理
-	unsigned char max_unknown_count, target_unknown_count;	//未探索の壁の数を管理
+	uint8_t max_unknown_count, target_unknown_count;	//未探索の壁の数を管理
 	ACTION_TYPE next_action;	//次の行動を管理
 
 //保存していたマップを読みだす
@@ -2075,7 +2092,7 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 		}
 
 //歩数マップ作製
-		step::set_step(target_x, target_y);
+		step::spread_step(target_x, target_y, false);
 
 //方向と未探索の壁の数をリセット
 		next_direction.all = 0;
@@ -2087,65 +2104,66 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 //更に見てない壁の数が多ければpriority_directionの方にも候補として追加
 		if (check_move_by_step(now_x, now_y, MUKI_RIGHT)) {			//右
 			next_direction.element.right = 1;
-
-			target_unknown_count = count_unknown_wall((now_x + 1), now_y);
-			if (target_unknown_count == max_unknown_count) {
-				priority_direction.element.right = 1;
-			} else if (target_unknown_count > max_unknown_count) {
-				max_unknown_count = target_unknown_count;
-				priority_direction.all = 0;			//他の方向はいらないのでリセット
-				priority_direction.element.right = 1;
-			}
-
+			/*
+			 target_unknown_count = count_unknown_wall((now_x + 1), now_y);
+			 if (target_unknown_count == max_unknown_count) {
+			 priority_direction.element.right = 1;
+			 } else if (target_unknown_count > max_unknown_count) {
+			 max_unknown_count = target_unknown_count;
+			 priority_direction.all = 0;			//他の方向はいらないのでリセット
+			 priority_direction.element.right = 1;
+			 }
+			 */
 		}
 		if (check_move_by_step(now_x, now_y, MUKI_LEFT)) {			//左
-
 			next_direction.element.left = 1;
-
-			target_unknown_count = count_unknown_wall((now_x - 1), now_y);
-			if (target_unknown_count == max_unknown_count) {
-				priority_direction.element.left = 1;
-			} else if (target_unknown_count > max_unknown_count) {
-				max_unknown_count = target_unknown_count;
-				priority_direction.all = 0;			//他の方向はいらないのでリセット
-				priority_direction.element.left = 1;
-			}
-
+			/*
+			 target_unknown_count = count_unknown_wall((now_x - 1), now_y);
+			 if (target_unknown_count == max_unknown_count) {
+			 priority_direction.element.left = 1;
+			 } else if (target_unknown_count > max_unknown_count) {
+			 max_unknown_count = target_unknown_count;
+			 priority_direction.all = 0;			//他の方向はいらないのでリセット
+			 priority_direction.element.left = 1;
+			 }
+			 */
 		}
 		if (check_move_by_step(now_x, now_y, MUKI_UP)) {			//上
 			next_direction.element.up = 1;
-
-			target_unknown_count = count_unknown_wall(now_x, (now_y + 1));
-			if (target_unknown_count == max_unknown_count) {
-				priority_direction.element.up = 1;
-			} else if (target_unknown_count > max_unknown_count) {
-				max_unknown_count = target_unknown_count;
-				priority_direction.all = 0;			//他の方向はいらないのでリセット
-				priority_direction.element.up = 1;
-			}
+			/*
+			 target_unknown_count = count_unknown_wall(now_x, (now_y + 1));
+			 if (target_unknown_count == max_unknown_count) {
+			 priority_direction.element.up = 1;
+			 } else if (target_unknown_count > max_unknown_count) {
+			 max_unknown_count = target_unknown_count;
+			 priority_direction.all = 0;			//他の方向はいらないのでリセット
+			 priority_direction.element.up = 1;
+			 }
+			 */
 
 		}
 		if (check_move_by_step(now_x, now_y, MUKI_DOWN)) {			//下
 			next_direction.element.down = 1;
-
-			target_unknown_count = count_unknown_wall(now_x, (now_y - 1));
-			if (target_unknown_count == max_unknown_count) {
-				priority_direction.element.down = 1;
-			} else if (target_unknown_count > max_unknown_count) {
-				max_unknown_count = target_unknown_count;
-				priority_direction.all = 0;			//他の方向はいらないのでリセット
-				priority_direction.element.down = 1;
-			}
-
+			/*
+			 target_unknown_count = count_unknown_wall(now_x, (now_y - 1));
+			 if (target_unknown_count == max_unknown_count) {
+			 priority_direction.element.down = 1;
+			 } else if (target_unknown_count > max_unknown_count) {
+			 max_unknown_count = target_unknown_count;
+			 priority_direction.all = 0;			//他の方向はいらないのでリセット
+			 priority_direction.element.down = 1;
+			 }
+			 */
 		}
-
-//未探索区間が候補の中にあるなら、次に行く方向はその中から選ぶ
-		if ((priority_direction.all != 0) && is_FULUKAWA) {
-			next_direction.all = priority_direction.all;
-		}
-
+		/*
+		 //未探索区間が候補の中にあるなら、次に行く方向はその中から選ぶ
+		 if ((priority_direction.all != 0) && is_FULUKAWA) {
+		 next_direction.all = priority_direction.all;
+		 }
+		 */
 //next_dirrctionから次行く方向を選び、行動する
-		next_action = get_next_action(next_direction, mouse::get_direction());
+		next_action = get_next_action_old(next_direction,
+				mouse::get_direction());
 		run_next_action(next_action, true);
 		my7seg::turn_off();
 
@@ -2165,7 +2183,7 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 //ここに来るということは足立法が失敗してる
 		motor::sleep_motor();
 		COORDINATE place = mouse::get_place();
-		float displace = mouse::get_relative_displace();
+		float displace = mouse::get_relative_side();
 		float go = mouse::get_relative_go();
 //TODO わかりやすい何かが欲しい
 		mouse::error();
@@ -2384,7 +2402,7 @@ bool adachi::adachi_method_place(unsigned char target_x, unsigned char target_y,
 		}
 
 //歩数マップ作製
-		step::set_step(target_x, target_y);
+		step::spread_step(target_x, target_y, false);
 
 //方向と未探索の壁の数をリセット
 		next_direction.all = 0;
@@ -2454,7 +2472,8 @@ bool adachi::adachi_method_place(unsigned char target_x, unsigned char target_y,
 		}
 
 //next_dirrctionから次行く方向を選び、行動する
-		next_action = get_next_action(next_direction, mouse::get_direction());
+		next_action = get_next_action_old(next_direction,
+				mouse::get_direction());
 		if (next_action != go_straight)
 			run_next_action(next_action, true);
 		else {		//直進の場合は、通常とは異なり絶対座標基準の直進を行う
@@ -2484,7 +2503,7 @@ bool adachi::adachi_method_place(unsigned char target_x, unsigned char target_y,
 //ここに来るということは足立法が失敗してる
 		COORDINATE fin_pl = mouse::get_place();
 		COORDINATE rel_pl;
-		rel_pl.x = mouse::get_relative_displace();
+		rel_pl.x = mouse::get_relative_side();
 		rel_pl.y = mouse::get_relative_go();
 		motor::sleep_motor();
 //TODO わかりやすい何かが欲しい
@@ -2637,7 +2656,7 @@ bool adachi::node_adachi(std::vector<std::pair<uint8_t, uint8_t> > finish,
 		//ここに来るということは足立法が失敗してる
 		COORDINATE fin_pl = mouse::get_place();
 		COORDINATE rel_pl;
-		rel_pl.x = mouse::get_relative_displace();
+		rel_pl.x = mouse::get_relative_side();
 		rel_pl.y = mouse::get_relative_go();
 		motor::sleep_motor();
 		//TODO わかりやすい何かが欲しい

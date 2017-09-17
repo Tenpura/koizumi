@@ -136,6 +136,7 @@ public:
 };
 */
 
+
 //”ŠwƒNƒ‰ƒX
 class my_math{
 private:

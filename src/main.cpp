@@ -57,6 +57,8 @@ int main(void) {
 	map::reset_wall();
 	map::output_map_data(&mouse::now_map);
 
+	encoder::yi_correct();		//YI式補正
+
 	uint8_t select = 0;	//モード管理用
 	while (1) {
 		//チャタリング対策
@@ -133,7 +135,7 @@ int main(void) {
 			break;
 
 		case 4:		//調整用
-			encoder::yi_correct();		//YI式補正
+			//encoder::yi_correct();		//YI式補正
 			encoder::draw_correct(false, false);
 			while (1) {
 				my7seg::blink(8, 500, 1);
@@ -141,25 +143,22 @@ int main(void) {
 					break;
 			}
 			my7seg::count_down(3, 500);
-			mouse::run_init(true, true);
+			mouse::run_init(true, false);
 
-			//flog[0][0] = -1;
-			//run::accel_run(0.09 * 7, 0, 0);
-
+			flog[0][0] = -1;
+			//run::accel_run(0.09 * 4, 0, 0);
 			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
-			//run::accel_run(0.045 + 0.09, SEARCH_VELOCITY, 0);
-			//run::slalom_for_search(small, MUKI_RIGHT, 0);
+			run::accel_run(0.045 + 0.09, SEARCH_VELOCITY, 0);
+			//run::slalom_for_search(small, MUKI_LEFT, 0);
 			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
-			run::accel_run(0.045, 0, 0);
+			//run::accel_run(0.045, 0, 0);
 			run::slalom_for_search(small, MUKI_RIGHT, 0);
-			run::slalom_for_search(small, MUKI_RIGHT, 0);
-			run::slalom_for_search(small, MUKI_LEFT, 0);
 			//control::stop_wall_control();
-			//run::accel_run(0.045 * 2, 0, 0);
+			run::accel_run(0.045*3, 0, 0);
 			//run::spin_turn(-360);
 			//run::spin_turn(360);
-			flog[0][0] = -1;
-			run::accel_run(0.09 * 4, 0, 0);
+			//flog[0][0] = -1;
+			run::accel_run(0.09*1, 0, 0);
 
 			wait::ms(2000);
 
@@ -200,21 +199,23 @@ int main(void) {
 			}
 			break;
 
-		case 6:{
+		case 6: {
 			map::draw_map(false);
 
-			std::vector<std::pair<uint8_t, uint8_t> > goal_vect;
-			goal_vect.emplace_back(std::make_pair(GOAL_x, GOAL_y));
-			goal_vect.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y));
-			goal_vect.emplace_back(std::make_pair(GOAL_x, GOAL_y + 1));
-			goal_vect.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y + 1));
-			node_search search;
-			search.input_map_data(&mouse::now_map);		//保存していたマップを読みだす
-			search.set_weight_algo(based_distance);		//重みづけの方法を設定
-			uint32_t temp_cnt = wait::get_count();
-			search.spread_step(goal_vect, false);		//歩数マップを作製
-			myprintf("cal. count->%d\n\r", wait::get_count()-temp_cnt);
-			search.draw_step();
+			/*
+			 std::vector<std::pair<uint8_t, uint8_t> > goal_vect;
+			 goal_vect.emplace_back(std::make_pair(GOAL_x, GOAL_y));
+			 goal_vect.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y));
+			 goal_vect.emplace_back(std::make_pair(GOAL_x, GOAL_y + 1));
+			 goal_vect.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y + 1));
+			 node_search search;
+			 //search.input_map_data(&mouse::now_map);		//保存していたマップを読みだす
+			 search.set_weight_algo(based_distance);		//重みづけの方法を設定
+			 uint32_t temp_cnt = wait::get_count();
+			 search.spread_step(goal_vect, false);		//歩数マップを作製
+			 myprintf("cal. count->%d\n\r", wait::get_count()-temp_cnt);
+			 search.draw_step();
+			 */
 
 			path::draw_path();
 			break;
@@ -231,8 +232,6 @@ int main(void) {
 void interrupt_timer() {
 
 	GPIO_SetBits(GPIOA, GPIO_Pin_14);
-
-	GPIO_SetBits(GPIOA, GPIO_Pin_9);	//FLA_GND
 
 	wait_counter++;	//ms(ミリ秒)のカウントを1増加
 	mouse::add_one_count_ms();
@@ -256,9 +255,9 @@ void interrupt_timer() {
 			i++;
 		}
 	} else if (i < flog_number) {
-		flog[0][i] = mouse::get_relative_displace();	//mouse::get_velocity();
-		flog[1][i] = photo::get_displacement_from_center(right);//mouse::get_ideal_angular_velocity();
-		flog[2][i] = photo::get_displacement_from_center(left);	//mouse::get_angular_velocity();
+		flog[0][i] = mouse::get_place().y;
+		flog[1][i] = photo::get_value(front);//
+		flog[2][i] = photo::get_value(left);
 		i++;
 	}
 

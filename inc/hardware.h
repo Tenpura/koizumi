@@ -219,8 +219,8 @@ private:
 	static const uint16_t GAP_AVE_COUNT=10;		//XXX 壁の切れ目対策にいくつの平均をとるか
 
 	static float ave_buf[element_count][GAP_AVE_COUNT];	//センサー値（平均取ったやつ）のバッファ　壁の切れ目チェックとかで使う
-	static float diff_buf[element_count][GAP_AVE_COUNT];	//今のセンサー値とave_bufの差　壁の切れ目チェックとかで使う
-	static uint8_t gap_buf[element_count][GAP_AVE_COUNT];		//count_wall_gapで数え上げた値を保存しておく
+	//static float diff_buf[element_count][GAP_AVE_COUNT];	//今のセンサー値とave_bufの差　壁の切れ目チェックとかで使う
+	//static uint8_t gap_buf[element_count][GAP_AVE_COUNT];		//count_wall_gapで数え上げた値を保存しておく
 
 
 
@@ -253,13 +253,17 @@ public:
 	static float get_value(PHOTO_TYPE sensor_type);
 
 	//センサ値から距離に変換し、区画中心からどれだけずれているのか[m]を返す。右側正
-	static float get_displacement_from_center(PHOTO_TYPE sensor_type);
+	static float get_displacement_from_center(PHOTO_TYPE type);
+	static float get_displacement_from_center(PHOTO_TYPE type, float val);
+
+	static float get_displacement_from_center_debag(PHOTO_TYPE type);
+
 
 	//TODO この関数はマウスclassにあるべきかも
 	static bool check_wall(unsigned char muki);
 	static bool check_wall(PHOTO_TYPE type);
 
-	static int8_t count_wall_gap(PHOTO_TYPE);	//diff_gapに保存されてる値の正負を数え上げて返す。
+	//static int8_t count_wall_gap(PHOTO_TYPE);	//diff_gapに保存されてる値の正負を数え上げて返す。
 	static bool check_wall_gap(PHOTO_TYPE type, float threshold);	//移動平均をとったやつでGAP_AVE_COUNT前と比較して絶対値がthreshold以上なら、壁の切れ目だからtrue
 
 	~photo();

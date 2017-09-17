@@ -66,8 +66,12 @@ private:
 	static void close_one_dead_end(unsigned char target_x, unsigned char target_y);
 
 public:
-	static void set_step(unsigned char target_x,unsigned char target_y);//target_x,yを基準に歩数マップ作製(等高線)
-	static void set_step_by_known(unsigned char target_x,unsigned char target_y);//見ていない壁は、壁があると見なす
+	static void spread_step(uint8_t tar_x, uint8_t tar_y,bool by_known);		//C++のQueueを使って歩数マップ作製
+	static bool set_step(uint8_t _x, uint8_t _y, uint8_t _muki, uint8_t _set_step, bool _by_known);		//(x,y)のmukiにset_stepを書き込む　書き込めたらtrue
+
+//	static void set_step(unsigned char target_x,unsigned char target_y);//target_x,yを基準に歩数マップ作製(等高線)
+//	static void set_step_by_known(unsigned char target_x,unsigned char target_y);//見ていない壁は、壁があると見なす
+
 	static unsigned int get_step(unsigned char target_x,unsigned char target_y);//ある座標(x,y)の歩数を返す
 
 	static void close_dead_end();//マップ上の袋小路をつぶす
@@ -218,6 +222,28 @@ public:
 	node_search();
 	node_search(uint16_t init_step);
 	~node_search();
+
+};
+
+//歩数マップ展開用のリングバッファQueue
+#define QUEUE_SIZE 200
+class my_queue{
+private:
+	static uint8_t x_queue[QUEUE_SIZE];
+	static uint8_t y_queue[QUEUE_SIZE];
+	static uint16_t head;
+	static uint16_t tail;
+	~my_queue();
+
+public:
+	static void reset();
+	static inline uint16_t size();
+	static inline void pop();
+	static inline void push(uint8_t _x, uint8_t _y);
+	static inline uint8_t x_front();
+	static inline uint8_t y_front();
+
+	my_queue();
 
 };
 

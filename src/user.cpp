@@ -83,7 +83,7 @@ bool mode::search_mode() {
 	goal_vect.emplace_back(std::make_pair(GOAL_x+1, GOAL_y+1));
 
 	uint8_t select = select_mode(7, PHOTO_TYPE::right);
-	encoder::yi_correct();		//YI式補正
+	//encoder::yi_correct();		//YI式補正
 
 	while (select != 0) {
 		my7seg::blink(8, 500, 1);
@@ -601,6 +601,9 @@ float my_math::log(float x) {
 		return log_table[0];
 	if (index_int > LOG_N)
 		return log_table[LOG_N];
+
+
+	//my7seg::light(7);
 
 	//テーブルから線形近似でlogXを求める
 	float log_x = log_table[index_int]

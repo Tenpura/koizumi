@@ -12,7 +12,6 @@
 
 #define CONTROL_PERIOD 0.001		//§ŒäüŠú[sec]
 
-//’²®€–Ú
 
 #define MAZE_SIZE	16
 

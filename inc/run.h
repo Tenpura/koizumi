@@ -102,10 +102,10 @@ public:
 	static COORDINATE get_place();
 
 	//TODO 関数名をもっとわかりやすくしたい
-	static float get_relative_displace();		//進行方向と垂直方向にどれだけずれているか[m] マウスから見て右側正
+	static float get_relative_side();		//進行方向と垂直方向にどれだけずれているか[m] マウスから見て右側正
 	static float get_relative_go();		//区画中心を原点としたとき、進行方向にどれだけ進んでいるか[m]
 	static void set_relative_go(float set_value, bool updata_abs);		//updata_abs は絶対座標を更新するかどうか
-	static void set_relative_displacement(float set_value, bool updata_abs);		//updata_abs は絶対座標を更新するかどうか
+	static void set_relative_side(float set_value, bool updata_abs);		//updata_abs は絶対座標を更新するかどうか
 
 	static float get_relative_rad();		//進行方向を0としたときにどれだけずれているか
 	static void set_relative_rad(float set_rad, bool updata_abs);		//relative_radがset_radになるように修正する
@@ -199,8 +199,7 @@ private:
 	static void simulate_next_action(ACTION_TYPE next_action);//機体は動かない。仮想的に変数とか更新。デバック用
 
 	//次行く方向と今の向きを与えると、次に取る行動を返す。優先度は、直進、右ターン、左ターン、バックの順
-	static ACTION_TYPE get_next_action(DIRECTION next_direction,
-			uint8_t now_muki);
+	static ACTION_TYPE get_next_action_old(DIRECTION next_direction, uint8_t now_muki);
 	static ACTION_TYPE get_next_action(compas next, compas now);
 
 public:
