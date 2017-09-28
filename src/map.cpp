@@ -120,8 +120,7 @@ void map::set_maze_wall(MAZE_WALL* const maze_wall, unsigned char edit_number,
 
 	}
 }
-unsigned char map::get_maze_wall(MAZE_WALL maze_wall,
-		unsigned char edit_number) {
+bool map::get_maze_wall(MAZE_WALL maze_wall, unsigned char edit_number) {
 	unsigned char maze_check = 0;		//元FALSE
 
 	switch (edit_number) {
@@ -223,7 +222,10 @@ unsigned char map::get_maze_wall(MAZE_WALL maze_wall,
 		break;
 	}
 
-	return maze_check;
+	if (maze_check == 0)
+		return false;
+	else
+		return true;
 }
 
 void map::remember_exist(unsigned char wall_x, unsigned char wall_y,
@@ -519,7 +521,7 @@ bool map::get_wall(unsigned char wall_x, unsigned char wall_y,
 		} else {		//適切でない値が入ってる
 			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("存在しないx座標の壁を読もうとしています\n\r");
+			myprintf("存在しないx座標の壁を読もうとしています->%d\n\r",target_x);
 			myprintf("get_wall関数内\n\r");
 			return false;
 		}
@@ -539,7 +541,7 @@ bool map::get_wall(unsigned char wall_x, unsigned char wall_y,
 		} else {		//適切でない値が入ってる
 			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("存在しないy座標の壁を読もうとしています\n\r");
+			myprintf("存在しないy座標の壁を読もうとしています->%d\n\r",target_y);
 			myprintf("get_wall関数内\n\r");
 			return false;
 		}
@@ -785,6 +787,7 @@ void step::step_reset() {
 
  }
 
+
  void step::set_step_by_known(unsigned char target_x, unsigned char target_y) {
  //座標を管理するための配列
  unsigned char x_coordinate[965];
@@ -899,33 +902,45 @@ void step::spread_step(uint8_t tar_x, uint8_t tar_y, bool by_known) {
 	uint8_t x, y;	//一時的に座標をもっとくよう
 	uint16_t now_step;
 
-	my_queue::reset();		//queueをリセット
+	//座標保存用Queue
+	my_queue x_que;
+	my_queue y_que;
+
 	step_reset();
 	maze_step[tar_x][tar_y] = 0;
 
 	//Qの最初には目標の座標を入れとく
-	my_queue::push(tar_x, tar_y);
+	x_que.push(tar_x);
+	y_que.push(tar_y);
 
-	while (my_queue::size() != 0) {
+	while (x_que.size() != 0) {		//xもyもサイズは同じなので代表してxを使う
 		//座標を代入
-		x = my_queue::x_front();
-		y = my_queue::y_front();
-		my_queue::pop();		//取り出したので消去
+		x = x_que.front();
+		y = y_que.front();
+		x_que.pop();		//取り出したので消去
+		y_que.pop();		//取り出したので消去
 		now_step = maze_step[x][y];
 
 		//左マス
-		if (set_step(x, y, MUKI_LEFT, now_step + 1, by_known))	//書き込めたなら
-			my_queue::push(x - 1, y);		//この座標を保持
+		if (set_step(x, y, MUKI_LEFT, now_step + 1, by_known)) {	//書き込めたなら
+			x_que.push(x - 1);		//この座標を保持
+			y_que.push(y);		//この座標を保持
+		}
 		//右マス
-		if (set_step(x, y, MUKI_RIGHT, now_step + 1, by_known))	//書き込めたなら
-			my_queue::push(x + 1, y);		//この座標を保持
+		if (set_step(x, y, MUKI_RIGHT, now_step + 1, by_known)) {	//書き込めたなら
+			x_que.push(x + 1);		//この座標を保持
+			y_que.push(y);		//この座標を保持
+		}
 		//北マス
-		if (set_step(x, y, MUKI_UP, now_step + 1, by_known))	//書き込めたなら
-			my_queue::push(x, y + 1);		//この座標を保持
+		if (set_step(x, y, MUKI_UP, now_step + 1, by_known)) {	//書き込めたなら
+			x_que.push(x);		//この座標を保持
+			y_que.push(y + 1);		//この座標を保持
+		}
 		//南マス
-		if (set_step(x, y, MUKI_DOWN, now_step + 1, by_known))	//書き込めたなら
-			my_queue::push(x, y - 1);		//この座標を保持
-
+		if (set_step(x, y, MUKI_DOWN, now_step + 1, by_known)) {	//書き込めたなら
+			x_que.push(x);		//この座標を保持
+			y_que.push(y - 1);		//この座標を保持
+		}
 	}
 
 }
@@ -953,7 +968,7 @@ bool step::set_step(uint8_t _x, uint8_t _y, uint8_t _muki, uint8_t _set_step,
 		break;
 	}
 
-	//配列外に出るパターンを除外
+//配列外に出るパターンを除外
 	if (static_cast<int16_t>(_x) + dx < 0)
 		return false;
 	if (static_cast<int16_t>(_x) + dx > MAZE_SIZE)
@@ -993,47 +1008,47 @@ void step::close_one_dead_end(unsigned char target_x, unsigned char target_y) {
 
 	dead_end.all = 0;	//初期化
 
-	//左マス
+//左マス
 	if ((map::get_wall(target_x, target_y, MUKI_LEFT))) {	//左壁があるなら
 		dead_end.direction.left = 1;	//左フラグを建てる
-		dead_end.direction.count++;		//1足す
+		dead_end.direction.count++;	//1足す
 	} else if ((target_x - 1) >= 0) {		//座標が迷路内(x-1が0以上)にあり
 		if ((maze_step[target_x - 1][target_y] == STEP_INIT)
 				|| (map::check_exist(target_x, target_y, MUKI_LEFT) == false)) {//左のマスに行けない（入ってる歩数が255 または ）
-			dead_end.direction.left = 1;	//左フラグオン
+			dead_end.direction.left = 1;		//左フラグオン
 			dead_end.direction.count++;		//1足す
 		}
 	}
 
-	//右マス
-	if ((map::get_wall(target_x, target_y, MUKI_RIGHT))) {	//右壁があるなら
+//右マス
+	if ((map::get_wall(target_x, target_y, MUKI_RIGHT))) {		//右壁があるなら
 		dead_end.direction.right = 1;		//右フラグを建てる
-		dead_end.direction.count++;			//1足す
-	} else if ((target_x + 1) < MAZE_SIZE) {	//座標が迷路内(x+1がMax_x未満)にあり
+		dead_end.direction.count++;		//1足す
+	} else if ((target_x + 1) < MAZE_SIZE) {		//座標が迷路内(x+1がMax_x未満)にあり
 		if ((maze_step[target_x + 1][target_y] == STEP_INIT)
 				|| (map::check_exist(target_x, target_y, MUKI_RIGHT) == false)) {//右のマスに行けない（入ってる歩数が255 または 壁がある）
-			dead_end.direction.right = 1;	//右フラグを建てる
+			dead_end.direction.right = 1;		//右フラグを建てる
 			dead_end.direction.count++;		//1足す
 		}
 	}
 
-	//下マス
-	if ((map::get_wall(target_x, target_y, MUKI_DOWN))) {	//下壁があるなら
+//下マス
+	if ((map::get_wall(target_x, target_y, MUKI_DOWN))) {		//下壁があるなら
 		dead_end.direction.down = 1;		//下フラグを建てる
-		dead_end.direction.count++;			//1足す
+		dead_end.direction.count++;		//1足す
 	} else if ((target_y - 1 >= 0)) {		//座標が迷路内(y-1が0以上)にあり
 		if ((maze_step[target_x][target_y - 1] == STEP_INIT)
 				|| (map::check_exist(target_x, target_y, MUKI_DOWN) == false)) {//下のマスに行けない（入ってる歩数が255 または 壁がある）
-			dead_end.direction.down = 1;	//下フラグを建てる
+			dead_end.direction.down = 1;		//下フラグを建てる
 			dead_end.direction.count++;		//1足す
 		}
 	}
 
-	//上マス
+//上マス
 	if ((map::get_wall(target_x, target_y, MUKI_UP))) {		//上壁があるなら
-		dead_end.direction.up = 1;			//上フラグを建てる
-		dead_end.direction.count++;			//1足す
-	} else if ((target_y + 1 < MAZE_SIZE)) {	//x,y+1の座標が迷路内(MAX_y未満)である
+		dead_end.direction.up = 1;		//上フラグを建てる
+		dead_end.direction.count++;		//1足す
+	} else if ((target_y + 1 < MAZE_SIZE)) {		//x,y+1の座標が迷路内(MAX_y未満)である
 		if ((maze_step[target_x][target_y + 1] == STEP_INIT)
 				|| (map::check_exist(target_x, target_y, MUKI_UP) == false)) {//上のマスに行けない（入ってる歩数が255　または　壁がある）
 			dead_end.direction.up = 1;		//上フラグを建てる
@@ -1041,12 +1056,12 @@ void step::close_one_dead_end(unsigned char target_x, unsigned char target_y) {
 		}
 	}
 
-	//袋小路をふさぐ
+//袋小路をふさぐ
 	if (dead_end.direction.count >= 3) {		//行けない方向が3以上 = 袋小路なら
 		if ((target_x == 0) && (target_y == 0)) {		//それがスタートなら何もしない
 		} else if ((target_x == GOAL_x) && (target_y == GOAL_y)) {//それがゴールでも何もしない
 		} else {							//上記以外なら袋小路を潰す
-			maze_step[target_x][target_y] = STEP_INIT;	//歩数を初期化
+			maze_step[target_x][target_y] = STEP_INIT;					//歩数を初期化
 			//袋小路のあいてる方向についてもう一回同じことを行う
 			if (dead_end.direction.left == 0) {
 				map::create_wall(target_x, target_y, MUKI_LEFT);
@@ -1099,13 +1114,13 @@ PATH path::path_memory[PATH_MAX];
 void path::set_step_for_shortest(unsigned char target_x,
 		unsigned char target_y) {
 
-	//set_step_by_known(target_x, target_y);		//既知の壁だけで歩数マップを作成
-	spread_step(target_x, target_y, true);		//既知の壁だけで歩数マップを作成
-	close_dead_end();							//袋小路を潰す
+//set_step_by_known(target_x, target_y);		//既知の壁だけで歩数マップを作成
+	spread_step(target_x, target_y, true);					//既知の壁だけで歩数マップを作成
+	close_dead_end();					//袋小路を潰す
 }
 
 void path::displace_path(unsigned int path_number) {
-	//1個ずらす
+//1個ずらす
 	for (uint16_t number = path_number;
 			path_memory[number].element.flag == TRUE; number++) {
 		path_memory[number].all = path_memory[number + 1].all;
@@ -1115,29 +1130,29 @@ void path::displace_path(unsigned int path_number) {
 void path::improve_path() {
 	unsigned int count = 0;
 
-	while (path_memory[count].element.flag == TRUE) {		//pathが終われば終了
+	while (path_memory[count].element.flag == TRUE) {	//pathが終われば終了
 
-		if (path_memory[count].element.distance >= 1) {		//90mm以上直進するなら
+		if (path_memory[count].element.distance >= 1) {	//90mm以上直進するなら
 
 			if (path_memory[count + 1].element.distance >= 1) {	//ターン後も90mm以上直進するなら	大回りのチェックを行う
-				path_memory[count].element.turn = 2;				//大回りターンに変更
-				path_memory[count].element.distance -= 1;		//直線距離を90mm減らす
+				path_memory[count].element.turn = 2;	//大回りターンに変更
+				path_memory[count].element.distance -= 1;	//直線距離を90mm減らす
 				path_memory[count + 1].element.distance -= 1;	//直線距離を90mm減らす
 
-			} else {										//ターン後90mm直進はしないなら
+			} else {								//ターン後90mm直進はしないなら
 
 				if (path_memory[count].element.muki
 						== path_memory[count + 1].element.muki) {//同じ方向に曲がるなら(Uターン)
 
 					if (path_memory[count + 2].element.distance >= 1) {	//Uターン後90mm直進するなら
-						path_memory[count].element.turn = 3;		//180°ターンに変更
+						path_memory[count].element.turn = 3;	//180°ターンに変更
 						path_memory[count].element.distance -= 1;//直線距離を90mm減らす
 						path_memory[count + 2].element.distance -= 1;//直線距離を90mm減らす
 
 						//1個ずらす
 						displace_path(count + 1);
 
-					} else {									//Uターン後すぐ曲がるなら
+					} else {							//Uターン後すぐ曲がるなら
 
 						if (path_memory[count + 2].element.flag == FALSE) {	//pathが終わってないかチェック　終わってなければ逆方向にターンのはず
 							//ナナメの処理なので何もしない
@@ -1163,47 +1178,47 @@ void path::improve_advance_path() {
 	unsigned char temp_distance = 0;	//一時的な距離保存
 	unsigned char naname_flag = FALSE;	//現在機体が斜めかを判断	ONなら斜め走行中
 
-	while (path_memory[count].element.flag == TRUE) {		//pathが終われば終了
+	while (path_memory[count].element.flag == TRUE) {	//pathが終われば終了
 
-		if (naname_flag == TRUE) {			//斜め走行中なら	確実に直進距離(distance)が0のはず
+		if (naname_flag == TRUE) {	//斜め走行中なら	確実に直進距離(distance)が0のはず
 
 			if (path_memory[count + 1].element.distance >= 1) {	//次のターン後90mm以上直進(斜め終わり)
 
-				path_memory[count].element.turn = 5;			//終わり45°ターンに変更
+				path_memory[count].element.turn = 5;	//終わり45°ターンに変更
 				path_memory[count + 1].element.distance -= 1;	//直線距離を90mm減らす
 				naname_flag = FALSE;
-				count++;												//配列を次へ
+				count++;	//配列を次へ
 
 			} else if (path_memory[count + 2].element.distance >= 1) {//次の次のターン後90mm以上直進(斜め終わり)
 
 				if (path_memory[count].element.muki
 						== path_memory[count + 1].element.muki) {	//同じ方向の2回ターン
 
-					path_memory[count].element.turn = 7;		//終わり135°ターンに変更
-					displace_path(count + 1);							//一個ずらす
+					path_memory[count].element.turn = 7;	//終わり135°ターンに変更
+					displace_path(count + 1);	//一個ずらす
 					path_memory[count + 1].element.distance -= 1;//ターン後の直線距離を90mm減らす
 					naname_flag = FALSE;
-					count++;										//配列を次へ
+					count++;	//配列を次へ
 
-				} else {										//交互のターン(ギザギザ)
+				} else {								//交互のターン(ギザギザ)
 
 					path_memory[count].element.distance += 1;	//斜めの直線距離を1増やす
 					temp_distance = path_memory[count].element.distance;//距離を一時的に持っておく
-					displace_path(count);							//一個ずらす
+					displace_path(count);								//一個ずらす
 					path_memory[count].element.distance = temp_distance;//距離を入れなおす
 
 				}
 
-			} else {											//まだまだ斜めは続くなら
+			} else {									//まだまだ斜めは続くなら
 
 				if (path_memory[count].element.muki
 						== path_memory[count + 1].element.muki) {//同じ方向の2回ターン	コの字
 
 					path_memory[count].element.turn = 8;		//斜め90°ターンに変更
 					displace_path(count + 1);							//一個ずらす
-					count++;										//配列を次へ
+					count++;									//配列を次へ
 
-				} else {									//違う方向の2回ターン	ギザギザ
+				} else {							//違う方向の2回ターン	ギザギザ
 
 					path_memory[count].element.distance += 1;	//斜めの直線距離を1増やす
 					temp_distance = path_memory[count].element.distance;//距離を一時的に持っておく
@@ -1219,7 +1234,7 @@ void path::improve_advance_path() {
 
 				if ((count != 0) || (path_memory[0].element.distance > 1)) {//初っ端のターンじゃなければ
 
-					path_memory[count].element.turn = 2;			//大回りターンに変更
+					path_memory[count].element.turn = 2;	//大回りターンに変更
 					path_memory[count].element.distance -= 1;	//直線距離を90mm減らす
 					path_memory[count + 1].element.distance -= 1;//直線距離を90mm減らす
 
@@ -1227,19 +1242,19 @@ void path::improve_advance_path() {
 					//TODO 初っ端大回り90ターンの処理
 				}
 
-			} else {										//ターン後90mm直進はしないなら
+			} else {								//ターン後90mm直進はしないなら
 
 				if (path_memory[count].element.muki
 						== path_memory[count + 1].element.muki) {//同じ方向に曲がるなら(Uターン)
 
 					if (path_memory[count + 2].element.distance >= 1) {	//Uターン後90mm直進するなら
 
-						path_memory[count].element.turn = 3;		//180°ターンに変更
+						path_memory[count].element.turn = 3;	//180°ターンに変更
 						path_memory[count].element.distance -= 1;//直線距離を90mm減らす
 						path_memory[count + 2].element.distance -= 1;//直線距離を90mm減らす
-						displace_path(count + 1);						//一個ずらす
+						displace_path(count + 1);	//一個ずらす
 
-					} else {									//Uターン後すぐ曲がるなら
+					} else {							//Uターン後すぐ曲がるなら
 
 						if (path_memory[count + 2].all != 0) {//pathが終わってないかチェック　終わってなければ逆方向にターンのはず
 
@@ -1254,7 +1269,7 @@ void path::improve_advance_path() {
 
 				} else {		//違う方法に曲がるなら
 
-					path_memory[count].element.turn = 4;			//45°ターンに変更
+					path_memory[count].element.turn = 4;		//45°ターンに変更
 					path_memory[count].element.distance -= 1;	//直線距離を90mm減らす
 					naname_flag = TRUE;
 
@@ -1269,34 +1284,34 @@ void path::improve_advance_path() {
 
 void path::create_path() {
 	int8_t path_x, path_y;							//位置管理用
-	int8_t path_direction_x, path_direction_y;		//方向管理用
-	bool straight_flag;			//直線できるかどうか判別用フラグ
-	SAVE_DIRECTION save_direction;				//次に行くマスの方向を保存
-	uint16_t count = 0;	//数を数えるだけの変数
+	int8_t path_direction_x, path_direction_y;							//方向管理用
+	bool straight_flag;							//直線できるかどうか判別用フラグ
+	SAVE_DIRECTION save_direction;							//次に行くマスの方向を保存
+	uint16_t count = 0;							//数を数えるだけの変数
 
-	//set_step_for_shortest(GOAL_x,GOAL_y);
+//set_step_for_shortest(GOAL_x,GOAL_y);
 
 	spread_step(GOAL_x, GOAL_y, true);
 
 	path_reset();
 
-	path_direction_x = 0;	//方向を初期化
+	path_direction_x = 0;							//方向を初期化
 	path_direction_y = 1;
 
-	path_x = 0;		//位置を初期化
+	path_x = 0;							//位置を初期化
 	path_y = 0;
 
-	straight_flag = false;	//フラグは折っておく
+	straight_flag = false;							//フラグは折っておく
 
-	path_memory[count].element.distance += 1;	//最初は必ず半区画直進する
-	path_memory[count].element.flag = TRUE;		//最初だし続行フラグを建てる
+	path_memory[count].element.distance += 1;					//最初は必ず半区画直進する
+	path_memory[count].element.flag = TRUE;						//最初だし続行フラグを建てる
 
 	while (1) {
 
 		save_direction.all = 0;		//次に行く方向初期化
-		straight_flag = false;	//フラグは折っておく
+		straight_flag = false;		//フラグは折っておく
 
-		path_x += path_direction_x; 		//位置修正
+		path_x += path_direction_x;		//位置修正
 		path_y += path_direction_y;
 
 		//GOALにたどり着いたら終了
@@ -1307,10 +1322,10 @@ void path::create_path() {
 		}
 
 		//左
-		if ((path_x - 1) >= 0) {		//path_x-1,path_yの座標が迷路内(0以上)である
+		if ((path_x - 1) >= 0) {	//path_x-1,path_yの座標が迷路内(0以上)である
 			if (get_step(path_x - 1, path_y) < get_step(path_x, path_y)) {//歩数の小さいほうへ
 				if ((map::get_wall(path_x, path_y, MUKI_LEFT) == false)) {//壁がないなら
-					save_direction.element.left = 1;		//次に進む方向の選択肢に追加
+					save_direction.element.left = 1;	//次に進む方向の選択肢に追加
 					if ((path_direction_x == -1) && (path_direction_y == 0)) {//左を向いてるとき（直進できるとき）
 						straight_flag = true;	//直進フラグをたてる
 					}
@@ -1323,7 +1338,7 @@ void path::create_path() {
 		if ((path_x + 1) < MAZE_SIZE) {	//path_x+1,path_yの座標が迷路内である
 			if (get_step(path_x + 1, path_y) < get_step(path_x, path_y)) {//歩数の小さいほうへ
 				if ((map::get_wall(path_x, path_y, MUKI_RIGHT) == false)) {	//壁がないなら
-					save_direction.element.right = 1;		//次に進む方向の選択肢に追加
+					save_direction.element.right = 1;	//次に進む方向の選択肢に追加
 					if ((path_direction_x == 1) && (path_direction_y == 0)) {//右を向いてるとき（直進できるとき）
 						straight_flag = true;	//直進フラグをたてる
 					}
@@ -1332,10 +1347,10 @@ void path::create_path() {
 		}
 
 		//下
-		if ((path_y - 1) >= 0) {		//path_x,path_y-1の座標が迷路内(0以上)である
+		if ((path_y - 1) >= 0) {	//path_x,path_y-1の座標が迷路内(0以上)である
 			if (get_step(path_x, path_y - 1) < get_step(path_x, path_y)) {//歩数の小さいほうへ
 				if ((map::get_wall(path_x, path_y, MUKI_DOWN) == false)) {//壁がないなら
-					save_direction.element.down = 1;		//次に進む方向の選択肢に追加
+					save_direction.element.down = 1;	//次に進む方向の選択肢に追加
 					if ((path_direction_x == 0) && (path_direction_y == -1)) {//下を向いてるとき（直進できるとき）
 						straight_flag = true;	//直進フラグをたてる
 					}
@@ -1347,7 +1362,7 @@ void path::create_path() {
 		if ((path_y + 1) < MAZE_SIZE) {	//path_x,path_y+1の座標が迷路内(16以下)である
 			if (get_step(path_x, path_y + 1) < get_step(path_x, path_y)) {//歩数の小さいほうへ
 				if ((map::get_wall(path_x, path_y, MUKI_UP) == false)) {//壁がないなら
-					save_direction.element.up = 1;		//次に進む方向の選択肢に追加
+					save_direction.element.up = 1;	//次に進む方向の選択肢に追加
 					if ((path_direction_x == 0) && (path_direction_y == 1)) {//上を向いてるとき（直進できるとき）
 						straight_flag = true;	//直進フラグをたてる
 					}
@@ -1356,12 +1371,12 @@ void path::create_path() {
 		}
 
 		if (straight_flag) {			//直進できるなら
-			path_memory[count].element.distance += 2;	//半区間直進*2 を追加
+			path_memory[count].element.distance += 2;			//半区間直進*2 を追加
 
 		} else {								//ターンするなら
-			path_memory[count].element.turn = 1;	//小回りターン
+			path_memory[count].element.turn = 1;						//小回りターン
 
-			if (path_direction_x == 0) {						//上か下向きのとき
+			if (path_direction_x == 0) {				//上か下向きのとき
 				//右に行きたい
 				if (save_direction.element.right == 1) {
 					if (path_direction_y == 1) {	//上を向いてる
@@ -1382,7 +1397,7 @@ void path::create_path() {
 					}
 				}
 
-			} else {											//右か左向きのとき
+			} else {										//右か左向きのとき
 				//上に行きたい
 				if (save_direction.element.up == 1) {
 					if (path_direction_x == -1) {	//左を向いてる
@@ -1408,7 +1423,7 @@ void path::create_path() {
 					path_memory[count].element.muki);
 
 			count++;
-			path_memory[count].element.flag = TRUE;		//パスが続くのなら続行フラグを建てる
+			path_memory[count].element.flag = TRUE;			//パスが続くのなら続行フラグを建てる
 
 		}
 
@@ -1432,7 +1447,7 @@ void path::draw_path() {
 	for (int i = 0; path_memory[i].element.flag == TRUE; i++) {
 		//直線
 		myprintf("distance -> %2d *", path_memory[i].element.distance);
-		if (MOUSE_MODE == 1)		//ハーフは半区間が45mm
+		if (MOUSE_MODE == 1)								//ハーフは半区間が45mm
 			myprintf("45mm\n\r");
 		else
 			myprintf("90mm\n\r");
@@ -1494,7 +1509,7 @@ void path::path_reset() {
 }
 
 bool path::get_path_flag(signed int index_number) {
-	//pathがあるならtrue,ないならfalseを返す
+//pathがあるならtrue,ないならfalseを返す
 	if (path_memory[index_number].element.flag == TRUE) {
 		return true;
 	} else {
@@ -1554,6 +1569,14 @@ unsigned char path::get_path_turn_muki(unsigned int index_number) {
 	return path_memory[index_number].element.muki;
 }
 
+bool path::set_path(uint16_t _index,PATH _path){
+	if(_index >= PATH_MAX)
+		return false;
+
+	path_memory[_index] = _path;
+	return true;
+}
+
 void direction_turn(signed char *direction_x, signed char *direction_y,
 		unsigned char direction_turn_muki) {
 	signed char temp_direction_x = (*direction_x);	//他の場所に保存しないと変換途中で参照する羽目になる
@@ -1611,17 +1634,17 @@ bool node_step::able_set_step(uint8_t x, uint8_t y, compas muki,
 		uint16_t step_val, bool by_known) {
 	uint8_t def_muki = compas_to_define(muki);
 
-	//見ていない部分には書き込めない
+//見ていない部分には書き込めない
 	if (by_known) {
 		if (map::check_exist(x, y, def_muki) != TRUE)
 			return false;
 	}
 
-	//壁がある部分には書き込めない
+//壁がある部分には書き込めない
 	if (map::get_wall(x, y, def_muki) == TRUE)
 		return false;
 
-	//書き込む歩数より小さい場所には書き込めない
+//書き込む歩数より小さい場所には書き込めない
 	if (get_step(x, y, muki) <= step_val)
 		return false;
 
@@ -1643,12 +1666,12 @@ bool node_step::is_outside_array(uint8_t x_index, uint8_t y_index) {
 
 bool node_step::set_step(uint8_t x, uint8_t y, compas muki, uint16_t step_val,
 		bool by_known) {
-	//代入用の変数
+//代入用の変数
 	uint8_t step_x = x;
 	uint8_t step_y = y;
 
 	switch (muki) {
-	//南向きと西向きに変更してやりなおし
+//南向きと西向きに変更してやりなおし
 	case north:
 		return set_step(x, y + 1, south, step_val, by_known);
 		break;
@@ -1658,18 +1681,18 @@ bool node_step::set_step(uint8_t x, uint8_t y, compas muki, uint16_t step_val,
 
 		//南と西なら配列用にX座標を対応させる
 	case south:
-		step_x = 2 * x + 1;			//南向きだと横向きの壁なので、x方向が2x+1
+		step_x = 2 * x + 1;	//南向きだと横向きの壁なので、x方向が2x+1
 		break;
 	case west:
-		step_x = 2 * x;				//西向きだと縦向きの壁なので、x方向は2x
+		step_x = 2 * x;	//西向きだと縦向きの壁なので、x方向は2x
 		break;
 	}
 
-	//配列の要素外に書き込むなら何もしない
+//配列の要素外に書き込むなら何もしない
 	if (is_outside_array(step_x, step_y))
 		return false;
 
-	//書き込めるなら
+//書き込めるなら
 	if (able_set_step(x, y, muki, step_val, by_known)) {
 		step[step_x][step_y] = step_val;	//配列に歩数代入
 		return true;
@@ -1678,13 +1701,36 @@ bool node_step::set_step(uint8_t x, uint8_t y, compas muki, uint16_t step_val,
 	return false;
 }
 
-uint16_t node_step::get_step(uint8_t x, uint8_t y, compas muki) {
+bool node_step::set_step_double(uint8_t _double_x, uint8_t _double_y,
+		uint16_t step_val, bool by_known) {
 	//代入用の変数
+	uint8_t step_x = _double_x;
+	uint8_t step_y = _double_y / 2;
+
+	//配列の要素外に書き込むなら何もしない
+	if (is_outside_array(step_x, step_y))
+		return false;
+
+	compas muki = south;
+	if (step_x % 2 == 0)
+		muki = west;
+
+	//書き込めるなら
+	if (able_set_step(step_x / 2, step_y, muki, step_val, by_known)) {
+		step[step_x][step_y] = step_val;	//配列に歩数代入
+		return true;
+	}
+	return false;
+
+}
+
+uint16_t node_step::get_step(uint8_t x, uint8_t y, compas muki) {
+//代入用の変数
 	uint8_t step_x = x;
 	uint8_t step_y = y;
 
 	switch (muki) {
-	//南向きと西向きに変更してやりなおして終了
+//南向きと西向きに変更してやりなおして終了
 	case north:
 		return get_step(x, y + 1, south);
 		break;
@@ -1694,18 +1740,31 @@ uint16_t node_step::get_step(uint8_t x, uint8_t y, compas muki) {
 
 		//南と西なら配列用にX座標を対応させる
 	case south:
-		step_x = 2 * x + 1;			//南向きだと横向きの壁なので、x方向が2x+1
+		step_x = 2 * x + 1;	//南向きだと横向きの壁なので、x方向が2x+1
 		break;
 	case west:
-		step_x = 2 * x;				//西向きだと縦向きの壁なので、x方向は2x
+		step_x = 2 * x;	//西向きだと縦向きの壁なので、x方向は2x
 		break;
 	}
+
+//配列の要素外を読みだすときはInit_stepを
+	if (is_outside_array(step_x, step_y))
+		return init_step;
+
+	return step[step_x][step_y];	//配列から歩数参照
+}
+
+uint16_t node_step::get_step_double(uint8_t double_x, uint8_t double_y) {
+	//代入用の変数
+	uint8_t step_x = double_x;
+	uint8_t step_y = double_y / 2;
 
 	//配列の要素外を読みだすときはInit_stepを
 	if (is_outside_array(step_x, step_y))
 		return init_step;
 
 	return step[step_x][step_y];	//配列から歩数参照
+
 }
 
 compas node_step::get_min_compas(uint8_t x, uint8_t y) {
@@ -1776,7 +1835,7 @@ void node_step::draw_step() {
 		myprintf("\n\r");
 	}
 
-	//下辺	迷路の端は壁しかないはず
+//下辺	迷路の端は壁しかないはず
 	for (tekitou_x = 0; tekitou_x < MAZE_SIZE; tekitou_x++)
 		myprintf("+---");
 	myprintf("+\n\r");
@@ -1795,43 +1854,10 @@ node_step::~node_step() {
 
 }
 
-bool node_search::set_step_double(uint8_t double_x, uint8_t double_y,
-		uint16_t step_val, bool by_known) {
-	//2倍座標を通常の座標と向きに直す
-	uint8_t x = double_x / 2;
-	uint8_t y = double_y / 2;
-	compas muki;
-	if (double_x % 2 == 0) 		//縦壁なら
-		muki = west;
-	else if (double_y % 2 == 0) 	//横壁なら
-		muki = south;
-
-	return node_step::set_step(x, y, muki, step_val, by_known);
-
-}
-
-bool node_search::set_step_double(std::pair<uint8_t, uint8_t> xy,
-		uint16_t step_val, bool by_known) {
-	return set_step_double(xy.first, xy.second, step_val, by_known);
-}
-
-uint16_t node_search::get_step_double(uint8_t double_x, uint8_t double_y) {
-	//2倍座標を通常の座標と向きに直す
-	uint8_t x = double_x / 2;
-	uint8_t y = double_y / 2;
-	compas muki;
-	if (double_x % 2 == 0) 		//縦壁なら
-		muki = west;
-	else if (double_y % 2 == 0) 	//横壁なら
-		muki = south;
-
-	return node_step::get_step(x, y, muki);
-}
-
 void node_search::set_weight_algo(weight_algo weight) {
 	static const std::vector<uint8_t> temp_s { 21, 20, 19, 18, 17, 16, 9, 4 }; //直進方向の重みづけ
 	static const std::vector<uint8_t> temp_o { 15, 14, 13, 12, 11, 10, 9, 4 }; //斜め方向の重みづけ
-	static const std::vector<uint8_t> temp_c { 0, 10, 14 };	//カーブに関する重みづけ、0°,45°,90°の順番
+	static const std::vector<uint8_t> temp_c { 0, 10, 14 }; //カーブに関する重みづけ、0°,45°,90°の順番
 
 	algo = weight;
 
@@ -1861,8 +1887,8 @@ void node_search::set_weight_algo(weight_algo weight) {
 		break;
 
 	case weight_algo::T_Wataru_method:		//斜めにも重みがある
-		straight_w = (temp_s);	//staright_wに代入
-		oblique_w = (temp_o);	//oblique_wに代入
+		straight_w = (temp_s);		//staright_wに代入
+		oblique_w = (temp_o);		//oblique_wに代入
 		curve_w = temp_c;
 		break;
 
@@ -1876,134 +1902,222 @@ weight_algo node_search::get_weight_algo() {
 
 void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 		bool by_known) {
-	//座標管理は歩数の配列(X方向だけ倍)と異なりX,Y方向両方で倍にする　隣接座標の取り扱いが楽だから
+//座標管理は歩数の配列(X方向だけ倍)と異なりX,Y方向両方で倍にする　隣接座標の取り扱いが楽だから
+	union {
+		int8_t xy;
+		struct {
+			int8_t x :4;
+			int8_t y :4;
+		};
+	} dir;			//方向管理用　int8_tでxy両方管理したかった
 
-	std::queue<std::pair<uint8_t, uint8_t> > que;//座標管理用Queue　FirstがX、SecondがY
-	std::pair<uint8_t, uint8_t> temp;
-	std::queue<std::pair<int8_t, int8_t> > dir;	//方向管理用Queue　FirstがX、SecondがY
+	my_queue x_queue;		//座標管理用Queue
+	my_queue y_queue;		//座標管理用Queue
+	my_queue dir_queue;		//方向管理用Queue
+	uint8_t x, y;		//2倍座標
 
-	//歩数をリセット
+//歩数をリセット
 	node_step::reset_step(init_step);
-	//目標座標を最初にキューにぶち込む
+
+//目標座標を最初にキューにぶち込む
 	for (uint16_t index = 0; index < finish.size(); index++) {
 		for (int i = 0; i <= 2; i++) {
 			for (int j = 0; j <= 2; j++) {
-				if ((i + j) % 2 != 0) {			//2倍座標系では区画の間は奇数にしかありえない
-					temp = std::make_pair<uint8_t, uint8_t>(
-							2 * finish.at(index).first + i,
-							2 * finish.at(index).second + j);
-					if (set_step_double(temp, 0, by_known)) {
-						que.push(temp);
-						dir.push(
-								std::make_pair<int8_t, int8_t>(
-										static_cast<int8_t>(i - 1),
-										static_cast<int8_t>(j - 1)));	//方向も記録
+				if ((i + j) % 2 != 0) {		//2倍座標系では区画の間は奇数にしかありえない
+					x = 2 * finish.at(index).first + i;
+					y = 2 * finish.at(index).second + j;
+					if (set_step_double(x, y, 0, by_known)) {
+						x_queue.push(2 * finish.at(index).first + i);
+						y_queue.push(2 * finish.at(index).second + j);
+						dir.x = i - 1;
+						dir.y = j - 1;
+						dir_queue.push(dir.xy);
+						//方向も記録
 					}
 				}
 			}
 		}
 	}
 
-	uint16_t step = 0;	//現在の歩数
 	uint16_t next_step = 0;	//次の歩数
-	uint8_t x, y;	//2倍座標
-	int8_t dir_x, dir_y = 0;		//現在の方向
-	int8_t dx, dy;			//次に行く方向
-	int8_t curve_index;		//ターンの種類を判別する
+	int8_t dx, dy;	//次に行く方向
+	int8_t curve_index;	//ターンの種類を判別する
 
-	//直進する歩数の重みを管理
+//直進する歩数の重みを管理
 	uint8_t straight;
-
-	while (!que.empty()) {
+	while (x_queue.size() != 0) {
 		//キューから座標を取り出す
-		temp = que.front();
-		x = temp.first;
-		y = temp.second;
-		step = get_step_double(x, y);
-		que.pop();	//取り出したので削除
+		x = x_queue.front();
+		y = y_queue.front();
+		x_queue.pop();	//取り出したので削除
+		y_queue.pop();	//取り出したので削除
+		next_step = get_step_double(x, y);
 
 		//キューから方向を取り出す
-		dir_x = dir.front().first;
-		dir_y = dir.front().second;
-		dir.pop();	//取り出したので削除
+		dir.xy = dir_queue.front();
+		dir_queue.pop();	//取り出したので削除
 
 		for (int n = -1; n <= 1; n++) {
 			//次に行く方向は3パターンしか見ない　区画中心より今の方向側にある3種　ex.now(1,1)ならdx>0の(1,1)(2,0)(-1,0)
 			//つまるところ、ここの歩数にたどり着く直前で候補にあったやつらは、その時に行ったほうが早いに決まってるので無視
 			if (x % 2 == 0) {		//縦壁の時
-				dx = (2 - ABS(n)) * SIGN(dir_x);
+				dx = (2 - ABS(n)) * SIGN(dir.x);
 				dy = n;
-				curve_index = ABS(dir_y - dy);		//0が直進、1が45°、2が90°
+				curve_index = ABS(dir.y - dy);		//0が直進、1が45°、2が90°
 			} else {			//縦でなければ横（y%2==0）しかない
 				dx = n;
-				dy = (2 - ABS(n)) * SIGN(dir_y);
-				curve_index = ABS(dir_x - dx);		//0が直進、1が45°、2が90°
+				dy = (2 - ABS(n)) * SIGN(dir.y);
+				curve_index = ABS(dir.x - dx);			//0が直進、1が45°、2が90°
 			}
 
-			next_step = step + curve_w.at(curve_index);	//カーブすることに対する重みを足す
-			//その直線方向に、書き込めなくなるまで書き込んでいく
-			for (uint16_t i = 0;; i++) {
+			if (algo == adachi || algo == based_distance) {
 				//直線が続くと足していく歩数は小さくなっていく
 				if (n == 0) {		//区画を横切るとき
-					if (i < straight_w.size())
-						straight = straight_w.at(i);//要素外に出る場合は値を更新しない＝最後の値が続く
+					straight = straight_w.at(0);//要素外に出る場合は値を更新しない＝最後の値が続く
 				} else {			//斜め方向の直進のとき
-					if (i < oblique_w.size())
-						straight = oblique_w.at(i);	//要素外に出る場合は値を更新しない＝最後の値が続く
+					straight = oblique_w.at(0);	//要素外に出る場合は値を更新しない＝最後の値が続く
 				}
 				//歩数を書き込めたら、書き込んだ座標をQueueにぶっこむ
-				if (set_step_double(x + dx * (i + 1), y + dy * (i + 1),
-						(next_step + straight), by_known)) {
-					next_step += straight;		//ステップを更新
-					que.push(
-							std::make_pair<uint8_t, uint8_t>(x + (i + 1) * dx,
-									y + (i + 1) * dy));
-					dir.push(
-							std::make_pair<int8_t, int8_t>(
-									static_cast<int8_t>(dx),
-									static_cast<int8_t>(dy)));		//方向も記録
-				} else
-					break;	//書き込めなくなったらループを抜ける
+				if (set_step_double(x + dx, y + dy,	(next_step + straight), by_known)) {
+					x_queue.push(x + dx);
+					y_queue.push(y + dy);
+					dir.x = dx;
+					dir.y = dy;
+					dir_queue.push(dir.xy);
+				}
+			} else {
+				next_step += curve_w.at(curve_index);	//カーブすることに対する重みを足す
+				//その直線方向に、書き込めなくなるまで書き込んでいく
+				for (uint8_t i = 0;; i++) {
+					//直線が続くと足していく歩数は小さくなっていく
+					if (n == 0) {		//区画を横切るとき
+						if (i < straight_w.size())
+							straight = straight_w.at(i);//要素外に出る場合は値を更新しない＝最後の値が続く
+					} else {			//斜め方向の直進のとき
+						if (i < oblique_w.size())
+							straight = oblique_w.at(i);	//要素外に出る場合は値を更新しない＝最後の値が続く
+					}
+					//歩数を書き込めたら、書き込んだ座標をQueueにぶっこむ
+					if (set_step_double(x + dx * (i + 1), y + dy * (i + 1),
+							(next_step + straight), by_known)) {
+						next_step += straight;		//ステップを更新
+						x_queue.push(x + (i + 1) * dx);
+						y_queue.push(y + (i + 1) * dy);
+						dir.x = dx;
+						dir.y = dy;
+						dir_queue.push(dir.xy);
+						//break;	ここにbreakつけないと47ms, つけると39ms
+					} else
+						break;	//書き込めなくなったらループを抜ける
+				}
 			}
 		}
 	}
+
 }
 
 bool node_search::create_small_path(
 		std::vector<std::pair<uint8_t, uint8_t> > finish,
 		std::pair<uint8_t, uint8_t> init, compas mouse_direction) {
-	//歩数マップ作製
+//歩数マップ作製
 	node_step::reset_step(init_step);
-	spread_step(finish, true);		//ここは既知壁だけで歩数マップ作製
-	return node_path::create_path(init, mouse_direction);		//歩数マップに従ってパス作製
+	spread_step(finish, true);	//ここは既知壁だけで歩数マップ作製
+	return node_path::create_path(init, mouse_direction);	//歩数マップに従ってパス作製
 
 }
 
 bool node_search::create_big_path(
 		std::vector<std::pair<uint8_t, uint8_t> > finish,
 		std::pair<uint8_t, uint8_t> init, compas mouse_direction) {
-	if (create_small_path(finish, init, mouse_direction)) {		//小回りパス作製
-		node_path::improve_path();		//小回りを大回りパスに改良
+	if (create_small_path(finish, init, mouse_direction)) {	//小回りパス作製
+		node_path::improve_path();	//小回りを大回りパスに改良
 		return true;
 	}
 	return false;
 }
 
+
 void node_search::reset_finish() {
-	//目的地情報をすべてリセット
+//目的地情報をすべてリセット
 	for (int i = 0; i < MAZE_SIZE; i++) {
 		x_finish[i].all = 0;
 		y_finish[i].all = 0;
 	}
 }
 
-void node_search::set_finish(std::pair<uint8_t, uint8_t> finish, compas dir) {
+void node_search::set_finish(uint8_t _x, uint8_t _y) {
+	set_finish(_x, _y, north);
+	set_finish(_x, _y, south);
+	set_finish(_x, _y, east);
+	set_finish(_x, _y, west);
+}
+
+void node_search::set_finish(uint8_t _x, uint8_t _y, compas dir) {
+	uint8_t set_x = _x;
+	uint8_t set_y = _y;
+
+	if (dir == east) {
+		if (set_x == 0)		//一番左は常に外壁なので無視
+			return;
+		else
+			set_x--;		//必ず右を更新
+	}
+	if (dir == east || dir == west) {
+		if (set_x < MAZE_SIZE)
+			set_maze_wall(&x_finish[set_y], set_x, true);//x_finish[y]のx番目の右区画中心
+		return;
+	}
+
+	if (dir == south) {
+		if (set_y == 0) 		//一番下壁は管理しない
+			return;
+		else
+			set_y--;	//必ず上壁を更新するように、座標を変える
+
+	}
+	if (dir == south || dir == north) {
+		if (set_y < MAZE_SIZE)
+			set_maze_wall(&y_finish[set_x], set_y, true);//x_maze_wall[y]のx番目の右壁に1を代入
+		return;
+	}
+
+}
+
+bool node_search::get_finish(uint8_t _x, uint8_t _y, compas dir) {
+	uint8_t get_x = _x;
+	uint8_t get_y = _y;
+
+	if (dir == east) {
+		if (get_x == 0)		//一番左は常に外壁なので無視
+			return false;	//壁なのでゴール座標としては不適
+		else
+			get_x--;		//必ず右を更新
+	}
+	if (dir == east || dir == west) {
+		if (get_x < MAZE_SIZE)
+			return get_maze_wall(x_finish[get_y], get_x);//x_finish[y]のx番目の右区画中心
+	}
+
+	if (dir == south) {
+		if (get_y == 0) 		//一番下壁は管理しない
+			return false;
+		else
+			get_y--;	//必ず上壁を更新するように、座標を変える
+
+	}
+	if (dir == south || dir == north) {
+		if (get_y < MAZE_SIZE)
+			return get_maze_wall(y_finish[get_x], get_y);//x_maze_wall[y]のx番目の右壁に1を代入
+	}
+
+	return false;
 
 }
 
 node_search::node_search() {
 	set_weight_algo(weight_algo::adachi);
 	reset_finish();
+
 }
 
 node_search::node_search(uint16_t init_step) {
@@ -2015,13 +2129,12 @@ node_search::node_search(uint16_t init_step) {
 node_search::~node_search() {
 }
 
-std::vector<path_element> node_path::path(1);
+std::vector<path_element> node_path::path;
 
 PATH node_path::to_PATH(path_element from) {
 	PATH ans;
 
 	ans.element.flag = FALSE;
-
 	ans.element.distance = from.distance;
 
 	if (from.is_right)
@@ -2094,7 +2207,7 @@ bool node_path::is_right_turn(compas now, compas next) {
 }
 
 void node_path::format() {
-	std::vector<path_element>(1).swap(path);
+	std::vector<path_element>().swap(path);
 }
 
 void node_path::push_straight(int half) {
@@ -2103,26 +2216,26 @@ void node_path::push_straight(int half) {
 
 void node_path::push_small_turn(bool is_right) {
 	(path.back()).turn = small;		//種類は小回り
-	(path.back()).is_right = is_right;	//右向き
+	(path.back()).is_right = is_right;		//右向き
 
 	path_element temp;
 	temp.distance = 0;
 	temp.turn = none;
-	path.emplace_back(temp);	//次の要素を作っておく
+	path.emplace_back(temp);		//次の要素を作っておく
 
 }
 
 bool node_path::create_path(std::pair<uint8_t, uint8_t> init,
 		compas mouse_direction) {
 	node_path::format();				//パスを初期化
-	node_path::push_straight(1);			//区画中心にいる想定なので半区間前進
+	node_path::push_straight(1);				//区画中心にいる想定なので半区間前進
 
-	//向かっている方向の歩数が初期値なら、道が閉じているので終了
+//向かっている方向の歩数が初期値なら、道が閉じているので終了
 	uint16_t now_step = get_step(init.first, init.second, mouse_direction);
 	if (now_step >= init_step)
 		return false;
 
-	//歩数の低い方へ下っていく
+//歩数の低い方へ下っていく
 	compas now_compas = mouse_direction;
 	uint8_t now_x = init.first;
 	uint8_t now_y = init.second;
@@ -2157,25 +2270,24 @@ bool node_path::create_path(std::pair<uint8_t, uint8_t> init,
 		now_x += dx;		//X座標更新
 		now_y += dy;		//Y座標更新
 
-		next_compas = get_min_compas(now_x, now_y);			//次に行く方角を決める
-		next_step = get_step(now_x, now_y, next_compas);	//次に行く場所の歩数も取得
+		next_compas = get_min_compas(now_x, now_y);		//次に行く方角を決める
+		next_step = get_step(now_x, now_y, next_compas);		//次に行く場所の歩数も取得
 
 		if (now_step <= next_step)
 			return false;	//今の歩数が次行くべき歩数と同じかそれ以下ということはあり得ないはずなので、とりあえず失敗しとく
 
 		//パスを追加
 		if (now_compas == next_compas)
-			node_path::push_straight(2);	//今の向きと同じ方向に進むなら直進
+			node_path::push_straight(2);		//今の向きと同じ方向に進むなら直進
 		else
-			//ターン以外の選択肢はないはず
-			node_path::push_small_turn(is_right_turn(now_compas, next_compas));
+			node_path::push_small_turn(is_right_turn(now_compas, next_compas));			//ターン以外の選択肢はないはず
 
-		now_step = next_step;	//歩数を更新
-		now_compas = next_compas;	//方角を更新
+		now_step = next_step;		//歩数を更新
+		now_compas = next_compas;		//方角を更新
 
 	}
 
-	//次の方角の変化方向を取得
+//次の方角の変化方向を取得
 	switch (next_compas) {
 	case north:
 		//now_y += 1;
@@ -2199,7 +2311,7 @@ bool node_path::create_path(std::pair<uint8_t, uint8_t> init,
 		break;
 	}
 
-	//複数マスゴールの場合用に、0の続く限り直進
+//複数マスゴールの場合用に、0の続く限り直進
 	while (1) {
 		now_x += dx;		//X座標更新
 		now_y += dy;		//Y座標更新
@@ -2227,37 +2339,37 @@ void node_path::improve_path() {
 	path.at(size - 1).distance -= 1;//最後の区画の中心まで入り込むための半区間直進を消す。　こうしておかないと最後が大回りに丸め込まれて減速できなくなる可能性があるから
 
 	while (count < path.size()) {		//pathが終われば終了
-		if (naname_flag) {					//斜め走行中なら	確実に直進距離(distance)が0のはず
+		if (naname_flag) {		//斜め走行中なら	確実に直進距離(distance)が0のはず
 
 			if (get_path(count + 1).element.distance >= 1) {//次のターン後90mm以上直進(斜め終わり)
-				path.at(count).turn = end_45;						//45°ターンに変更
-				path.at(count + 1).distance -= 1;				//直線距離を90mm減らす
+				path.at(count).turn = end_45;		//45°ターンに変更
+				path.at(count + 1).distance -= 1;		//直線距離を90mm減らす
 				naname_flag = false;
-				count++;												//配列を次へ
+				count++;		//配列を次へ
 
 			} else if (get_path(count + 2).element.distance >= 1) {	//次の次のターン後90mm以上直進(斜め終わり)
 
 				if (path.at(count).is_right == path.at(count + 1).is_right) {//同じ方向の2回ターン
-					path.at(count).turn = end_135;					//135°ターンに変更
-					path.erase(path.begin() + count + 1);				//一個ずらす
-					path.at(count + 1).distance -= 1;		//ターン後の直線距離を90mm減らす
+					path.at(count).turn = end_135;	//135°ターンに変更
+					path.erase(path.begin() + count + 1);	//一個ずらす
+					path.at(count + 1).distance -= 1;	//ターン後の直線距離を90mm減らす
 					naname_flag = false;
-					count++;										//配列を次へ
+					count++;	//配列を次へ
 
-				} else {										//交互のターン(ギザギザ)
+				} else {								//交互のターン(ギザギザ)
 					path.at(count).distance += 1;				//斜めの直線距離を1増やす
 					temp_distance = path.at(count).distance;	//距離を一時的に持っておく
 					path.erase(path.begin() + count);					//一個ずらす
-					path.at(count).distance = temp_distance;	//距離を入れなおす
+					path.at(count).distance = temp_distance;		//距離を入れなおす
 
 				}
 
-			} else {											//まだまだ斜めは続くなら
+			} else {									//まだまだ斜めは続くなら
 				if (count + 1 < size) {		//次のパスが存在する
 					if (path.at(count + 1).turn == none) {
 						//斜めの大回りで終わるパターン
 						temp_distance = path.at(count).distance;//距離を一時的に持っておく
-						path.erase(path.begin() + count);				//一個ずらす
+						path.erase(path.begin() + count);		//一個ずらす
 						path.at(count).distance = temp_distance;//距離を入れなおす						count++;
 						naname_flag = false;
 					} else {
@@ -2265,8 +2377,8 @@ void node_path::improve_path() {
 								== path.at(count + 1).is_right) {//同じ方向の2回ターン	コの字
 							path.at(count).turn = oblique_90;	//斜め90°ターンに変更
 							path.erase(path.begin() + count + 1);		//一個ずらす
-							count++;									//配列を次へ
-						} else {							//違う方向の2回ターン	ギザギザ
+							count++;		//配列を次へ
+						} else {					//違う方向の2回ターン	ギザギザ
 							path.at(count).distance += 1;		//斜めの直線距離を1増やす
 							temp_distance = path.at(count).distance;//距離を一時的に持っておく
 							path.erase(path.begin() + count);			//一個ずらす
@@ -2274,11 +2386,11 @@ void node_path::improve_path() {
 
 						}
 					}
-				} else {					//TODO 斜めのままパスが終了する　とりあえず入りきらずに終了する
+				} else {			//TODO 斜めのままパスが終了する　とりあえず入りきらずに終了する
 					//FIX_ME 斜めのまま終了するときの処理
 					path.at(count).distance += 1;				//斜めの直線距離を1増やす
 					path.at(count).turn = none;
-					count = size;	//終了
+					count = size;							//終了
 				}
 			}
 
@@ -2289,24 +2401,24 @@ void node_path::improve_path() {
 				if (path.at(count + 1).distance >= 1) {	//ターン後も90mm以上直進するなら	大回りのチェックを行う
 
 					if ((count != 0) || (path.at(0).distance > 1)) {//初っ端のターンじゃなければ
-						path.at(count).turn = big_90;				//大回りターンに変更
-						path.at(count).distance -= 1;			//直線距離を90mm減らす
-						path.at(count + 1).distance -= 1;		//直線距離を90mm減らす
+						path.at(count).turn = big_90;	//大回りターンに変更
+						path.at(count).distance -= 1;	//直線距離を90mm減らす
+						path.at(count + 1).distance -= 1;	//直線距離を90mm減らす
 
 					}
 
-				} else {									//ターン後90mm直進はしないなら
+				} else {							//ターン後90mm直進はしないなら
 
 					if (path.at(count).is_right
 							== path.at(count + 1).is_right) {//同じ方向に曲がるなら(Uターン)
-						if (count + 2 < size) {			//2つ先までパスが存在するなら
+						if (count + 2 < size) {		//2つ先までパスが存在するなら
 							if (path.at(count + 2).distance >= 1) {	//Uターン後90mm直進するなら
-								path.at(count).turn = big_180;		//180°ターンに変更
+								path.at(count).turn = big_180;	//180°ターンに変更
 								path.at(count).distance -= 1;	//直線距離を90mm減らす
 								path.at(count + 2).distance -= 1;//直線距離を90mm減らす
 								path.erase(path.begin() + count + 1);	//一個ずらす
 
-							} else {							//Uターン後すぐ曲がるなら
+							} else {					//Uターン後すぐ曲がるなら
 								path.at(count).turn = begin_135;	//135°ターンに変更
 								path.at(count).distance -= 1;	//直線距離を90mm減らす
 								path.erase(path.begin() + count + 1);	//一個ずらす
@@ -2316,8 +2428,8 @@ void node_path::improve_path() {
 
 						}
 					} else {		//違う方法に曲がるなら
-						path.at(count).turn = begin_45;				//45°ターンに変更
-						path.at(count).distance -= 1;			//直線距離を90mm減らす
+						path.at(count).turn = begin_45;		//45°ターンに変更
+						path.at(count).distance -= 1;		//直線距離を90mm減らす
 						naname_flag = true;
 
 					}
@@ -2331,7 +2443,7 @@ void node_path::improve_path() {
 
 	}
 
-	//最初に1つ削ったから忘れず足しておく
+//最初に1つ削ったから忘れず足しておく
 	if (naname_flag)
 		path.at(size - 1).distance -= 1;
 	else
@@ -2365,42 +2477,10 @@ node_path::~node_path() {
 
 }
 
-uint8_t my_queue::x_queue[QUEUE_SIZE];
-uint8_t my_queue::y_queue[QUEUE_SIZE];
-uint16_t my_queue::head = 0;
-uint16_t my_queue::tail = 0;
-
-void my_queue::reset() {
-	head = 0;
-	tail = 0;
-}
-
-inline uint16_t my_queue::size() {
-	return (head + QUEUE_SIZE - tail) % QUEUE_SIZE;
-}
-
-inline void my_queue::pop() {
-	tail = (tail + 1) % QUEUE_SIZE;		//リング内でtailを1進める
-}
-
-inline void my_queue::push(uint8_t _x, uint8_t _y) {
-	x_queue[head] = _x;		//Queueにぶち込む
-	y_queue[head] = _y;		//Queueにぶち込む
-	head = (head + 1) % QUEUE_SIZE;		//リング内でtailを1進める
-}
-
-inline uint8_t my_queue::x_front() {
-	return x_queue[tail];		//head=tailだと変な値返すかも
-}
-
-inline uint8_t my_queue::y_front() {
-	return y_queue[tail];		//head=tailだと変な値返すかも
-}
-
-my_queue::my_queue() {
-
-}
-
-my_queue::~my_queue() {
+void node_path::convert_path(){
+	path::path_reset();
+	for(int i = 0; i < PATH_MAX; i++){
+		path::set_path(i,get_path(i));
+	}
 
 }

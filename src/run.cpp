@@ -891,6 +891,14 @@ void run::accel_run(const float distance_m, const float end_velocity,
 
 		if (mouse::get_fail_flag())
 			return;
+
+		/*
+		de_accel_value = sign
+				* (max_velocity * max_velocity - end_velocity * end_velocity)
+				/ (2 * (distance_m - mouse::get_distance_m()));
+		mouse::set_ideal_accel(-de_accel_value);
+		*/
+
 	}
 
 	mouse::set_ideal_accel(0);
@@ -1229,7 +1237,7 @@ void run::slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
 
 	//スラロームの目標角は相対的な角度なので、最初の角度を記録しておく
 	float init_angle = mouse::get_angle_degree();
-	control::reset_delta(sen_gyro);
+	//control::reset_delta(sen_gyro);
 
 	float correct = 0;	//補正項
 	if (slalom_type == small) {
@@ -1330,7 +1338,7 @@ void run::slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
 	distance = parameter::get_slalom((slalom_type), after_distance,
 			right_or_left, select_mode);
 	accel_run(distance, slalom_velocity, select_mode);
-	control::reset_delta(sen_gyro);
+	//control::reset_delta(sen_gyro);
 
 }
 
@@ -1601,16 +1609,12 @@ void run::spin_turn(const float target_degree) {
 	mouse::set_spin_flag(false);		//超信地終了
 }
 
-void run::path(const float finish_velocity, const unsigned char run_mode) {
+void run::path(const float finish_velocity, const uint8_t _straight,
+		const uint8_t _curve) {
 	float next_velocity = 0;
 	bool naname_flag = false;
 	SLALOM_TYPE slalom_type;
 	unsigned char slalom_muki;
-
-	//FIX_ME 既知区間加速できるようになってない
-	mouse::run_init(true, true);
-
-	my7seg::count_down(3, 500);
 
 	for (uint16_t path_count = 0; path::get_path_flag(path_count);
 			path_count++) {
@@ -1632,9 +1636,8 @@ void run::path(const float finish_velocity, const unsigned char run_mode) {
 			if ((path::get_path_flag(path_count)) == false) {
 				next_velocity = finish_velocity;
 				//例外処理なので最後の直線を走って終わり
-				run::accel_run(0.045 * MOUSE_MODE, next_velocity, run_mode);
+				run::accel_run(0.045 * MOUSE_MODE, next_velocity, _straight);
 				break;
-
 			}
 		} else {
 			//次のパスで終了する場合
@@ -1643,14 +1646,14 @@ void run::path(const float finish_velocity, const unsigned char run_mode) {
 					next_velocity = finish_velocity;
 					//例外処理なので最後の直線を走って終わり
 					run::accel_run(path::get_path_straight(path_count),
-							next_velocity, run_mode);
+							next_velocity, _straight);
 					break;
 
 				} else {
 					//次のターン速度に合わせる
 					next_velocity = parameter::get_slalom(
 							path::get_path_turn_type(path_count), velocity,
-							path::get_path_turn_muki(path_count), run_mode);
+							path::get_path_turn_muki(path_count), _curve);
 
 				}
 
@@ -1658,22 +1661,23 @@ void run::path(const float finish_velocity, const unsigned char run_mode) {
 				//次のターン速度に合わせる
 				next_velocity = parameter::get_slalom(
 						path::get_path_turn_type(path_count), velocity,
-						path::get_path_turn_muki(path_count), run_mode);
+						path::get_path_turn_muki(path_count), _curve);
 			}
 
 			if (naname_flag) {	//ナナメ走行中
-				run::accel_run(path::get_path_straight(path_count),
-						next_velocity, run_mode);
-
+				control::stop_wall_control();
+				run::accel_run(path::get_path_straight(path_count) * SQRT2,
+						next_velocity, _straight);
+				control::start_wall_control();
 			} else {				//普通の直進
 				control::start_wall_control();
 				if (path_count == 0)	//最初の直進の場合は壁キレ読めない気がするので普通に走る
 					run::accel_run(path::get_path_straight(path_count),
-							next_velocity, run_mode);
+							next_velocity, _curve);
 				else
 					run::accel_run_wall_eage(
 							path::get_path_straight(path_count), next_velocity,
-							run_mode, 0.045 * MOUSE_MODE);
+							_curve, 0.045 * MOUSE_MODE);
 			}
 
 		}
@@ -1686,29 +1690,24 @@ void run::path(const float finish_velocity, const unsigned char run_mode) {
 		slalom_type = path::get_path_turn_type(path_count);
 		slalom_muki = path::get_path_turn_muki(path_count);
 
-		run::slalom(slalom_type, slalom_muki, run_mode);
+		run::slalom(slalom_type, slalom_muki, _curve);
 
-		//FIXME
-		/*
-		 switch (path::get_path_turn_type(path_count)) {
-		 //ナナメに入るなら
-		 case begin_45:
-		 case begin_135:
-		 naname_flag = true;
-		 break;
-		 //ナナメから出るなら
-		 case end_45:
-		 case end_135:
-		 naname_flag = false;
-		 break;
-		 default:
-		 break;
-		 }
-		 */
+		switch (path::get_path_turn_type(path_count)) {
+		//ナナメに入るなら
+		case begin_45:
+		case begin_135:
+			naname_flag = true;
+			break;
+			//ナナメから出るなら
+		case end_45:
+		case end_135:
+			naname_flag = false;
+			break;
+		default:
+			break;
+		}
+
 	}
-
-	wait::ms(100);
-	motor::sleep_motor();
 
 }
 
@@ -1833,24 +1832,24 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 	case go_straight: {
 		my7seg::light(1);
 
-		/*
-		//壁があれば制御がかかるので姿勢が直されるため、スコア加算
-		bool check = photo::check_wall(PHOTO_TYPE::right);//ifの条件にcheck_wall入れると無限ループにとらわれることがあるので経由させる
-		if (check) {
-			str_score++;
-		}
-		check = photo::check_wall(PHOTO_TYPE::left);
-		if (check) {
-			str_score++;
-		}
-		*/
+
+		 //壁があれば制御がかかるので姿勢が直されるため、スコア加算
+		 bool check = photo::check_wall(PHOTO_TYPE::right);//ifの条件にcheck_wall入れると無限ループにとらわれることがあるので経由させる
+		 if (check) {
+		 str_score++;
+		 }
+		 check = photo::check_wall(PHOTO_TYPE::left);
+		 if (check) {
+		 str_score++;
+		 }
+
 
 		//caseに入ってからここにたどり着くまでに止まることがある。
 		my7seg::light(2);
 
 		//1区間直進
 		run::accel_run_wall_eage((0.09 * MOUSE_MODE), SEARCH_VELOCITY, 0,
-				(0.09 * MOUSE_MODE));
+				(0.045 * MOUSE_MODE));
 		//両壁あり直線が連続?回　くらいの補正がかかっていたら姿勢が正されていると判断し角度を修正
 		if (str_score >= 4) {
 			mouse::set_relative_rad(mouse::get_relative_rad() * 0.9, true);

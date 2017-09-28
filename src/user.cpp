@@ -168,8 +168,43 @@ bool mode::search_mode() {
 }
 
 bool mode::shortest_mode() {
+	std::vector<std::pair<uint8_t, uint8_t> > goal;
+	goal.emplace_back(std::make_pair(GOAL_x, GOAL_y));
+	goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y));
+	goal.emplace_back(std::make_pair(GOAL_x, GOAL_y + 1));
+	goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y + 1));
+	std::pair<uint8_t, uint8_t> init = std::make_pair(0, 0);
+	node_search search;
 
-	uint8_t select = select_mode(5, PHOTO_TYPE::right);
+	uint8_t select = select_mode(4+1, PHOTO_TYPE::right);
+
+	switch (select) {
+	case 0:		//0はメニューに戻る
+		return false;
+		break;
+
+	case 1:
+		/*
+		if(search.create_small_path(goal,init,north))
+			break;
+		else
+			return false;
+		*/
+		path::create_path();
+		break;
+
+	default:
+		/*
+		if(search.create_big_path(goal,init,north))
+			break;
+		else
+			return false;
+		*/
+		path::create_path_advance();
+		break;
+	}
+
+	uint8_t curve = select_mode(3, PHOTO_TYPE::right);
 
 	while (select != 0) {
 		my7seg::blink(8, 500, 1);
@@ -177,15 +212,13 @@ bool mode::shortest_mode() {
 			break;
 	}
 
-	switch (select) {
-	case 0:		//0はメニューに戻る
-		break;
+	mouse::run_init(true, true);
+	my7seg::count_down(3, 500);
 
-	default:	//それぞれのモードで走る
-		run::path(0, select-1);
-		break;
+	run::path(0, select-1,curve);
 
-	}
+	wait::ms(500);
+	motor::sleep_motor();
 
 	return false;
 
@@ -198,6 +231,48 @@ mode::mode() {
 mode::~mode() {
 
 }
+
+void my_queue::reset() {
+	head = 0;
+	tail = 0;
+}
+
+uint16_t my_queue::size() {
+	return (head + QUEUE_SIZE - tail) % QUEUE_SIZE;
+}
+
+void my_queue::pop() {
+	//リング内でtailを1進める
+	if(tail + 1 == QUEUE_SIZE)
+		tail = 0;
+	else
+		tail++;
+}
+
+void my_queue::push(int8_t _var) {
+	queue[head] = _var;		//Queueにぶち込む
+	//リング内でheadを1進める
+	if(head + 1 == QUEUE_SIZE)
+		head = 0;
+	else
+		head++;
+}
+
+int8_t my_queue::front() {
+	return queue[tail];		//head=tailだと変な値返すかも
+}
+
+my_queue::my_queue() {
+	reset();
+}
+
+my_queue::~my_queue() {
+
+}
+
+
+
+
 /*
 char log::buf[buf_count] = { 0 };
 uint16_t log::length = 0;

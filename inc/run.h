@@ -169,7 +169,7 @@ public:
 			const signed char right_or_left, const uint8_t select_mode);
 	static void spin_turn(const float target_degree);
 
-	static void path(const float finish_velocity, const uint8_t run_mode);
+	static void path(const float finish_velocity, const uint8_t _straight, const uint8_t _curve);
 
 	~run();
 

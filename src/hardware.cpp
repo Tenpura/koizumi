@@ -1328,7 +1328,7 @@ photo::~photo() {
 //control関連
 const PID gyro_gain = { 15, 750, 0.015 };//{ 15, 600, 0};		//限界感度法、限界感度30、限界周期0.01[s]
 const PID photo_gain = { 300, 0, 0.001 };
-const PID encoder_gain = { 200, 1200, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
+const PID encoder_gain = { 250, 900, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
 const PID accel_gain = { 0, 0, 0 };	//{50, 0, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta,
@@ -1413,8 +1413,8 @@ void control::cal_delta() {
 		}
 		photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
 		photo_delta.D = mouse::get_velocity() * mouse::get_relative_rad();//Vθ オドメトリから求めたD項　Sinθ~θと近似
-		if(photo_delta.P != 0)
-			photo_delta.D = (photo_delta.P - before_p_delta) / CONTROL_PERIOD;
+		//if(photo_delta.P != 0)
+		//	photo_delta.D = (photo_delta.P - before_p_delta) / CONTROL_PERIOD;
 	} else {
 		//壁制御かけないときは初期化し続ける。
 		photo_delta.P = 0;

@@ -12,7 +12,7 @@
 
 //パラメータ
 #define MASS	(20 * 0.001)			//マウスの重さ[kg]
-#define tire_R (7.55 * 0.001)	//タイヤの半径　[m]
+#define tire_R (7.5 * 0.001)	//タイヤの半径　[m]
 #define TREAD_W	(44*0.001)		//トレッド幅[m]
 
 #define LEAST_SQUARE_TIME	2000		//ジャイロの最小二乗法を何ms出かけるか
@@ -31,6 +31,7 @@
 
 #include"user.h"
 #include"serial.h"
+#include<array>
 
 #define RUN_MODE_NUMBER	5	//走行モードを何種類用意するか
 
@@ -39,13 +40,6 @@ private:
 	const static unsigned int ideal_photo[2][5];			//ideal_photo[クラシックorハーフ][光学センサの向き]
 	const static int16_t min_wall_photo[2][5];			//壁がある時の最小値[クラシックorハーフ][光学センサの向き]
 	const static TRAPEZOID straight_run[RUN_MODE_NUMBER];
-
-	//クラシック用パラメータ
-	const static INIT_SLALOM right_slalom[slalom_type_count][RUN_MODE_NUMBER], left_slalom[slalom_type_count][RUN_MODE_NUMBER];
-
-	//ハーフ用パラメータ
-	const static INIT_SLALOM right_slalom_half[slalom_type_count][RUN_MODE_NUMBER], left_slalom_half[slalom_type_count][RUN_MODE_NUMBER];
-
 
 public:
 	static unsigned int get_ideal_photo(const PHOTO_TYPE photo_type);
@@ -57,6 +51,7 @@ public:
 
 	static float get_slalom(const SLALOM_TYPE slalom_type, const SLALOM_ELEMENT slalom_element,
 				const signed char right_or_left, const unsigned char select_mode);
+	static const INIT_SLALOM* const get_slalom(const SLALOM_TYPE type, bool is_right, uint8_t select_mode);
 
 };
 

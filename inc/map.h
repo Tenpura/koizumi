@@ -26,8 +26,9 @@ private:
 	static MAZE_WALL x_maze_wall[MAZE_SIZE],y_maze_wall[MAZE_SIZE];//壁情報保存用
 	static MAZE_WALL x_wall_exist[MAZE_SIZE],y_wall_exist[MAZE_SIZE];//壁情報を見たかどうか判別用
 
+protected:
 	static void set_maze_wall( MAZE_WALL* const maze_wall,unsigned char edit_number,bool is_wall);//maze_wallに値を代入する用
-	static unsigned char get_maze_wall( MAZE_WALL maze_wall,unsigned char edit_number);//maze_wallの値を読む用
+	static bool get_maze_wall( MAZE_WALL maze_wall,unsigned char edit_number);//maze_wallの値を読む用
 
 
 
@@ -114,6 +115,7 @@ public:
 	static float get_path_straight(unsigned int index_number);			//返り値は距離[m]
 	static SLALOM_TYPE get_path_turn_type(unsigned int index_number);
 	static unsigned char get_path_turn_muki(unsigned int index_number);		//返り値はMUKI_RIGHT　or　MUKI_LEFT
+	static bool set_path(uint16_t _index, PATH _path);
 
 };
 
@@ -128,18 +130,22 @@ std::pair<int8_t, int8_t> compas_to_direction(compas tar);
 compas muki_to_compas(uint8_t muki);
 
 class node_step :public map{
-private:
-	std::vector<PATH> path;
+protected:
 	static const uint16_t x_size=64;
 	static const uint16_t y_size=32;
+
+private:
+	std::vector<PATH> path;
 	static uint16_t step[x_size][y_size];			//ノードに配置する歩数	x,y xは横壁と縦壁の両方を表現するために2倍	[0][0]は(0,0)の西壁
 	virtual bool able_set_step(uint8_t x, uint8_t y, compas muki, uint16_t step_val, bool by_known);	//歩を伸ばせるならTrue　壁がないか、その壁を見ているのか、step_valより歩数が大きいかチェック
 	bool is_outside_array(uint8_t x_index, uint8_t y_index);		//配列の添え字でみた座標系（X方向だけ倍）で迷路外（配列外）に出ているか
 
 public:
 	static const uint16_t init_step = 999;
-	virtual bool set_step(uint8_t x, uint8_t y, compas muki, uint16_t step_val, bool by_known);
+	bool set_step(uint8_t x, uint8_t y, compas muki, uint16_t step_val, bool by_known);
+	bool set_step_double(uint8_t _double_x, uint8_t _double_y, uint16_t step_val, bool by_known);
 	uint16_t get_step(uint8_t x, uint8_t y, compas muki);
+	uint16_t get_step_double(uint8_t double_x, uint8_t double_y);
 	compas get_min_compas(uint8_t x, uint8_t y);			//（x,y）の4つの歩数の内、最小の歩数がどの方角か
 
 	void reset_step(uint16_t reset_val);		//全ての歩数をreset_valでリセット
@@ -184,20 +190,19 @@ public:
 	node_path();
 	~node_path();
 
+	void convert_path();		//node_pathをこれまでのPath形式に直す
+
 };
 
 class node_search :virtual public node_step, virtual public  node_path {
 private:
 	MAZE_WALL x_finish[MAZE_SIZE],y_finish[MAZE_SIZE];//目的地の座標管理用
+
 public:
 	//直進、斜め、ターンの重みを管理　set_weight_algo で変更される
 	std::vector<uint8_t> straight_w;
 	std::vector<uint8_t> oblique_w;
 	std::vector<uint8_t> curve_w;
-
-	bool set_step_double(uint8_t double_x, uint8_t double_y, uint16_t step_val, bool by_known);	//XY方向両方に倍取った座標軸での歩数代入関数
-	bool set_step_double(std::pair<uint8_t, uint8_t> xy, uint16_t step_val, bool by_known);		//XY方向両方に倍取った座標軸での歩数代入関数
-	uint16_t get_step_double(uint8_t double_x, uint8_t double_y);		//2倍座標系から歩数を取り出す
 	weight_algo algo;		//重みづけの方法を管理する
 
 public:
@@ -208,15 +213,17 @@ public:
 	void spread_step(std::vector< std::pair<uint8_t, uint8_t> > finish, bool by_known);		//複数マスゴール対応　もちろん1マスでもおｋ
 
 	bool create_small_path(std::vector< std::pair<uint8_t, uint8_t> > finish, std::pair<uint8_t, uint8_t> init, compas mouse_direction);
-	//initマスの中心からfinishマスの中心までのPath　道がふさがってたらFasle
-	//mouse_direction が引数になっている理由
+	//initマスの中心からfinishマスの中心までのPath　道がふさがってたらfalse
+	//↓mouse_direction が引数になっている理由
 	//基本的には最短走行か既知区間加速で使うので歩数の小さい方が今行くべき方向と一致しているが、最小歩数が複数あるとヤバいので最初の向きを要求している
 	bool create_big_path(std::vector< std::pair<uint8_t, uint8_t> > finish, std::pair<uint8_t, uint8_t> init, compas mouse_direction);
 	//大回りパス作製
 
+
 	void reset_finish();		//目的地情報をすべてリセットする
-	void set_finish(std::pair<uint8_t, uint8_t> finish);		//目標座標を設定する  そのマスの東西南北全て目標となる
-	void set_finish(std::pair<uint8_t, uint8_t> finish, compas dir);	//目標座標の特定の方角を指定する
+	void set_finish(uint8_t _x, uint8_t _y);		//目標座標を設定する  そのマスの東西南北全て目標となる
+	void set_finish(uint8_t _x, uint8_t _y, compas dir);	//目標座標の特定の方角を指定する
+	bool get_finish(uint8_t _x, uint8_t _y, compas dir);
 
 
 	node_search();
@@ -225,27 +232,6 @@ public:
 
 };
 
-//歩数マップ展開用のリングバッファQueue
-#define QUEUE_SIZE 200
-class my_queue{
-private:
-	static uint8_t x_queue[QUEUE_SIZE];
-	static uint8_t y_queue[QUEUE_SIZE];
-	static uint16_t head;
-	static uint16_t tail;
-	~my_queue();
-
-public:
-	static void reset();
-	static inline uint16_t size();
-	static inline void pop();
-	static inline void push(uint8_t _x, uint8_t _y);
-	static inline uint8_t x_front();
-	static inline uint8_t y_front();
-
-	my_queue();
-
-};
 
 
 #endif /* MAP_H_ */

@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <array>
 
 //TODO テンプレートできゅーを実装する
 /*
@@ -70,6 +71,26 @@ public:
 
 	~mode();
 };
+
+//歩数マップ展開用のリングバッファQueue
+#define QUEUE_SIZE 2560
+class my_queue{
+private:
+	int8_t queue[QUEUE_SIZE];
+	uint16_t head;
+	uint16_t tail;
+public:
+	void reset();
+	uint16_t size();
+	void pop();
+	void push(int8_t _var);
+	int8_t front();
+
+	my_queue();
+	~my_queue();
+
+};
+
 
 //logクラス	いつかはtemplateで任意の型に対応させたい…!
 
@@ -155,4 +176,7 @@ public:
 	static float sqrt(float x);			//平方根を返す関数　ニュートン法
 
 };
+
+
+
 #endif /* USER_H_ */

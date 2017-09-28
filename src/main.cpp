@@ -91,7 +91,7 @@ int main(void) {
 			;
 		wait::ms(100);
 
-		select = mode::select_mode(7, PHOTO_TYPE::right);
+		select = mode::select_mode(8 + 1, PHOTO_TYPE::right);
 
 		GPIO_SetBits(GPIOC, GPIO_Pin_3);	//LED2
 		mouse::set_direction(0, 1);	//スラロームで方向が変化するので初期化を忘れずに
@@ -121,8 +121,7 @@ int main(void) {
 			break;
 
 		case 2:		//最短
-			path::create_path();
-			//map::draw_map(false);
+			//TODO パス作れなかったら抜けるように
 			mode::shortest_mode();
 			//path::draw_path();
 			motor::sleep_motor();
@@ -143,35 +142,25 @@ int main(void) {
 					break;
 			}
 			my7seg::count_down(3, 500);
-			mouse::run_init(true, false);
+			mouse::run_init(true, true);
 
 			flog[0][0] = -1;
-			//run::accel_run(0.09 * 4, 0, 0);
+			run::accel_run(0.09 * 6, 0, 0);
 			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
-			run::accel_run(0.045 + 0.09, SEARCH_VELOCITY, 0);
+			//run::accel_run(0.045 + 0.09, SEARCH_VELOCITY, 0);
 			//run::slalom_for_search(small, MUKI_LEFT, 0);
 			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
 			//run::accel_run(0.045, 0, 0);
-			run::slalom_for_search(small, MUKI_RIGHT, 0);
+			//run::slalom_for_search(small, MUKI_RIGHT, 0);
 			//control::stop_wall_control();
-			run::accel_run(0.045*3, 0, 0);
+			//run::accel_run(0.045*3, 0, 0);
 			//run::spin_turn(-360);
 			//run::spin_turn(360);
 			//flog[0][0] = -1;
-			run::accel_run(0.09*1, 0, 0);
-
+			//run::accel_run(0.09 * 5, 0, 0);
 			wait::ms(2000);
-
 			motor::sleep_motor();
 			my7seg::turn_off();
-
-			GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
-			while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
-			}
-
-			for (int i = 0; i < flog_number; i++) {
-				myprintf("%f,%f,%f\n\r", flog[0][i], flog[1][i], flog[2][i]);
-			}
 			break;
 
 		case 5:		//調整用
@@ -190,6 +179,81 @@ int main(void) {
 			motor::sleep_motor();
 			my7seg::turn_off();
 
+			break;
+
+		case 6: {		//スラローム調整
+			select = mode::select_mode(slalom_type_count, right);
+			float b_dis = 0.09 * 2 * MOUSE_MODE;		//スラロームの前にどれだけ進むか
+			float a_dis = 0.09 * 2 * MOUSE_MODE;		//スラロームの後にどれだけ進むか
+			SLALOM_TYPE sla_type = none;
+			int8_t right_or_left = MUKI_LEFT;
+
+			switch (select) {
+			case none:
+			case spin_turn:
+				b_dis = 0;
+				a_dis = 0;
+				break;
+			case small:
+				sla_type = small;
+				b_dis -= 0.045 * MOUSE_MODE;
+				a_dis -= 0.045 * MOUSE_MODE;
+				break;
+			case big_90:
+				sla_type = big_90;
+				break;
+			case big_180:
+				sla_type = big_180;
+				break;
+			case begin_45:
+				sla_type = begin_45;
+				a_dis *= SQRT2;		//斜めなので√2倍
+				break;
+			case end_45:
+				sla_type = end_45;
+				b_dis *= SQRT2;		//斜めなので√2倍
+				break;
+			case begin_135:
+				sla_type = begin_135;
+				a_dis *= SQRT2;		//斜めなので√2倍
+				break;
+			case end_135:
+				sla_type = end_135;
+				b_dis *= SQRT2;		//斜めなので√2倍
+				break;
+			case oblique_90:
+				sla_type = oblique_90;
+				b_dis *= SQRT2;		//斜めなので√2倍
+				a_dis *= SQRT2;		//斜めなので√2倍
+				break;
+			}
+			if (b_dis != 0) {		//前距離0のパターン(none,spin_turn)は調整しない
+
+				select = mode::select_mode(3, right);
+
+				while (1) {
+					my7seg::blink(8, 500, 1);
+					if (photo::check_wall(PHOTO_TYPE::front))
+						break;
+				}
+				my7seg::count_down(3, 500);
+				mouse::run_init(true, true);
+
+				flog[0][0] = -1;
+				run::accel_run(b_dis,
+						parameter::get_slalom(sla_type, true, select)->velocity,
+						2);
+				run::slalom(sla_type, right_or_left, select);
+				run::accel_run(a_dis, 0, 2);
+			}
+
+			wait::ms(1000);
+			motor::sleep_motor();
+			my7seg::turn_off();
+
+			break;
+		}
+		case 7:
 			GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 			while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
 			}
@@ -198,24 +262,27 @@ int main(void) {
 				myprintf("%f,%f,%f\n\r", flog[0][i], flog[1][i], flog[2][i]);
 			}
 			break;
-
-		case 6: {
+		case 8: {
 			map::draw_map(false);
 
-			/*
-			 std::vector<std::pair<uint8_t, uint8_t> > goal_vect;
-			 goal_vect.emplace_back(std::make_pair(GOAL_x, GOAL_y));
-			 goal_vect.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y));
-			 goal_vect.emplace_back(std::make_pair(GOAL_x, GOAL_y + 1));
-			 goal_vect.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y + 1));
-			 node_search search;
-			 //search.input_map_data(&mouse::now_map);		//保存していたマップを読みだす
-			 search.set_weight_algo(based_distance);		//重みづけの方法を設定
-			 uint32_t temp_cnt = wait::get_count();
-			 search.spread_step(goal_vect, false);		//歩数マップを作製
-			 myprintf("cal. count->%d\n\r", wait::get_count()-temp_cnt);
-			 search.draw_step();
-			 */
+			std::vector<std::pair<uint8_t, uint8_t> > goal;
+			goal.emplace_back(std::make_pair(GOAL_x, GOAL_y));
+			goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y));
+			goal.emplace_back(std::make_pair(GOAL_x, GOAL_y + 1));
+			goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y + 1));
+			node_search search;
+			search.input_map_data(&mouse::now_map);		//保存していたマップを読みだす
+			search.set_weight_algo(based_distance);		//重みづけの方法を設定
+			uint32_t temp_cnt = wait::get_count();
+			step::spread_step(GOAL_x, GOAL_y, false);		//歩数マップを作製
+			myprintf("square cal. count->%d\n\r", wait::get_count() - temp_cnt);
+			temp_cnt = wait::get_count();
+			search.spread_step(goal, true);		//歩数マップを作製
+			myprintf("node cal. count->%d\n\r", wait::get_count() - temp_cnt);
+			search.draw_step();
+
+			search.create_small_path(goal,std::make_pair<uint8_t, uint8_t>(0,0),north);
+			search.convert_path();
 
 			path::draw_path();
 			break;
@@ -255,10 +322,13 @@ void interrupt_timer() {
 			i++;
 		}
 	} else if (i < flog_number) {
-		flog[0][i] = mouse::get_place().y;
-		flog[1][i] = photo::get_value(front);//
-		flog[2][i] = photo::get_value(left);
+		flog[0][i] = mouse::get_angle_degree();
+		flog[1][i] = mouse::get_ideal_velocity();//photo::get_value(right);
+		flog[2][i] = mouse::get_velocity();//photo::get_value(left);
 		i++;
+	}else if ( i == flog_number){
+		flog[0][0]=0;
+		i=0;
 	}
 
 	GPIO_ResetBits(GPIOA, GPIO_Pin_14);

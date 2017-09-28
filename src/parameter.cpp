@@ -8,51 +8,84 @@
 #include"parameter.h"
 //ideal_photo[x][y]	xは0がハーフ,1がクラシック	yが光学センサの向きに対応。
 //right left front_right front_left,front
-const unsigned int parameter::ideal_photo[2][5] = { { 140, 280, 0, 1900, 380 },
+const unsigned int parameter::ideal_photo[2][5] = { { 140, 280, 0, 1900, 450 },
 		{ 3250, 3200, 10815, 10100, 0 } };
 const int16_t parameter::min_wall_photo[2][5] = { { 40, 100, 1400, 130, 200 }, {
 		20000, 20000, 0, 0, 0 } };
 
 //0番目は探索用
 const TRAPEZOID parameter::straight_run[RUN_MODE_NUMBER] = { { 3.0,
-SEARCH_VELOCITY, 3.0 }, { 3.0, SEARCH_VELOCITY * 2.5, 3.0 }, { 5.0,
-SEARCH_VELOCITY * 2.5, 5.0 }, { 7.0,
-SEARCH_VELOCITY * 3, 5.0 }, { 8.0,
-		SEARCH_VELOCITY * 3.5, 5.0 } };
+SEARCH_VELOCITY, 3.0 }, { 5.0, 0.75, 5.0 }, { 10.0, 1, 10.0 }, { 8.0,
+1.5, 8.0 }, { 8.0,
+SEARCH_VELOCITY * 3.5, 5.0 } };
 
-const INIT_SLALOM parameter::right_slalom[slalom_type_count][RUN_MODE_NUMBER] =
-		{ 0 };
 
-const INIT_SLALOM parameter::left_slalom[slalom_type_count][RUN_MODE_NUMBER] = {
-		0 };
-
-//スラローム要素
+//XXX スラロームパラメータ
 //速度、角度、加速角度、前距離、後ろ距離、角加速度、最高角速度
-const INIT_SLALOM parameter::right_slalom_half[slalom_type_count][RUN_MODE_NUMBER] =
-		{ { { 0 } },	//none
-				{
-						{ SEARCH_VELOCITY, 90, 30, 0.01, 0.018, 119.1789,
-								11.17156, 0 }, { SEARCH_VELOCITY, 90, 30, 0.008,
-								0.012, 119.1789, 11.17156, 0 }, {
-								SEARCH_VELOCITY, 90, 30, 0.008, 0.012, 119.1789,
-								11.17156, 0 }, { SEARCH_VELOCITY, 90, 30, 0.008,
-								0.012, 119.1789, 11.17156, 0 }, {
-								SEARCH_VELOCITY, 90, 30, 0.008, 0.012, 119.1789,
-								11.17156, 0 }, }	//small
-		};
+const std::array<INIT_SLALOM, 1> right_small_half = { { SEARCH_VELOCITY, 90, 30,
+		0.01, 0.018, 119.1789, 11.17156, 0 } };
+const std::array<INIT_SLALOM, 1> left_small_half = { { SEARCH_VELOCITY, 90, 30,
+		0.012, 0.008, 119.1789, 11.17156, 0 } };
 
-const INIT_SLALOM parameter::left_slalom_half[slalom_type_count][RUN_MODE_NUMBER] =
-		{ { { 0 } },	//none
-				{
-						{ SEARCH_VELOCITY, 90, 30, 0.012, 0.008, 119.1789,
-								11.17156, 0 }, { SEARCH_VELOCITY, 90, 30, 0.015,
-								0.01, 119.1789, 11.17156, 0 }, {
-								SEARCH_VELOCITY, 90, 30, 0.015, 0.01, 119.1789,
-								11.17156, 0 }, { SEARCH_VELOCITY, 90, 30, 0.015,
-								0.01, 119.1789, 11.17156, 0 }, {
-								SEARCH_VELOCITY, 90, 30, 0.015, 0.01, 119.1789,
-								11.17156, 0 } }	//small
-		};
+//大まわり90°ターン
+const std::array<INIT_SLALOM, 3> right_big90_half = { {
+		{ 0.5, 91, 30, 0.020, 0.025, 119.1789, 11.17156, 0 },
+		{ 0.6, 90, 30, 0.015, 0.015, 149.4980,12.51215, 0 },
+		{ 0.7, 90, 40, 0.015, 0.015, 194.7204,16.48881, 0 },
+} };
+const std::array<INIT_SLALOM, 3> left_big90_half = { {
+		{ 0.5, 89, 30, 0.030, 0.03, 112.6498, 10.86124, 0 },
+		{ 0.6, 89, 30, 0.015, 0.015, 149.4980, 12.51215, 0 },
+		{ 0.7, 90, 40, 0.015, 0.015, 194.7204, 16.48881, 0 },
+} };
+
+//大まわり180°ターン
+const std::array<INIT_SLALOM, 3> right_big180_half = { {
+		{ 0.5, 182, 40, 0.020, 0.030, 83.56877, 10.80203, 0 },
+		{ 0.6, 180, 40, 0.020, 0.020, 148.5666, 14.40271, 0 },
+		{ 0.7, 180, 40, 0.015, 0.015, 202.2157, 16.80316, 0 },
+} };
+const std::array<INIT_SLALOM, 3> left_big180_half = { {
+		{ 0.5, 180, 40, 0.020, 0.020, 98.73437, 11.74134, 0 },
+		{ 0.6, 180, 40, 0.020, 0.020, 148.5666, 14.40271, 0 },
+		{ 0.7, 180, 40, 0.015, 0.015, 202.2157, 16.80316, 0 },
+} };
+
+//入り45°ターン
+const std::array<INIT_SLALOM, 1> right_begin45_half ={ {
+		{ 0.5, 45, 20, 0.012, 0.03064, 195.0775, 11.67003, 0 },
+} };
+const std::array<INIT_SLALOM, 1> left_begin45_half = { {
+		{ 0.5, 45, 20, 0.012, 0.03064, 195.0775, 11.67003, 0 },
+} };
+
+//出の45°ターン
+const std::array<INIT_SLALOM, 1> right_end45_half = { {
+		{ 0.5, 45, 20, 0.03064, 0.012, 195.0775, 11.67003, 0 },
+} };
+const std::array<INIT_SLALOM, 1> left_end45_half = { {
+		{ 0.5, 45, 20, 0.03064, 0.012, 195.0775, 11.67003, 0 },
+} };
+
+//入り135°ターン
+const std::array<INIT_SLALOM, 1> right_begin135_half = { {
+		{ 0.5, 135, 45, 0.02, 0.01228, 141.1387, 14.89, 0 },
+} };
+const std::array<INIT_SLALOM, 1> left_begin135_half = { {
+		{ 0.5, 135, 45, 0.02, 0.01228, 141.1387, 14.89, 0 },
+} };
+
+//出の135°ターン
+const std::array<INIT_SLALOM, 1> right_end135_half = { {
+		{ 0.5, 135, 45, 0.0123, 0.02, 141.1387, 14.89, 0 },
+} };
+const std::array<INIT_SLALOM, 1> left_end135_half = { {
+		{ 0.5, 90, 40, 0.01, 0.01, 194.223, 16.46773, 0 },
+} };
+
+//ななめ90°ターン
+const std::array<INIT_SLALOM, 1> right_obli90_half = { 0 };
+const std::array<INIT_SLALOM, 1> left_obli90_half = { 0 };
 
 float parameter::get_run_acceleration(const unsigned char select_mode) {
 	if (select_mode >= RUN_MODE_NUMBER) {			//存在しないモードを選択したらエラー
@@ -142,150 +175,324 @@ float parameter::get_run_de_acceleration(const unsigned char select_mode) {
 float parameter::get_slalom(const SLALOM_TYPE slalom_type,
 		const SLALOM_ELEMENT slalom_element, const signed char right_or_left,
 		const unsigned char select_mode) {
+	const INIT_SLALOM* tar;
 
-	if (select_mode >= RUN_MODE_NUMBER) {			//存在しないモードを選択したらエラー
-		mouse::error();
-		myprintf("存在しない走行モード[%d]のスラローム要素を参照しています!!", select_mode);
-		return 0;
+	if (right_or_left == MUKI_RIGHT)
+		tar = get_slalom(slalom_type, true, select_mode);
+	else
+		tar = get_slalom(slalom_type, false, select_mode);
+
+	switch (slalom_element) {
+	case velocity:
+		return tar->velocity;
+	case target_angle:
+		return tar->target_angle;
+	case clothoid_angle:
+		return tar->clothoid_angle;
+	case before_distance:
+		return tar->before_distance;
+	case after_distance:
+		return tar->after_distance;
+	case angular_accel:
+		return tar->angular_accel;
+	case max_angular_velocity:
+		return tar->max_angular_velocity;
+	case time:
+		return tar->time;
 	}
 
-//クラシックなら
-	if (MOUSE_MODE == 2) {
-		switch (slalom_element) {
-		case velocity:
-			if (right_or_left == MUKI_RIGHT) {
-				return right_slalom[slalom_type][select_mode].velocity;
-			} else {
-				return left_slalom[slalom_type][select_mode].velocity;
-			}
-			break;
+	/*
+	 if (select_mode >= RUN_MODE_NUMBER) {			//存在しないモードを選択したらエラー
+	 mouse::error();
+	 myprintf("存在しない走行モード[%d]のスラローム要素を参照しています!!", select_mode);
+	 return 0;
+	 }
 
-		case target_angle:
-			if (right_or_left == MUKI_RIGHT) {
-				return right_slalom[slalom_type][select_mode].target_angle;
-			} else {
-				return left_slalom[slalom_type][select_mode].target_angle;
-			}
-			break;
+	 //クラシックなら
+	 if (MOUSE_MODE == 2) {
+	 switch (slalom_element) {
+	 case velocity:
+	 if (right_or_left == MUKI_RIGHT) {
+	 return right_slalom[slalom_type][select_mode].velocity;
+	 } else {
+	 return left_slalom[slalom_type][select_mode].velocity;
+	 }
+	 break;
 
-		case clothoid_angle:
-			if (right_or_left == MUKI_RIGHT) {
-				return right_slalom[slalom_type][select_mode].clothoid_angle;
-			} else {
-				return left_slalom[slalom_type][select_mode].clothoid_angle;
-			}
-			break;
+	 case target_angle:
+	 if (right_or_left == MUKI_RIGHT) {
+	 return right_slalom[slalom_type][select_mode].target_angle;
+	 } else {
+	 return left_slalom[slalom_type][select_mode].target_angle;
+	 }
+	 break;
 
-		case before_distance:
-			if (right_or_left == MUKI_RIGHT) {
-				return right_slalom[slalom_type][select_mode].before_distance;
-			} else {
-				return left_slalom[slalom_type][select_mode].before_distance;
-			}
-			break;
+	 case clothoid_angle:
+	 if (right_or_left == MUKI_RIGHT) {
+	 return right_slalom[slalom_type][select_mode].clothoid_angle;
+	 } else {
+	 return left_slalom[slalom_type][select_mode].clothoid_angle;
+	 }
+	 break;
 
-		case after_distance:
-			if (right_or_left == MUKI_RIGHT) {
-				return right_slalom[slalom_type][select_mode].after_distance;
-			} else {
-				return left_slalom[slalom_type][select_mode].after_distance;
-			}
-			break;
+	 case before_distance:
+	 if (right_or_left == MUKI_RIGHT) {
+	 return right_slalom[slalom_type][select_mode].before_distance;
+	 } else {
+	 return left_slalom[slalom_type][select_mode].before_distance;
+	 }
+	 break;
 
-		case angular_accel:
-			if (right_or_left == MUKI_RIGHT) {
-				return right_slalom[slalom_type][select_mode].angular_accel;
-			} else {
-				return left_slalom[slalom_type][select_mode].angular_accel;
-			}
-			break;
+	 case after_distance:
+	 if (right_or_left == MUKI_RIGHT) {
+	 return right_slalom[slalom_type][select_mode].after_distance;
+	 } else {
+	 return left_slalom[slalom_type][select_mode].after_distance;
+	 }
+	 break;
 
-		case max_angular_velocity:
-			if (right_or_left == MUKI_RIGHT) {
-				return right_slalom[slalom_type][select_mode].max_angular_velocity;
-			} else {
-				return left_slalom[slalom_type][select_mode].max_angular_velocity;
-			}
-			break;
+	 case angular_accel:
+	 if (right_or_left == MUKI_RIGHT) {
+	 return right_slalom[slalom_type][select_mode].angular_accel;
+	 } else {
+	 return left_slalom[slalom_type][select_mode].angular_accel;
+	 }
+	 break;
 
-		case time:
-			if (right_or_left == MUKI_RIGHT) {
-				return right_slalom[slalom_type][select_mode].time;
-			} else {
-				return left_slalom[slalom_type][select_mode].time;
-			}
-			break;
-		}
+	 case max_angular_velocity:
+	 if (right_or_left == MUKI_RIGHT) {
+	 return right_slalom[slalom_type][select_mode].max_angular_velocity;
+	 } else {
+	 return left_slalom[slalom_type][select_mode].max_angular_velocity;
+	 }
+	 break;
 
-		//ハーフなら
-	} else {
-		switch (slalom_element) {
-		case velocity:
-			if (right_or_left == MUKI_RIGHT) {
-				return right_slalom_half[slalom_type][select_mode].velocity;
-			} else {
-				return left_slalom_half[slalom_type][select_mode].velocity;
-			}
-			break;
+	 case time:
+	 if (right_or_left == MUKI_RIGHT) {
+	 return right_slalom[slalom_type][select_mode].time;
+	 } else {
+	 return left_slalom[slalom_type][select_mode].time;
+	 }
+	 break;
+	 }
 
-		case target_angle:
-			if (right_or_left == MUKI_RIGHT) {
-				return right_slalom_half[slalom_type][select_mode].target_angle;
-			} else {
-				return left_slalom_half[slalom_type][select_mode].target_angle;
-			}
-			break;
+	 //ハーフなら
+	 } else {
+	 switch (slalom_element) {
+	 case velocity:
+	 if (right_or_left == MUKI_RIGHT) {
+	 return right_slalom_half[slalom_type][select_mode].velocity;
+	 } else {
+	 return left_slalom_half[slalom_type][select_mode].velocity;
+	 }
+	 break;
 
-		case clothoid_angle:
-			if (right_or_left == MUKI_RIGHT) {
-				return right_slalom_half[slalom_type][select_mode].clothoid_angle;
-			} else {
-				return left_slalom_half[slalom_type][select_mode].clothoid_angle;
-			}
-			break;
+	 case target_angle:
+	 if (right_or_left == MUKI_RIGHT) {
+	 return right_slalom_half[slalom_type][select_mode].target_angle;
+	 } else {
+	 return left_slalom_half[slalom_type][select_mode].target_angle;
+	 }
+	 break;
 
-		case before_distance:
-			if (right_or_left == MUKI_RIGHT) {
-				return right_slalom_half[slalom_type][select_mode].before_distance;
-			} else {
-				return left_slalom_half[slalom_type][select_mode].before_distance;
-			}
-			break;
+	 case clothoid_angle:
+	 if (right_or_left == MUKI_RIGHT) {
+	 return right_slalom_half[slalom_type][select_mode].clothoid_angle;
+	 } else {
+	 return left_slalom_half[slalom_type][select_mode].clothoid_angle;
+	 }
+	 break;
 
-		case after_distance:
-			if (right_or_left == MUKI_RIGHT) {
-				return right_slalom_half[slalom_type][select_mode].after_distance;
-			} else {
-				return left_slalom_half[slalom_type][select_mode].after_distance;
-			}
-			break;
+	 case before_distance:
+	 if (right_or_left == MUKI_RIGHT) {
+	 return right_slalom_half[slalom_type][select_mode].before_distance;
+	 } else {
+	 return left_slalom_half[slalom_type][select_mode].before_distance;
+	 }
+	 break;
 
-		case angular_accel:
-			if (right_or_left == MUKI_RIGHT) {
-				return right_slalom_half[slalom_type][select_mode].angular_accel;
-			} else {
-				return left_slalom_half[slalom_type][select_mode].angular_accel;
-			}
-			break;
+	 case after_distance:
+	 if (right_or_left == MUKI_RIGHT) {
+	 return right_slalom_half[slalom_type][select_mode].after_distance;
+	 } else {
+	 return left_slalom_half[slalom_type][select_mode].after_distance;
+	 }
+	 break;
 
-		case max_angular_velocity:
-			if (right_or_left == MUKI_RIGHT) {
-				return right_slalom_half[slalom_type][select_mode].max_angular_velocity;
-			} else {
-				return left_slalom_half[slalom_type][select_mode].max_angular_velocity;
-			}
-			break;
+	 case angular_accel:
+	 if (right_or_left == MUKI_RIGHT) {
+	 return right_slalom_half[slalom_type][select_mode].angular_accel;
+	 } else {
+	 return left_slalom_half[slalom_type][select_mode].angular_accel;
+	 }
+	 break;
 
-		case time:
-			if (right_or_left == MUKI_RIGHT) {
-				return right_slalom_half[slalom_type][select_mode].time;
-			} else {
-				return left_slalom_half[slalom_type][select_mode].time;
-			}
-			break;
-		}
+	 case max_angular_velocity:
+	 if (right_or_left == MUKI_RIGHT) {
+	 return right_slalom_half[slalom_type][select_mode].max_angular_velocity;
+	 } else {
+	 return left_slalom_half[slalom_type][select_mode].max_angular_velocity;
+	 }
+	 break;
 
-	}
+	 case time:
+	 if (right_or_left == MUKI_RIGHT) {
+	 return right_slalom_half[slalom_type][select_mode].time;
+	 } else {
+	 return left_slalom_half[slalom_type][select_mode].time;
+	 }
+	 break;
+	 }
 
+	 }
+	 */
 	return 0;
 }
+
+const INIT_SLALOM* const parameter::get_slalom(const SLALOM_TYPE _type, bool _is_right,
+		uint8_t _mode) {
+	switch (_type) {
+	case none:
+		break;
+	case small:
+		if (_is_right) {
+			if (MOUSE_MODE == 1) {
+				if (_mode >= right_small_half.size())		//配列外アクセス時は最大のを返す
+					return &right_small_half.back();
+				else
+					return &right_small_half.at(_mode);
+			}
+		} else {
+			if (MOUSE_MODE == 1) {
+				if (_mode >= left_small_half.size())		//配列外アクセス時は最大のを返す
+					return &left_small_half.back();
+				else
+					return &left_small_half.at(_mode);
+			}
+		}
+		break;
+	case big_90:
+		if (_is_right) {
+			if (MOUSE_MODE == 1) {
+				if (_mode >= right_big90_half.size())		//配列外アクセス時は最大のを返す
+					return &right_big90_half.back();
+				else
+					return &right_big90_half.at(_mode);
+			}
+		} else {
+			if (MOUSE_MODE == 1) {
+				if (_mode >= left_big90_half.size())		//配列外アクセス時は最大のを返す
+					return &left_big90_half.back();
+				else
+					return &left_big90_half.at(_mode);
+			}
+		}
+		break;
+	case big_180:
+		if (_is_right) {
+			if (MOUSE_MODE == 1) {
+				if (_mode >= right_big180_half.size())		//配列外アクセス時は最大のを返す
+					return &right_big180_half.back();
+				else
+					return &right_big180_half.at(_mode);
+			}
+		} else {
+			if (MOUSE_MODE == 1) {
+				if (_mode >= left_big180_half.size())		//配列外アクセス時は最大のを返す
+					return &left_big180_half.back();
+				else
+					return &left_big180_half.at(_mode);
+			}
+		}
+		break;
+	case begin_45:
+		if (_is_right) {
+			if (MOUSE_MODE == 1) {
+				if (_mode >= right_begin45_half.size())		//配列外アクセス時は最大のを返す
+					return &right_begin45_half.back();
+				else
+					return &right_begin45_half.at(_mode);
+			}
+		} else {
+			if (MOUSE_MODE == 1) {
+				if (_mode >= left_begin45_half.size())		//配列外アクセス時は最大のを返す
+					return &left_begin45_half.back();
+				else
+					return &left_begin45_half.at(_mode);
+			}
+		}
+		break;
+	case end_45:
+		if (_is_right) {
+			if (MOUSE_MODE == 1) {
+				if (_mode >= right_end45_half.size())		//配列外アクセス時は最大のを返す
+					return &right_end45_half.back();
+				else
+					return &right_end45_half.at(_mode);
+			}
+		} else {
+			if (MOUSE_MODE == 1) {
+				if (_mode >= left_end45_half.size())		//配列外アクセス時は最大のを返す
+					return &left_end45_half.back();
+				else
+					return &left_end45_half.at(_mode);
+			}
+		}
+		break;
+	case begin_135:
+		if (_is_right) {
+			if (MOUSE_MODE == 1) {
+				if (_mode >= right_big90_half.size())		//配列外アクセス時は最大のを返す
+					return &right_begin135_half.back();
+				else
+					return &right_begin135_half.at(_mode);
+			}
+		} else {
+			if (MOUSE_MODE == 1) {
+				if (_mode >= left_begin135_half.size())		//配列外アクセス時は最大のを返す
+					return &left_begin135_half.back();
+				else
+					return &left_begin135_half.at(_mode);
+			}
+		}
+		break;
+	case end_135:
+		if (_is_right) {
+			if (MOUSE_MODE == 1) {
+				if (_mode >= right_end135_half.size())		//配列外アクセス時は最大のを返す
+					return &right_end135_half.back();
+				else
+					return &right_end135_half.at(_mode);
+			}
+		} else {
+			if (MOUSE_MODE == 1) {
+				if (_mode >= left_end135_half.size())		//配列外アクセス時は最大のを返す
+					return &left_end135_half.back();
+				else
+					return &left_end135_half.at(_mode);
+			}
+		}
+		break;
+	case oblique_90:
+		if (_is_right) {
+			if (MOUSE_MODE == 1) {
+				if (_mode >= right_obli90_half.size())		//配列外アクセス時は最大のを返す
+					return &right_obli90_half.back();
+				else
+					return &right_obli90_half.at(_mode);
+			}
+		} else {
+			if (MOUSE_MODE == 1) {
+				if (_mode >= left_obli90_half.size())		//配列外アクセス時は最大のを返す
+					return &left_obli90_half.back();
+				else
+					return &left_obli90_half.at(_mode);
+			}
+		}
+		break;
+	}
+
+	INIT_SLALOM temp = { 0 };
+	return &temp;
+}
+
