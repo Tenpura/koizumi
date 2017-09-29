@@ -150,7 +150,7 @@ int main(void) {
 			//run::accel_run(0.045 + 0.09, SEARCH_VELOCITY, 0);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
 			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
-			run::accel_run(0.045*2, 0, 0);
+			run::accel_run(0.045* 2, 0, 0);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
 			//control::stop_wall_control();
 			//run::accel_run(0.045*3, 0, 0);
