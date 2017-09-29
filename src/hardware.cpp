@@ -1326,7 +1326,7 @@ photo::~photo() {
 
 //XXX 各種ゲイン
 //control関連
-const PID gyro_gain = { 15, 750, 0.015 };//{ 15, 600, 0};		//限界感度法、限界感度30、限界周期0.01[s]
+const PID gyro_gain = { 15, 750, 0.015 };
 const PID photo_gain = { 300, 0, 0.001 };
 const PID encoder_gain = { 200, 1000, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
 const PID accel_gain = { 0, 0, 0 };	//{50, 0, 0 };
