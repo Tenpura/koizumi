@@ -1133,26 +1133,26 @@ void photo::set_ref(PHOTO_TYPE sensor_type, int16_t set_value) {
 float photo::get_value(PHOTO_TYPE sensor_type) {
 	int16_t ad = 0;
 	switch (sensor_type) {
-	case PHOTO_TYPE::right:
+	case PHOTO_TYPE::right:{
 		ad = right_ad;
 		break;
-
-	case PHOTO_TYPE::left:
+	}
+	case PHOTO_TYPE::left:{
 		ad = left_ad;
 		break;
-
-	case PHOTO_TYPE::front_right:
+	}
+	case PHOTO_TYPE::front_right:{
 		ad = front_right_ad;
 		break;
-
-	case PHOTO_TYPE::front_left:
+	}
+	case PHOTO_TYPE::front_left:{
 		ad = front_left_ad;
 		break;
-
-	case PHOTO_TYPE::front:
+	}
+	case PHOTO_TYPE::front:{
 		ad = front_ad;
 		break;
-
+	}
 	default:
 		break;
 	}
@@ -1207,12 +1207,12 @@ float photo::get_displacement_from_center_debag(PHOTO_TYPE sensor_type) {
 
 }
 
-float photo::get_displacement_from_center(PHOTO_TYPE type) {
+float photo::get_side_from_center(PHOTO_TYPE type) {
 	float val = (photo::get_value(type));		//現在のセンサ値に対して求める
-	return (get_displacement_from_center(type, val));
+	return (get_side_from_center(type, val));
 }
 
-float photo::get_displacement_from_center(PHOTO_TYPE sensor_type, float val) {
+float photo::get_side_from_center(PHOTO_TYPE sensor_type, float val) {
 
 	float f = val;		//対称のセンサ値
 	float f_c = static_cast<float>(parameter::get_ideal_photo(sensor_type));//中心位置におけるセンサ値
@@ -1306,8 +1306,8 @@ bool photo::check_wall_gap(PHOTO_TYPE type, float threshold) {
 	//壁の切れ目ならtrue
 	//急に壁が現れた時も制御を切る
 
-	float before_val = get_displacement_from_center(type, ave_buf[type][0]);
-	float now_val = get_displacement_from_center(type,
+	float before_val = get_side_from_center(type, ave_buf[type][0]);
+	float now_val = get_side_from_center(type,
 			ave_buf[type][GAP_AVE_COUNT - 1]);
 
 	if (ABS(now_val-before_val) > ABS(threshold)) {		//壁の切れ目
@@ -1328,7 +1328,7 @@ photo::~photo() {
 //control関連
 const PID gyro_gain = { 15, 750, 0.015 };//{ 15, 600, 0};		//限界感度法、限界感度30、限界周期0.01[s]
 const PID photo_gain = { 300, 0, 0.001 };
-const PID encoder_gain = { 250, 900, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
+const PID encoder_gain = { 200, 1000, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
 const PID accel_gain = { 0, 0, 0 };	//{50, 0, 0 };
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta,
@@ -1383,12 +1383,12 @@ void control::cal_delta() {
 	if (control::get_wall_control_phase()) {
 		if (photo::check_wall(PHOTO_TYPE::right)) {
 			//if (!photo::check_wall_gap(right, 0.005))		//壁キレでないなら
-			photo_right_delta = photo::get_displacement_from_center(
+			photo_right_delta = photo::get_side_from_center(
 					PHOTO_TYPE::right);		//中心からのずれてる距離[m]
 		}
 		if (photo::check_wall(PHOTO_TYPE::left)) {
 			//if (!photo::check_wall_gap(left, 0.025))		//壁キレでないなら
-			photo_left_delta = photo::get_displacement_from_center(
+			photo_left_delta = photo::get_side_from_center(
 					PHOTO_TYPE::left);		//中心からのずれてる距離[m]
 		}
 
@@ -1403,7 +1403,7 @@ void control::cal_delta() {
 		static const float half_section = 0.045 * MOUSE_MODE;	//1区間の半分の長さ
 		//柱近傍はセンサ値を信用しない。 区画の中央部分
 		if (ABS(mouse::get_relative_go() - 0.01 * MOUSE_MODE)
-				< (half_section * 0.5)) {
+				< (half_section * 0.6)) {
 			photo_delta.P = 0;//mouse::get_relative_side();		//センサを信用しない　= 推定値を突っ込んどく
 		}
 

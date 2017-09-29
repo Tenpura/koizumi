@@ -145,12 +145,12 @@ int main(void) {
 			mouse::run_init(true, true);
 
 			flog[0][0] = -1;
-			run::accel_run(0.09 * 6, 0, 0);
+			//run::accel_run(0.09 * 6, 0, 0);
 			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
-			//run::accel_run(0.045 + 0.09, SEARCH_VELOCITY, 0);
-			//run::slalom_for_search(small, MUKI_LEFT, 0);
+			run::accel_run(0.045 + 0.09, SEARCH_VELOCITY, 0);
+			run::slalom_for_search(small, MUKI_RIGHT, 0);
 			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
-			//run::accel_run(0.045, 0, 0);
+			run::accel_run(0.045, 0, 0);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
 			//control::stop_wall_control();
 			//run::accel_run(0.045*3, 0, 0);
@@ -186,7 +186,7 @@ int main(void) {
 			float b_dis = 0.09 * 2 * MOUSE_MODE;		//スラロームの前にどれだけ進むか
 			float a_dis = 0.09 * 2 * MOUSE_MODE;		//スラロームの後にどれだけ進むか
 			SLALOM_TYPE sla_type = none;
-			int8_t right_or_left = MUKI_LEFT;
+			int8_t right_or_left = MUKI_RIGHT;
 
 			switch (select) {
 			case none:
@@ -242,9 +242,9 @@ int main(void) {
 				flog[0][0] = -1;
 				run::accel_run(b_dis,
 						parameter::get_slalom(sla_type, true, select)->velocity,
-						2);
+						1);
 				run::slalom(sla_type, right_or_left, select);
-				run::accel_run(a_dis, 0, 2);
+				run::accel_run(a_dis, 0, 1);
 			}
 
 			wait::ms(1000);
@@ -274,10 +274,11 @@ int main(void) {
 			search.input_map_data(&mouse::now_map);		//保存していたマップを読みだす
 			search.set_weight_algo(based_distance);		//重みづけの方法を設定
 			uint32_t temp_cnt = wait::get_count();
-			step::spread_step(GOAL_x, GOAL_y, false);		//歩数マップを作製
+			step::spread_step(GOAL_x, GOAL_y, true);		//歩数マップを作製
+			map::draw_map(true);
 			myprintf("square cal. count->%d\n\r", wait::get_count() - temp_cnt);
 			temp_cnt = wait::get_count();
-			search.spread_step(goal, true);		//歩数マップを作製
+			search.spread_step(goal, false);		//歩数マップを作製
 			myprintf("node cal. count->%d\n\r", wait::get_count() - temp_cnt);
 			search.draw_step();
 

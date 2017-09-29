@@ -168,14 +168,16 @@ bool mode::search_mode() {
 }
 
 bool mode::shortest_mode() {
+/*
 	std::vector<std::pair<uint8_t, uint8_t> > goal;
 	goal.emplace_back(std::make_pair(GOAL_x, GOAL_y));
 	goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y));
 	goal.emplace_back(std::make_pair(GOAL_x, GOAL_y + 1));
 	goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y + 1));
 	std::pair<uint8_t, uint8_t> init = std::make_pair(0, 0);
-	node_search search;
 
+	node_search search;
+*/
 	uint8_t select = select_mode(4+1, PHOTO_TYPE::right);
 
 	switch (select) {
@@ -183,7 +185,7 @@ bool mode::shortest_mode() {
 		return false;
 		break;
 
-	case 1:
+	case 1:{
 		/*
 		if(search.create_small_path(goal,init,north))
 			break;
@@ -192,8 +194,8 @@ bool mode::shortest_mode() {
 		*/
 		path::create_path();
 		break;
-
-	default:
+	}
+	default:{
 		/*
 		if(search.create_big_path(goal,init,north))
 			break;
@@ -202,6 +204,7 @@ bool mode::shortest_mode() {
 		*/
 		path::create_path_advance();
 		break;
+	}
 	}
 
 	uint8_t curve = select_mode(3, PHOTO_TYPE::right);

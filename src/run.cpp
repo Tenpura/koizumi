@@ -361,8 +361,10 @@ void mouse::cal_velocity() {
 }
 
 void mouse::cal_distance() {
-	run_distance += velocity * CONTORL_PERIOD;
-	ideal_distance += ideal_velocity * CONTORL_PERIOD;
+	run_distance += (velocity + ideal_acceleration * CONTROL_PERIOD / 2)
+			* CONTROL_PERIOD;
+//	ideal_distance += (ideal_velocity + ideal_acceleration * CONTROL_PERIOD / 2)
+//					* CONTROL_PERIOD;
 }
 
 void mouse::cal_place() {
@@ -893,11 +895,11 @@ void run::accel_run(const float distance_m, const float end_velocity,
 			return;
 
 		/*
-		de_accel_value = sign
-				* (max_velocity * max_velocity - end_velocity * end_velocity)
-				/ (2 * (distance_m - mouse::get_distance_m()));
-		mouse::set_ideal_accel(-de_accel_value);
-		*/
+		 de_accel_value = sign
+		 * (max_velocity * max_velocity - end_velocity * end_velocity)
+		 / (2 * (distance_m - mouse::get_distance_m()));
+		 mouse::set_ideal_accel(-de_accel_value);
+		 */
 
 	}
 
@@ -935,10 +937,12 @@ void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 	uint8_t left = 0;
 
 	//直前に何ms以上 閾値を超えていれば壁キレが起こると判断するか（値がバラつく対策）
-	static const uint8_t w_cnt = 3;
+	static const uint8_t w_cnt = 5;
 
 	//1ms まってから次のセンサー値をみるために、割り込みがされたか判断するよう
 	uint32_t time_count = mouse::get_count_ms();
+	bool check_l = photo::check_wall(PHOTO_TYPE::left);
+	bool check_r = photo::check_wall(PHOTO_TYPE::right);
 
 	while (mouse::get_distance_m() < target_distance) {
 		//フェイルセーフが掛かっていればそこで抜ける
@@ -954,42 +958,46 @@ void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 		if (!wall_eage_flag) {
 			GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 		} else {
-			//直前w_cnt[ms]以上閾値の反対側にいて、このときはじめて閾値を超えたなら
-			if (left >= w_cnt) {
-				if (photo::get_displacement_from_center(PHOTO_TYPE::left)
-						> wall_eage[PHOTO_TYPE::left]) {
-					target_distance = WALL_EAGE_DISTANCE[PHOTO_TYPE::left];
-					mouse::set_relative_go(0.045 * MOUSE_MODE - target_distance,
-							true);	//区画中央を原点として位置を更新
-					mouse::set_distance_m(0);
-					wall_eage_flag = false;
+			if (check_l) {
+				//直前w_cnt[ms]以上閾値の反対側にいて、このときはじめて閾値を超えたなら
+				if (left >= w_cnt) {
+					if (photo::get_side_from_center(PHOTO_TYPE::left)
+							> wall_eage[PHOTO_TYPE::left]) {
+						target_distance = WALL_EAGE_DISTANCE[PHOTO_TYPE::left];
+						mouse::set_relative_go(
+								0.045 * MOUSE_MODE - target_distance, true);//区画中央を原点として位置を更新
+						mouse::set_distance_m(0);
+						wall_eage_flag = false;
+					}
+				} else {
+					//壁キレを待つ前にそもそも壁キレが起こるのかを判断
+					if (photo::get_side_from_center(PHOTO_TYPE::left)
+							< wall_eage[PHOTO_TYPE::left])
+						left++;
+					else
+						left = 0;
 				}
-			} else {
-				//壁キレを待つ前にそもそも壁キレが起こるのかを判断
-				if (photo::get_displacement_from_center(PHOTO_TYPE::left)
-						< wall_eage[PHOTO_TYPE::left])
-					left++;
-				else
-					left = 0;
 			}
 
-			//直前w_cnt[ms]以上閾値の反対側にいて、このときはじめて閾値を超えたなら
-			if (right >= w_cnt) {
-				if (photo::get_displacement_from_center(PHOTO_TYPE::right)
-						< wall_eage[PHOTO_TYPE::right]) {
-					target_distance = WALL_EAGE_DISTANCE[PHOTO_TYPE::right];
-					mouse::set_relative_go(0.045 * MOUSE_MODE - target_distance,
-							true);	//区画中央を原点として位置を更新
-					mouse::set_distance_m(0);
-					wall_eage_flag = false;
+			if (check_r) {
+				//直前w_cnt[ms]以上閾値の反対側にいて、このときはじめて閾値を超えたなら
+				if (right >= w_cnt) {
+					if (photo::get_side_from_center(PHOTO_TYPE::right)
+							< wall_eage[PHOTO_TYPE::right]) {
+						target_distance = WALL_EAGE_DISTANCE[PHOTO_TYPE::right];
+						mouse::set_relative_go(
+								0.045 * MOUSE_MODE - target_distance, true);//区画中央を原点として位置を更新
+						mouse::set_distance_m(0);
+						wall_eage_flag = false;
+					}
+				} else {
+					//壁キレを待つ前にそもそも壁キレが起こるのかを判断
+					if (photo::get_side_from_center(PHOTO_TYPE::right)
+							> wall_eage[PHOTO_TYPE::right])
+						right++;
+					else
+						right = 0;
 				}
-			} else {
-				//壁キレを待つ前にそもそも壁キレが起こるのかを判断
-				if (photo::get_displacement_from_center(PHOTO_TYPE::right)
-						> wall_eage[PHOTO_TYPE::right])
-					right++;
-				else
-					right = 0;
 			}
 
 		}
@@ -1504,7 +1512,7 @@ void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 	accel_run(distance, slalom_velocity, select_mode);
 
 	//TODO スラロームのたびに角速度の偏差をリセットするかは要検討
-	control::reset_delta(sen_gyro);
+	//control::reset_delta(sen_gyro);
 
 }
 
@@ -1673,11 +1681,11 @@ void run::path(const float finish_velocity, const uint8_t _straight,
 				control::start_wall_control();
 				if (path_count == 0)	//最初の直進の場合は壁キレ読めない気がするので普通に走る
 					run::accel_run(path::get_path_straight(path_count),
-							next_velocity, _curve);
+							next_velocity, _straight);
 				else
 					run::accel_run_wall_eage(
 							path::get_path_straight(path_count), next_velocity,
-							_curve, 0.045 * MOUSE_MODE);
+							_straight, 0.045 * MOUSE_MODE);
 			}
 
 		}
@@ -1821,6 +1829,7 @@ unsigned int adachi::count_unknown_wall(unsigned char target_x,
 
 void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 	static uint8_t str_score = 0;	//壁制御をかけれる直線が何連続したか数える
+	bool check = false;
 
 	//直線でないときは壁制御信用できないのでスコアリセット
 	if (next_action != go_straight)
@@ -1831,19 +1840,17 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 	switch (next_action) {
 	case go_straight: {
 		my7seg::light(1);
-
-
+		/*
 		 //壁があれば制御がかかるので姿勢が直されるため、スコア加算
-		 bool check = photo::check_wall(PHOTO_TYPE::right);//ifの条件にcheck_wall入れると無限ループにとらわれることがあるので経由させる
+		 check = photo::check_wall(right);//ifの条件にcheck_wall入れると無限ループにとらわれることがあるので経由させる
 		 if (check) {
 		 str_score++;
 		 }
-		 check = photo::check_wall(PHOTO_TYPE::left);
+		 check = photo::check_wall(left);
 		 if (check) {
 		 str_score++;
 		 }
-
-
+		 */
 		//caseに入ってからここにたどり着くまでに止まることがある。
 		my7seg::light(2);
 
@@ -1853,7 +1860,7 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 		//両壁あり直線が連続?回　くらいの補正がかかっていたら姿勢が正されていると判断し角度を修正
 		if (str_score >= 4) {
 			mouse::set_relative_rad(mouse::get_relative_rad() * 0.9, true);
-			str_score -= 2;
+			str_score = 0;
 		}
 		break;
 	}
@@ -1889,7 +1896,7 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 		//前壁があれば前壁制御
 		float correct = 0;	//補正項
 		if (photo::check_wall(PHOTO_TYPE::front)) {
-			correct = photo::get_displacement_from_center(front);//区画の境目からどれだけずれているか
+			correct = photo::get_side_from_center(front);	//区画の境目からどれだけずれているか
 			if (correct > 0)
 				mouse::set_relative_go(correct - 0.045 * MOUSE_MODE, true);
 			else

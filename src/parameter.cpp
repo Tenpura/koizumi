@@ -10,49 +10,53 @@
 //right left front_right front_left,front
 const unsigned int parameter::ideal_photo[2][5] = { { 140, 280, 0, 1900, 450 },
 		{ 3250, 3200, 10815, 10100, 0 } };
-const int16_t parameter::min_wall_photo[2][5] = { { 40, 100, 1400, 130, 200 }, {
+const int16_t parameter::min_wall_photo[2][5] = { { 40, 80, 1400, 130, 200 }, {
 		20000, 20000, 0, 0, 0 } };
 
 //0番目は探索用
-const TRAPEZOID parameter::straight_run[RUN_MODE_NUMBER] = { { 3.0,
-SEARCH_VELOCITY, 3.0 }, { 5.0, 0.75, 5.0 }, { 10.0, 1, 10.0 }, { 8.0,
-1.5, 8.0 }, { 8.0,
-SEARCH_VELOCITY * 3.5, 5.0 } };
-
+const TRAPEZOID parameter::straight_run[RUN_MODE_NUMBER] = {
+		{ 3.0, SEARCH_VELOCITY, 3.0 },
+		{ 5.0, 1, 5.0 },
+		{ 5.0, 1.5, 5.0 },
+		{ 8.0, 1.5, 6.0 },
+		{ 10.0, 2, 8.0 } };
 
 //XXX スラロームパラメータ
 //速度、角度、加速角度、前距離、後ろ距離、角加速度、最高角速度
-const std::array<INIT_SLALOM, 1> right_small_half = { { SEARCH_VELOCITY, 90, 30,
-		0.01, 0.018, 119.1789, 11.17156, 0 } };
-const std::array<INIT_SLALOM, 1> left_small_half = { { SEARCH_VELOCITY, 90, 30,
-		0.012, 0.008, 119.1789, 11.17156, 0 } };
+//小回り90°ターン
+const std::array<INIT_SLALOM, 2> right_small_half = { {
+		{ SEARCH_VELOCITY, 91, 30, 0.010, 0.008, 119.1789, 11.17156, 0 },
+		{ 0.35, 91, 30, 0.01, 0.01, 171.1409, 15.45826, 0 }, } };
+const std::array<INIT_SLALOM, 2> left_small_half = { {
+		{ SEARCH_VELOCITY, 90, 30, 0.012, 0.008, 119.1789, 11.17156, 0 },
+		{ 0.35, 90, 30, 0.01, 0.01, 171.1409, 15.45826, 0 } } };
 
 //大まわり90°ターン
 const std::array<INIT_SLALOM, 3> right_big90_half = { {
-		{ 0.5, 91, 30, 0.020, 0.025, 119.1789, 11.17156, 0 },
-		{ 0.6, 90, 30, 0.015, 0.015, 149.4980,12.51215, 0 },
-		{ 0.7, 90, 40, 0.015, 0.015, 194.7204,16.48881, 0 },
+		{ 0.5, 91.5, 30, 0.030, 0.033, 119.1789, 11.17156, 0 },
+		{ 0.5, 91.5, 30, 0.030, 0.033, 119.1789, 11.17156, 0 },
+		{ 0.6, 91.5, 30, 0.023, 0.033, 149.4980, 12.51215, 0 },
 } };
 const std::array<INIT_SLALOM, 3> left_big90_half = { {
-		{ 0.5, 89, 30, 0.030, 0.03, 112.6498, 10.86124, 0 },
-		{ 0.6, 89, 30, 0.015, 0.015, 149.4980, 12.51215, 0 },
-		{ 0.7, 90, 40, 0.015, 0.015, 194.7204, 16.48881, 0 },
+		{ 0.5, 89, 30, 0.027, 0.03, 112.6498, 10.86124, 0 },
+		{ 0.5, 89, 30, 0.027, 0.03, 112.6498, 10.86124, 0 },
+		{ 0.6, 89, 30, 0.015, 0.03, 149.4980, 12.51215, 0 },
 } };
 
 //大まわり180°ターン
-const std::array<INIT_SLALOM, 3> right_big180_half = { {
+const std::array<INIT_SLALOM, 3> right_big180_half ={ {
 		{ 0.5, 182, 40, 0.020, 0.030, 83.56877, 10.80203, 0 },
-		{ 0.6, 180, 40, 0.020, 0.020, 148.5666, 14.40271, 0 },
-		{ 0.7, 180, 40, 0.015, 0.015, 202.2157, 16.80316, 0 },
+		{ 0.5, 182, 40, 0.020, 0.030, 83.56877, 10.80203, 0 },
+		{ 0.6, 180, 40, 0.020, 0.040, 148.5666, 14.40271, 0 },
 } };
-const std::array<INIT_SLALOM, 3> left_big180_half = { {
+const std::array<INIT_SLALOM, 3> left_big180_half ={ {
 		{ 0.5, 180, 40, 0.020, 0.020, 98.73437, 11.74134, 0 },
-		{ 0.6, 180, 40, 0.020, 0.020, 148.5666, 14.40271, 0 },
-		{ 0.7, 180, 40, 0.015, 0.015, 202.2157, 16.80316, 0 },
+		{ 0.5, 180, 40, 0.020, 0.020, 98.73437, 11.74134, 0 },
+		{ 0.6, 180, 40, 0.020, 0.030, 148.5666, 14.40271, 0 },
 } };
 
 //入り45°ターン
-const std::array<INIT_SLALOM, 1> right_begin45_half ={ {
+const std::array<INIT_SLALOM, 1> right_begin45_half = { {
 		{ 0.5, 45, 20, 0.012, 0.03064, 195.0775, 11.67003, 0 },
 } };
 const std::array<INIT_SLALOM, 1> left_begin45_half = { {
@@ -80,7 +84,7 @@ const std::array<INIT_SLALOM, 1> right_end135_half = { {
 		{ 0.5, 135, 45, 0.0123, 0.02, 141.1387, 14.89, 0 },
 } };
 const std::array<INIT_SLALOM, 1> left_end135_half = { {
-		{ 0.5, 90, 40, 0.01, 0.01, 194.223, 16.46773, 0 },
+		{ 0.5, 90, 40, 0.01,0.01, 194.223, 16.46773, 0 },
 } };
 
 //ななめ90°ターン
@@ -349,8 +353,8 @@ float parameter::get_slalom(const SLALOM_TYPE slalom_type,
 	return 0;
 }
 
-const INIT_SLALOM* const parameter::get_slalom(const SLALOM_TYPE _type, bool _is_right,
-		uint8_t _mode) {
+const INIT_SLALOM* const parameter::get_slalom(const SLALOM_TYPE _type,
+		bool _is_right, uint8_t _mode) {
 	switch (_type) {
 	case none:
 		break;
