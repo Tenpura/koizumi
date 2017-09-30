@@ -1164,7 +1164,8 @@ float photo::get_displacement_from_center_debag(PHOTO_TYPE sensor_type) {
 
 	my7seg::light(4);
 
-	float f = photo::get_value(sensor_type);		//現在のセンサ値に対して求める
+	float f;
+	f = photo::get_value(sensor_type);		//現在のセンサ値に対して求める
 
 	my7seg::light(5);
 
@@ -1327,7 +1328,7 @@ photo::~photo() {
 //XXX 各種ゲイン
 //control関連
 const PID gyro_gain = { 15, 750, 0.015 };
-const PID photo_gain = { 300, 0, 0.001 };
+const PID photo_gain = { 200, 0, 0.002 };
 const PID encoder_gain = { 200, 1000, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
 const PID accel_gain = { 0, 0, 0 };	//{50, 0, 0 };
 

@@ -145,12 +145,12 @@ int main(void) {
 			mouse::run_init(true, true);
 
 			flog[0][0] = -1;
-			//run::accel_run(0.09 * 6, 0, 0);
+			run::accel_run(0.09 * 6, 0, 0);
 			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
 			//run::accel_run(0.045 + 0.09, SEARCH_VELOCITY, 0);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
 			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
-			run::accel_run(0.045* 2, 0, 0);
+			//run::accel_run(0.045* 2, 0, 0);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
 			//control::stop_wall_control();
 			//run::accel_run(0.045*3, 0, 0);
@@ -324,8 +324,8 @@ void interrupt_timer() {
 		}
 	} else if (i < flog_number) {
 		flog[0][i] = mouse::get_place().y;
-		flog[1][i] = photo::get_value(front);
-		flog[2][i] = photo::get_value(left);
+		flog[1][i] = photo::get_displacement_from_center_debag(right);//photo::get_value(right);
+		flog[2][i] = photo::get_displacement_from_center_debag(left);//photo::get_value(left);
 		i++;
 	}else if ( i == flog_number){
 		flog[0][0]=0;

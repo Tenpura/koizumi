@@ -8,7 +8,7 @@
 #include"parameter.h"
 //ideal_photo[x][y]	xは0がハーフ,1がクラシック	yが光学センサの向きに対応。
 //right left front_right front_left,front
-const unsigned int parameter::ideal_photo[2][5] = { { 140, 280, 0, 1900, 450 },
+const unsigned int parameter::ideal_photo[2][5] = { { 120, 250, 0, 1900, 350 },
 		{ 3250, 3200, 10815, 10100, 0 } };
 const int16_t parameter::min_wall_photo[2][5] = { { 40, 80, 1400, 130, 200 }, {
 		20000, 20000, 0, 0, 0 } };
@@ -18,7 +18,7 @@ const TRAPEZOID parameter::straight_run[RUN_MODE_NUMBER] = {
 		{ 3.0, SEARCH_VELOCITY, 3.0 },
 		{ 5.0, 1, 5.0 },
 		{ 5.0, 1.5, 5.0 },
-		{ 8.0, 1.5, 6.0 },
+		{ 8.0, 2, 5.0 },
 		{ 10.0, 2, 8.0 } };
 
 //XXX スラロームパラメータ

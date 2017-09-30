@@ -178,7 +178,7 @@ bool mode::shortest_mode() {
 
 	node_search search;
 */
-	uint8_t select = select_mode(4+1, PHOTO_TYPE::right);
+	uint8_t select = select_mode(5+1, PHOTO_TYPE::right);
 
 	switch (select) {
 	case 0:		//0‚Íƒƒjƒ…[‚É–ß‚é
