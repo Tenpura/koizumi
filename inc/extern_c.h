@@ -45,6 +45,11 @@ extern "C" void USART_ITConfig(USART_TypeDef* USARTx, uint16_t USART_IT, Functio
 
 extern "C" uint32_t SysTick_Config(uint32_t ticks);
 
+extern "C" FLASH_Status FLASH_EraseSector(uint32_t FLASH_Sector, uint8_t VoltageRange);
+extern "C" FLASH_Status FLASH_ProgramWord(uint32_t Address, uint32_t Data);
+extern "C" void         FLASH_ClearFlag(uint32_t FLASH_FLAG);
+
+
 //ユーザー定義関数
 extern "C" void init_all(void);
 

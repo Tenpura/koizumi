@@ -57,7 +57,7 @@ public:
 
 };
 
-#define STEP_INIT 999		//歩数の初期値
+#define STEP_INIT 1025		//歩数の初期値
 class step {
 private:
 	static DIRECTION save_direction;				//次に行くマスの方向を保存

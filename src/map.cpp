@@ -971,11 +971,11 @@ bool step::set_step(uint8_t _x, uint8_t _y, uint8_t _muki, uint8_t _set_step,
 //配列外に出るパターンを除外
 	if (static_cast<int16_t>(_x) + dx < 0)
 		return false;
-	if (static_cast<int16_t>(_x) + dx > MAZE_SIZE)
+	if (static_cast<int16_t>(_x) + dx >= MAZE_SIZE)
 		return false;
 	if (static_cast<int16_t>(_y) + dy < 0)
 		return false;
-	if (static_cast<int16_t>(_y) + dy > MAZE_SIZE)
+	if (static_cast<int16_t>(_y) + dy >= MAZE_SIZE)
 		return false;
 
 	if ((maze_step[_x + dx][_y + dy] > _set_step)) {	//入ってる歩数が入れようとする歩数より大きい
@@ -2021,7 +2021,7 @@ bool node_search::create_small_path(
 		std::pair<uint8_t, uint8_t> init, compas mouse_direction) {
 //歩数マップ作製
 	node_step::reset_step(init_step);
-	spread_step(finish, true);	//ここは既知壁だけで歩数マップ作製
+	spread_step(finish, false);	//ここは既知壁だけで歩数マップ作製
 	return node_path::create_path(init, mouse_direction);	//歩数マップに従ってパス作製
 
 }
@@ -2134,7 +2134,7 @@ std::vector<path_element> node_path::path;
 PATH node_path::to_PATH(path_element from) {
 	PATH ans;
 
-	ans.element.flag = FALSE;
+	ans.element.flag = TRUE;
 	ans.element.distance = from.distance;
 
 	if (from.is_right)
@@ -2144,7 +2144,6 @@ PATH node_path::to_PATH(path_element from) {
 
 	switch (from.turn) {
 	case none:
-		ans.element.flag = TRUE;	//最後の直進で終わりのパターン
 		ans.element.turn = from.turn;
 		break;
 
@@ -2207,7 +2206,10 @@ bool node_path::is_right_turn(compas now, compas next) {
 }
 
 void node_path::format() {
+	//distance=0, sla_type=none, is_right=true　を1つだけ用意し、それでpathを初期化
 	std::vector<path_element>().swap(path);
+	path_element init = {0,none,true};
+	path.emplace_back(init);
 }
 
 void node_path::push_straight(int half) {
@@ -2218,9 +2220,7 @@ void node_path::push_small_turn(bool is_right) {
 	(path.back()).turn = small;		//種類は小回り
 	(path.back()).is_right = is_right;		//右向き
 
-	path_element temp;
-	temp.distance = 0;
-	temp.turn = none;
+	path_element temp={0,none,true};
 	path.emplace_back(temp);		//次の要素を作っておく
 
 }
@@ -2452,12 +2452,10 @@ void node_path::improve_path() {
 }
 
 PATH node_path::get_path(uint16_t index) {
-	if (path.size() <= index) {		//要素外アクセス禁止
-		path_element temp;
-		temp.distance = 0;
-		temp.turn = none;
+	if (index >= path.size()) {		//要素外アクセス禁止
+		path_element temp={0,none,true};
 		PATH ans = to_PATH(temp);
-		ans.element.flag = TRUE;
+		ans.element.flag = FALSE;
 		return ans;
 	}
 	path_element tar = path.at(index);

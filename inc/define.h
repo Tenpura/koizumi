@@ -13,7 +13,7 @@
 #define CONTROL_PERIOD 0.001		//§ŒäüŠú[sec]
 
 
-#define MAZE_SIZE	16
+#define MAZE_SIZE	32
 
 #define GOAL_x 5
 #define GOAL_y 6

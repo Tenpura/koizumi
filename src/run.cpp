@@ -370,8 +370,8 @@ void mouse::cal_distance() {
 void mouse::cal_place() {
 	float theta = get_angle_radian();		//マウスの角度を取得
 	//微小時間にマウスが進む距離
-	float dx = velocity * CONTORL_PERIOD * my_math::sin(theta);
-	float dy = velocity * CONTORL_PERIOD * my_math::cos(theta);
+	float dx = velocity * CONTORL_PERIOD * sinf(theta);
+	float dy = velocity * CONTORL_PERIOD * cosf(theta);
 
 	place.x += dx;
 	place.y += dy;
@@ -1403,12 +1403,14 @@ void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 		//時計回りが正
 		if (right_or_left == MUKI_RIGHT) {
 			run::spin_turn(90);
+			float rel_go = mouse::get_relative_go();
 			mouse::set_relative_go(-mouse::get_relative_side(), false);	//マウスの相対座標も変換する
-			mouse::set_relative_side(mouse::get_relative_go(), false);
+			mouse::set_relative_side(rel_go, false);
 		} else {
 			run::spin_turn(-90);
+			float rel_go = mouse::get_relative_go();
 			mouse::set_relative_go(mouse::get_relative_side(), false);//マウスの相対座標も変換する
-			mouse::set_relative_side(-mouse::get_relative_go(), false);
+			mouse::set_relative_side(-rel_go, false);
 		}
 		accel_run(0.045 * MOUSE_MODE, slalom_velocity, select_mode);	//半区画前進
 		return;		//スラロームはしないで終了
@@ -1494,12 +1496,14 @@ void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 	//マウスの相対座標も変換する
 	if (right_or_left == MUKI_LEFT) {		//時計回りが正
 		mouse::set_relative_base_rad(slalom_type, false);
+		float rel_go = mouse::get_relative_go();
 		mouse::set_relative_go(-mouse::get_relative_side(), false);
-		mouse::set_relative_side(mouse::get_relative_go(), false);
+		mouse::set_relative_side(rel_go, false);
 	} else {
 		mouse::set_relative_base_rad(slalom_type, true);
+		float rel_go = mouse::get_relative_go();
 		mouse::set_relative_go(mouse::get_relative_side(), false);
-		mouse::set_relative_side(-mouse::get_relative_go(), false);
+		mouse::set_relative_side(-rel_go, false);
 	}
 
 //後ろ距離分走る

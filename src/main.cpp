@@ -16,6 +16,7 @@
 #include "user.h"
 #include "run.h"
 #include "map.h"
+#include "flash.h"
 
 int main(void);
 
@@ -57,7 +58,7 @@ int main(void) {
 	map::reset_wall();
 	map::output_map_data(&mouse::now_map);
 
-	encoder::yi_correct();		//YI式補正
+//	encoder::yi_correct();		//YI式補正
 
 	uint8_t select = 0;	//モード管理用
 	while (1) {
@@ -253,7 +254,16 @@ int main(void) {
 
 			break;
 		}
-		case 7:
+		case 7:{
+			/*
+			flash_log flash_l;
+			flash fl;
+			fl.write_block();
+			MAP_DATA* temp;
+			map::output_map_data(temp);
+			flash_l.save_maze(0,temp);
+			*/
+
 			GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 			while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
 			}
@@ -261,10 +271,20 @@ int main(void) {
 			for (int i = 0; i < flog_number; i++) {
 				myprintf("%f,%f,%f\n\r", flog[0][i], flog[1][i], flog[2][i]);
 			}
+
 			break;
+
+		}
 		case 8: {
 			map::draw_map(false);
 
+			flash_log flash;
+			MAP_DATA* temp;
+			flash.load_maze(0,temp);	//マップ出力
+			map::input_map_data(temp);	//マップ入力
+			map::draw_map(false);
+
+/*
 			std::vector<std::pair<uint8_t, uint8_t> > goal;
 			goal.emplace_back(std::make_pair(GOAL_x, GOAL_y));
 			goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y));
@@ -274,9 +294,9 @@ int main(void) {
 			search.input_map_data(&mouse::now_map);		//保存していたマップを読みだす
 			search.set_weight_algo(based_distance);		//重みづけの方法を設定
 			uint32_t temp_cnt = wait::get_count();
-			step::spread_step(GOAL_x, GOAL_y, true);		//歩数マップを作製
-			map::draw_map(true);
+			step::spread_step(GOAL_x, GOAL_y, false);		//歩数マップを作製
 			myprintf("square cal. count->%d\n\r", wait::get_count() - temp_cnt);
+//			map::draw_map(true);
 			temp_cnt = wait::get_count();
 			search.spread_step(goal, false);		//歩数マップを作製
 			myprintf("node cal. count->%d\n\r", wait::get_count() - temp_cnt);
@@ -284,8 +304,10 @@ int main(void) {
 
 			search.create_small_path(goal,std::make_pair<uint8_t, uint8_t>(0,0),north);
 			search.convert_path();
-
+*/
+			//path::create_path();
 			path::draw_path();
+
 			break;
 		}
 

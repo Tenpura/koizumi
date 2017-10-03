@@ -13,6 +13,7 @@
 #include"parameter.h"
 #include"map.h"
 #include <queue>
+#include<cmath>
 
 //position
 typedef union {
