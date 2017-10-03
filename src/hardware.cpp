@@ -383,6 +383,8 @@ volatile int16_t mpu6000::get_mpu_val(SEN_TYPE sen, AXIS_t axis) {
 			reg_h = GYRO_ZOUT_H;
 			reg_l = GYRO_ZOUT_L;
 			break;
+		default:
+			break;
 		}
 		break;
 
@@ -399,6 +401,8 @@ volatile int16_t mpu6000::get_mpu_val(SEN_TYPE sen, AXIS_t axis) {
 		case axis_z:
 			reg_h = ACCEL_ZOUT_H;
 			reg_l = ACCEL_ZOUT_L;
+			break;
+		default:
 			break;
 		}
 		break;

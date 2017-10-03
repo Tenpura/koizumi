@@ -44,13 +44,13 @@ public:
 	static bool check_exist(unsigned char wall_x, unsigned char wall_y, unsigned char muki);
 	static bool check_exist(unsigned char wall_x, unsigned char wall_y, compas dir);
 
-	static void reset_wall();		//壁情報と見たかどうかをすべてリセット
+	static void reset_maze();		//壁情報と見たかどうかをすべてリセット
 
 	static void draw_map(bool write_step);//myprintfで迷路を描画
 	void convert_mapdata(unsigned char (*hiramatu_data)[16]);//平松先輩のマップデータ形式をノノホ式に変換
 
 	static void input_map_data(const MAP_DATA* input_data);//外部に保存したデータの入力
-	static void output_map_data(MAP_DATA* const output_data);//外部にデータ出力
+	static void output_map_data(MAP_DATA* output_data);//外部にデータ出力
 
 	map();
 	~map();
@@ -126,9 +126,6 @@ void direction_turn(signed char *direction_x, signed char *direction_y,
 //compasを与えると、方角ベクトルを返す. firstがX方向、　secondがY方向
 std::pair<int8_t, int8_t> compas_to_direction(compas tar);
 
-//defineされたMUKIを与えると、compasを返す.
-compas muki_to_compas(uint8_t muki);
-
 class node_step :public map{
 protected:
 	static const uint16_t x_size=64;
@@ -137,7 +134,7 @@ protected:
 private:
 	std::vector<PATH> path;
 	static uint16_t step[x_size][y_size];			//ノードに配置する歩数	x,y xは横壁と縦壁の両方を表現するために2倍	[0][0]は(0,0)の西壁
-	virtual bool able_set_step(uint8_t x, uint8_t y, compas muki, uint16_t step_val, bool by_known);	//歩を伸ばせるならTrue　壁がないか、その壁を見ているのか、step_valより歩数が大きいかチェック
+	bool able_set_step(uint8_t x, uint8_t y, compas muki, uint16_t step_val, bool by_known);	//歩を伸ばせるならTrue　壁がないか、その壁を見ているのか、step_valより歩数が大きいかチェック
 	bool is_outside_array(uint8_t x_index, uint8_t y_index);		//配列の添え字でみた座標系（X方向だけ倍）で迷路外（配列外）に出ているか
 
 public:
@@ -149,8 +146,6 @@ public:
 	compas get_min_compas(uint8_t x, uint8_t y);			//（x,y）の4つの歩数の内、最小の歩数がどの方角か
 
 	void reset_step(uint16_t reset_val);		//全ての歩数をreset_valでリセット
-
-	uint8_t compas_to_define(compas muki);			//列挙型のcompasをDefineされたMUKIに変換する　統一できてないから仕方なく
 
 	void draw_step();		//myprintfで表示する
 

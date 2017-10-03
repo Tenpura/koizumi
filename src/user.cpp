@@ -15,6 +15,38 @@ float radian(float degree) {
 	return (degree * PI() / 180.0);
 }
 
+compas muki_to_compas(uint8_t muki) {
+	switch (muki) {
+	case MUKI_UP:
+		return north;
+		break;
+	case MUKI_DOWN:
+		return south;
+		break;
+	case MUKI_RIGHT:
+		return east;
+		break;
+	case MUKI_LEFT:
+		return west;
+		break;
+	}
+	return north;
+}
+
+uint8_t compas_to_muki(compas from) {
+	switch (from) {
+	case east:
+		return MUKI_RIGHT;
+	case west:
+		return MUKI_LEFT;
+	case north:
+		return MUKI_UP;
+	case south:
+		return MUKI_DOWN;
+	}
+	return 0;
+}
+
 uint32_t wait::counter = 0;
 
 void wait::set_count(uint32_t count) {
@@ -82,7 +114,7 @@ bool mode::search_mode() {
 	goal_vect.emplace_back(std::make_pair(GOAL_x, GOAL_y+1));
 	goal_vect.emplace_back(std::make_pair(GOAL_x+1, GOAL_y+1));
 
-	uint8_t select = select_mode(7, PHOTO_TYPE::right);
+	uint8_t select = select_mode(6+1, PHOTO_TYPE::right);
 	//encoder::yi_correct();		//YI式補正
 
 	while (select != 0) {
@@ -97,19 +129,19 @@ bool mode::search_mode() {
 
 	case 1:		//1は普通の足立法
 		mouse::set_position(0, 0);
-		mouse::set_direction(MUKI_UP);
+		mouse::set_direction(north);
 		adachi::adachi_method(GOAL_x, GOAL_y, false);
 		break;
 
 	case 2:		//2は帰りもあるよ
 		mouse::set_position(0, 0);
-		mouse::set_direction(MUKI_UP);
+		mouse::set_direction(north);
 		if (adachi::adachi_method(GOAL_x, GOAL_y, false)) {	//足立法が成功したら
 			wait::ms(100);
 			mouse::set_position(GOAL_x, GOAL_y);
 			run::spin_turn(180);
-			mouse::turn_direction(MUKI_RIGHT);
-			mouse::turn_direction(MUKI_RIGHT);
+			mouse::turn_90_dir(MUKI_RIGHT);
+			mouse::turn_90_dir(MUKI_RIGHT);
 			wait::ms(100);
 
 			adachi::adachi_method(0, 0, false);
@@ -119,13 +151,13 @@ bool mode::search_mode() {
 
 	case 3:			//ノード型足立法
 		mouse::set_position(0, 0);
-		mouse::set_direction(MUKI_UP);
+		mouse::set_direction(north);
 		adachi::node_adachi(goal_vect, adachi);
 		break;
 
 	case 4:
 		mouse::set_position(0, 0);
-		mouse::set_direction(MUKI_UP);
+		mouse::set_direction(north);
 		if (adachi::adachi_method(GOAL_x, GOAL_y, true)) {	//足立法が成功したら
 
 		}
@@ -133,13 +165,13 @@ bool mode::search_mode() {
 
 	case 5:
 		mouse::set_position(0, 0);
-		mouse::set_direction(MUKI_UP);
+		mouse::set_direction(north);
 		if (adachi::adachi_method(GOAL_x, GOAL_y, false)) {
 			wait::ms(100);
 			mouse::set_position(GOAL_x, GOAL_y);
 			run::spin_turn(180);
-			mouse::turn_direction(MUKI_RIGHT);
-			mouse::turn_direction(MUKI_RIGHT);
+			mouse::turn_90_dir(MUKI_RIGHT);
+			mouse::turn_90_dir(MUKI_RIGHT);
 			wait::ms(100);
 
 			adachi::adachi_method(0, 0, true);
@@ -148,13 +180,13 @@ bool mode::search_mode() {
 
 	case 6:
 		mouse::set_position(0, 0);
-		mouse::set_direction(MUKI_UP);
+		mouse::set_direction(north);
 		if (adachi::adachi_method(GOAL_x, GOAL_y, true)) {	//古川式足立法（櫛無視）が成功したら
 			wait::ms(100);
 			mouse::set_position(GOAL_x, GOAL_y);
 			run::spin_turn(180);
-			mouse::turn_direction(MUKI_RIGHT);
-			mouse::turn_direction(MUKI_RIGHT);
+			mouse::turn_90_dir(MUKI_RIGHT);
+			mouse::turn_90_dir(MUKI_RIGHT);
 			wait::ms(100);
 
 			adachi::adachi_method(0, 0, true);
@@ -168,16 +200,18 @@ bool mode::search_mode() {
 }
 
 bool mode::shortest_mode() {
-/*
+
 	std::vector<std::pair<uint8_t, uint8_t> > goal;
 	goal.emplace_back(std::make_pair(GOAL_x, GOAL_y));
 	goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y));
 	goal.emplace_back(std::make_pair(GOAL_x, GOAL_y + 1));
 	goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y + 1));
-	std::pair<uint8_t, uint8_t> init = std::make_pair(0, 0);
 
-	node_search search;
-*/
+	static node_search search;
+	search.input_map_data(&mouse::now_map);
+	search.set_weight_algo(adachi);		//重みづけの方法を設定
+
+
 	uint8_t select = select_mode(5+1, PHOTO_TYPE::right);
 
 	switch (select) {
@@ -186,15 +220,22 @@ bool mode::shortest_mode() {
 		break;
 
 	case 1:{
-		/*
+/*
 		if(search.create_small_path(goal,init,north))
 			break;
 		else
 			return false;
-		*/
+		search.convert_path();
+*/
 		path::create_path();
+		search.create_big_path(goal,std::make_pair<uint8_t, uint8_t>(0,0),north);
+		search.convert_path();
+
 		break;
 	}
+	case 2:
+		path::create_path_advance();
+		break;
 	default:{
 		/*
 		if(search.create_big_path(goal,init,north))
@@ -202,7 +243,7 @@ bool mode::shortest_mode() {
 		else
 			return false;
 		*/
-		path::create_path_advance();
+		path::create_path_naname();
 		break;
 	}
 	}

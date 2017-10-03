@@ -41,6 +41,12 @@ public:
 float degree(float radian);		//ラジアン	->	度数		-π≦θ≦π
 float radian(float degree);		//度数	->	ラジアン	-180≦θ≦180
 
+//compas<->muki
+compas muki_to_compas(uint8_t muki);	//defineされたMUKIを与えると、compasを返す.
+uint8_t compas_to_muki(compas muki);	//列挙型のcompasをDefineされたMUKIに変換する
+
+
+
 //wait関数
 extern uint32_t wait_counter;	//割り込み内で1ずつ加算される変数
 class wait{

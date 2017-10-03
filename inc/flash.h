@@ -29,7 +29,7 @@ public:
 
 //flashを用いて実際に迷路とか保存するclass
 //flashのwork_ramにMAZE_DATAを順番に保存する運用を想定
-class flash_log : public flash{
+class flash_maze : public flash{
 private:
 	static const uint8_t save_maze_num = 2;	//迷路を何セットまで保存するか　これによってflashのRAMサイズが変わってくる
 	static const size_t maze_size;		//MAZE_DATAのサイズ

@@ -55,10 +55,10 @@ int main(void) {
 	my7seg::turn_off();
 
 	//マップをリセットする
-	map::reset_wall();
+	map::reset_maze();
 	map::output_map_data(&mouse::now_map);
 
-//	encoder::yi_correct();		//YI式補正
+	//encoder::yi_correct();		//YI式補正
 
 	uint8_t select = 0;	//モード管理用
 	while (1) {
@@ -124,17 +124,26 @@ int main(void) {
 		case 2:		//最短
 			//TODO パス作れなかったら抜けるように
 			mode::shortest_mode();
-			//path::draw_path();
 			motor::sleep_motor();
 			break;
 
 		case 3:		//データ消去
 			//マップをリセットする
-			map::reset_wall();
+			map::reset_maze();
 			map::output_map_data(&mouse::now_map);
 			break;
 
-		case 4:		//調整用
+		case 4:		//迷路データを呼び出す
+			select = mode::select_mode(2, right);
+			flash_maze fl;
+			if (fl.load_maze(select, &mouse::now_map))
+				myprintf("true\n\r");
+			else
+				myprintf("false\n\r");
+			map::input_map_data(&mouse::now_map);
+			break;
+
+		case 5:	//調整用
 			//encoder::yi_correct();		//YI式補正
 			encoder::draw_correct(false, false);
 			while (1) {
@@ -146,7 +155,7 @@ int main(void) {
 			mouse::run_init(true, true);
 
 			flog[0][0] = -1;
-			run::accel_run(0.09 * 6, 0, 0);
+			run::accel_run(0.09, 0, 0);
 			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
 			//run::accel_run(0.045 + 0.09, SEARCH_VELOCITY, 0);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
@@ -162,24 +171,6 @@ int main(void) {
 			wait::ms(2000);
 			motor::sleep_motor();
 			my7seg::turn_off();
-			break;
-
-		case 5:		//調整用
-			while (1) {
-				my7seg::blink(8, 500, 1);
-				if (photo::check_wall(PHOTO_TYPE::left))
-					break;
-			}
-			my7seg::count_down(3, 500);
-			//	mouse::run_init(true, false);
-
-			flog[0][0] = -1;
-
-			wait::ms(2000);
-
-			motor::sleep_motor();
-			my7seg::turn_off();
-
 			break;
 
 		case 6: {		//スラローム調整
@@ -254,16 +245,7 @@ int main(void) {
 
 			break;
 		}
-		case 7:{
-			/*
-			flash_log flash_l;
-			flash fl;
-			fl.write_block();
-			MAP_DATA* temp;
-			map::output_map_data(temp);
-			flash_l.save_maze(0,temp);
-			*/
-
+		case 7: {
 			GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 			while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {
 			}
@@ -277,14 +259,12 @@ int main(void) {
 		}
 		case 8: {
 			map::draw_map(false);
+			//今の迷路をスロット1に保存　探索完了とかで自動的に保存されるのはスロット0
+			flash_maze flash_l;
+			MAP_DATA temp;
+			map::output_map_data(&temp);
+			flash_l.save_maze(1, &temp);
 
-			flash_log flash;
-			MAP_DATA* temp;
-			flash.load_maze(0,temp);	//マップ出力
-			map::input_map_data(temp);	//マップ入力
-			map::draw_map(false);
-
-/*
 			std::vector<std::pair<uint8_t, uint8_t> > goal;
 			goal.emplace_back(std::make_pair(GOAL_x, GOAL_y));
 			goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y));
@@ -296,15 +276,16 @@ int main(void) {
 			uint32_t temp_cnt = wait::get_count();
 			step::spread_step(GOAL_x, GOAL_y, false);		//歩数マップを作製
 			myprintf("square cal. count->%d\n\r", wait::get_count() - temp_cnt);
-//			map::draw_map(true);
+			//			map::draw_map(true);
 			temp_cnt = wait::get_count();
 			search.spread_step(goal, false);		//歩数マップを作製
 			myprintf("node cal. count->%d\n\r", wait::get_count() - temp_cnt);
 			search.draw_step();
 
-			search.create_small_path(goal,std::make_pair<uint8_t, uint8_t>(0,0),north);
+			search.create_big_path(goal, std::make_pair<uint8_t, uint8_t>(0, 0),
+					north);
 			search.convert_path();
-*/
+
 			//path::create_path();
 			path::draw_path();
 
@@ -346,12 +327,12 @@ void interrupt_timer() {
 		}
 	} else if (i < flog_number) {
 		flog[0][i] = mouse::get_place().y;
-		flog[1][i] = photo::get_displacement_from_center_debag(right);//photo::get_value(right);
+		flog[1][i] = photo::get_displacement_from_center_debag(front);//photo::get_value(right);
 		flog[2][i] = photo::get_displacement_from_center_debag(left);//photo::get_value(left);
 		i++;
-	}else if ( i == flog_number){
-		flog[0][0]=0;
-		i=0;
+	} else if (i == flog_number) {
+		flog[0][0] = 0;
+		i = 0;
 	}
 
 	GPIO_ResetBits(GPIOA, GPIO_Pin_14);

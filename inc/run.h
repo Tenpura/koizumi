@@ -51,7 +51,8 @@ private:
 	static bool is_spin_turn;
 
 	static POSITION position;		//マウスの位置（座標）
-	static unsigned char mouse_direction;		//マウスの向き
+	//static unsigned char mouse_direction;		//マウスの向き
+	static compas direction;		//マウスの向き
 
 	static void cal_velocity();		//加速を行う。速度の加減算
 	static void cal_distance();		//距離計算
@@ -112,10 +113,11 @@ public:
 	static void set_relative_rad(float set_rad, bool updata_abs);		//relative_radがset_radになるように修正する
 	static void set_relative_base_rad(SLALOM_TYPE sla, bool is_right);	//ターン時の、相対角度の基準変更用
 
-	static unsigned char get_direction();	//defineされたMUKI_??で返す
-	static inline void get_direction(signed char *direction_x,
+	//static unsigned char get_direction();	//defineされたMUKI_??で返す
+	static compas get_compas();	//defineされたMUKI_??で返す
+	static void get_direction(signed char *direction_x,
 			signed char *direction_y);		//引数の値をポインタ経由で変更する
-	static void set_direction(const unsigned char muki);
+	static void set_direction(const compas dir);
 	static void set_direction(const signed char direction_x,
 			const signed char direction_y);
 
@@ -136,7 +138,8 @@ public:
 	//壁があるか確認用の関数	壁がある方向のLEDが光る
 	static void velify_wall();
 
-	static void turn_direction(const unsigned char right_or_left);
+	static void turn_90_dir(const unsigned char right_or_left);
+	static void turn_45_dir(bool is_right);
 	static void turn_direction_slalom(const SLALOM_TYPE slalom_type, const unsigned char right_or_left);
 
 	static void error();	//フェイルセーフとか、かかった時に、ここに飛びますよ
@@ -184,8 +187,6 @@ typedef enum {
 class adachi {
 private:
 	static signed char direction_x, direction_y;
-
-	static void set_direction();
 
 	//現在の座標と向きを与えると歩数的にそのマスに進めるかを判別
 	static bool check_move_by_step(unsigned char target_x,

@@ -550,7 +550,7 @@ bool map::get_wall(unsigned char wall_x, unsigned char wall_y,
 	return false;
 }
 
-void map::reset_wall() {
+void map::reset_maze() {
 	//壁を消す
 	for (int i = 0; i < MAZE_SIZE; i++) {
 		x_maze_wall[i].all = 0;
@@ -682,7 +682,7 @@ void map::input_map_data(const MAP_DATA *input_data) {
 	}
 }
 
-void map::output_map_data(MAP_DATA* const output_data) {
+void map::output_map_data(MAP_DATA* output_data) {
 	//データ出力
 	for (int i = 0; i < MAZE_SIZE; i++) {
 		output_data->x_wall[i].all = x_maze_wall[i].all;
@@ -693,7 +693,7 @@ void map::output_map_data(MAP_DATA* const output_data) {
 }
 
 map::map() {
-	reset_wall();
+	reset_maze();
 }
 
 map::~map() {
@@ -1097,7 +1097,7 @@ void step::close_dead_end() {
 }
 
 step::step() {
-	map::reset_wall();
+	map::reset_maze();
 	step_reset();
 
 }
@@ -1592,6 +1592,7 @@ void direction_turn(signed char *direction_x, signed char *direction_y,
 }
 
 std::pair<int8_t, int8_t> compas_to_direction(compas tar) {
+	//TODO 斜め
 	std::pair<int8_t, int8_t> ans(0, 0);
 	switch (tar) {
 	case north:
@@ -1610,38 +1611,21 @@ std::pair<int8_t, int8_t> compas_to_direction(compas tar) {
 	return ans;
 }
 
-compas muki_to_compas(uint8_t muki) {
-	switch (muki) {
-	case MUKI_UP:
-		return north;
-		break;
-	case MUKI_DOWN:
-		return south;
-		break;
-	case MUKI_RIGHT:
-		return east;
-		break;
-	case MUKI_LEFT:
-		return west;
-		break;
-	}
-	return north;
-}
 
 uint16_t node_step::step[x_size][y_size];
 
 bool node_step::able_set_step(uint8_t x, uint8_t y, compas muki,
 		uint16_t step_val, bool by_known) {
-	uint8_t def_muki = compas_to_define(muki);
+	uint8_t def_muki = compas_to_muki(muki);
 
 //見ていない部分には書き込めない
 	if (by_known) {
-		if (map::check_exist(x, y, def_muki) != TRUE)
+		if (!map::check_exist(x, y, def_muki))
 			return false;
 	}
 
 //壁がある部分には書き込めない
-	if (map::get_wall(x, y, def_muki) == TRUE)
+	if (map::get_wall(x, y, def_muki))
 		return false;
 
 //書き込む歩数より小さい場所には書き込めない
@@ -1686,6 +1670,9 @@ bool node_step::set_step(uint8_t x, uint8_t y, compas muki, uint16_t step_val,
 	case west:
 		step_x = 2 * x;	//西向きだと縦向きの壁なので、x方向は2x
 		break;
+
+	default:		//斜めは非対応
+		return false;
 	}
 
 //配列の要素外に書き込むなら何もしない
@@ -1745,6 +1732,9 @@ uint16_t node_step::get_step(uint8_t x, uint8_t y, compas muki) {
 	case west:
 		step_x = 2 * x;	//西向きだと縦向きの壁なので、x方向は2x
 		break;
+	default:	//斜めは非対応
+		return init_step;
+		break;
 	}
 
 //配列の要素外を読みだすときはInit_stepを
@@ -1791,19 +1781,7 @@ void node_step::reset_step(uint16_t reset_val) {
 
 }
 
-uint8_t node_step::compas_to_define(compas muki) {
-	switch (muki) {
-	case east:
-		return MUKI_RIGHT;
-	case west:
-		return MUKI_LEFT;
-	case north:
-		return MUKI_UP;
-	case south:
-		return MUKI_DOWN;
-	}
-	return 0;
-}
+
 
 void node_step::draw_step() {
 	signed char tekitou_x = 0, tekitou_y = MAZE_SIZE - 1;
@@ -2021,7 +1999,7 @@ bool node_search::create_small_path(
 		std::pair<uint8_t, uint8_t> init, compas mouse_direction) {
 //歩数マップ作製
 	node_step::reset_step(init_step);
-	spread_step(finish, false);	//ここは既知壁だけで歩数マップ作製
+	spread_step(finish, true);	//ここは既知壁だけで歩数マップ作製
 	return node_path::create_path(init, mouse_direction);	//歩数マップに従ってパス作製
 
 }
@@ -2265,6 +2243,9 @@ bool node_path::create_path(std::pair<uint8_t, uint8_t> init,
 			//now_x -= 1;
 			dx = -1;
 			dy = 0;
+			break;
+		default:	//斜めは非対応
+			return false;
 			break;
 		}
 		now_x += dx;		//X座標更新

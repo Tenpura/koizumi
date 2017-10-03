@@ -20,7 +20,8 @@ unsigned long mouse::mouse_count_ms;
 MAP_DATA mouse::now_map;
 
 POSITION mouse::position;
-unsigned char mouse::mouse_direction = MUKI_UP;
+//unsigned char mouse::mouse_direction = MUKI_UP;
+compas mouse::direction = north;
 
 bool mouse::is_fail_safe = false;
 bool mouse::is_spin_turn = false;
@@ -98,18 +99,30 @@ void mouse::reset_angle() {
 	//マウスの向いている向きに応じてangleとrelative_radを変更する
 	//TODO 斜め方向は要検討
 	float rad = 0;
-	switch (get_direction()) {
-	case MUKI_RIGHT:
+	switch (get_compas()) {
+	case north:
+		rad = 0;
+		break;
+	case north_east:
+		rad = PI() / 4;
+		break;
+	case east:
 		rad = PI() / 2;
 		break;
-	case MUKI_LEFT:
-		rad = -PI() / 2;
+	case south_east:
+		rad = PI() * 3 / 4;
 		break;
-	case MUKI_DOWN:
+	case south:
 		rad = PI();
 		break;
-	case MUKI_UP:
-		rad = 0;
+	case north_west:
+		rad = -PI() / 4;
+		break;
+	case west:
+		rad = -PI() / 2;
+		break;
+	case south_west:
+		rad = -PI() * 3 / 4;
 		break;
 	}
 	set_ang(rad);	//絶対角度を変更
@@ -280,56 +293,63 @@ void mouse::set_relative_base_rad(SLALOM_TYPE sla, bool is_right) {
 	relative_base_rad += correct;	//基準角度を変更
 
 }
-
-unsigned char mouse::get_direction() {
-	return mouse_direction;
+/*
+ unsigned char mouse::get_direction() {
+ return compas_to_muki(direction);
+ }
+ */
+compas mouse::get_compas() {
+	return direction;
 }
 
-inline void mouse::get_direction(signed char *direction_x,
-		signed char *direction_y) {
-	switch (mouse_direction) {
-	case MUKI_RIGHT:
+void mouse::get_direction(signed char *direction_x, signed char *direction_y) {
+	switch (direction) {
+	case east:
 		*direction_x = 1;
 		*direction_y = 0;
 		break;
 
-	case MUKI_LEFT:
+	case west:
 		*direction_x = -1;
 		*direction_y = 0;
 		break;
 
-	case MUKI_UP:
+	case north:
 		*direction_x = 0;
 		*direction_y = 1;
 		break;
 
-	case MUKI_DOWN:
+	case south:
 		*direction_x = 0;
 		*direction_y = -1;
+		break;
+	default:
+		*direction_x = 0;
+		*direction_y = 0;
 		break;
 	}
 }
 
-void mouse::set_direction(const unsigned char muki) {
-	mouse_direction = muki;
+void mouse::set_direction(const compas dir) {
+	direction = dir;
 }
 
 void mouse::set_direction(const signed char direction_x,
 		const signed char direction_y) {
 	switch (direction_x) {
 	case 1:
-		mouse_direction = MUKI_RIGHT;
+		direction = east;
 		break;
 
 	case -1:
-		mouse_direction = MUKI_LEFT;
+		direction = west;
 		break;
 
 	case 0:
 		if (direction_y == 1) {
-			mouse_direction = MUKI_UP;
+			direction = north;
 		} else {
-			mouse_direction = MUKI_DOWN;
+			direction = south;
 		}
 		break;
 	}
@@ -449,8 +469,8 @@ void mouse::look_wall(bool comb_ignore) {
 	signed char direction_x, direction_y;
 	mouse::get_direction(&direction_x, &direction_y);
 
-	switch (mouse_direction) {
-	case MUKI_UP:
+	switch (direction) {
+	case north:
 		//壁情報を更新
 		//マウスから見て右
 		map::remember_exist(get_x_position(), get_y_position(), MUKI_RIGHT);//壁を見たことを記録
@@ -515,7 +535,7 @@ void mouse::look_wall(bool comb_ignore) {
 
 		break;
 
-	case MUKI_RIGHT:
+	case east:
 		//壁情報を更新
 		//マウスから見て右
 		map::remember_exist(get_x_position(), get_y_position(), MUKI_DOWN);	//壁を見たことを記録
@@ -580,7 +600,7 @@ void mouse::look_wall(bool comb_ignore) {
 
 		break;
 
-	case MUKI_LEFT:
+	case west:
 		//壁情報を更新
 		//マウスから見て右
 		map::remember_exist(get_x_position(), get_y_position(), MUKI_UP);//壁を見たことを記録
@@ -646,7 +666,7 @@ void mouse::look_wall(bool comb_ignore) {
 
 		break;
 
-	case MUKI_DOWN:
+	case south:
 		//壁情報を更新
 		//マウスから見て右
 		map::remember_exist(get_x_position(), get_y_position(), MUKI_LEFT);	//壁を見たことを記録
@@ -710,7 +730,8 @@ void mouse::look_wall(bool comb_ignore) {
 		}
 
 		break;
-
+	default:
+		break;
 	}
 
 }
@@ -726,44 +747,69 @@ void mouse::velify_wall() {
 
 }
 
-void mouse::turn_direction(const unsigned char right_or_left) {
+void mouse::turn_90_dir(const unsigned char right_or_left) {
 	//マウスの向きを90°回転
+	bool is_right = false;
+	if (right_or_left == MUKI_RIGHT)
+		is_right = true;
+	turn_45_dir(is_right);
+	turn_45_dir(is_right);
+}
 
-	if (right_or_left == MUKI_RIGHT) {
-		switch (mouse_direction) {
-		case MUKI_UP:
-			mouse_direction = MUKI_RIGHT;
+void mouse::turn_45_dir(bool is_right) {
+	//マウスの向きを45°回転
+	if (is_right) {
+		switch (direction) {
+		case north:
+			direction = north_east;
 			break;
-
-		case MUKI_DOWN:
-			mouse_direction = MUKI_LEFT;
+		case north_east:
+			direction = east;
 			break;
-
-		case MUKI_RIGHT:
-			mouse_direction = MUKI_DOWN;
+		case east:
+			direction = south_east;
 			break;
-
-		case MUKI_LEFT:
-			mouse_direction = MUKI_UP;
+		case south_east:
+			direction = south;
+			break;
+		case south:
+			direction = south_west;
+			break;
+		case south_west:
+			direction = west;
+			break;
+		case west:
+			direction = north_west;
+			break;
+		case north_west:
+			direction = north;
 			break;
 		}
-
 	} else {
-		switch (mouse_direction) {
-		case MUKI_UP:
-			mouse_direction = MUKI_LEFT;
+		switch (direction) {
+		case north:
+			direction = north_west;
 			break;
-
-		case MUKI_DOWN:
-			mouse_direction = MUKI_RIGHT;
+		case north_west:
+			direction = west;
 			break;
-
-		case MUKI_RIGHT:
-			mouse_direction = MUKI_UP;
+		case west:
+			direction = south_west;
 			break;
-
-		case MUKI_LEFT:
-			mouse_direction = MUKI_DOWN;
+		case south_west:
+			direction = south;
+			break;
+		case south:
+			direction = south_east;
+			break;
+		case south_east:
+			direction = east;
+			break;
+		case east:
+			direction = north_east;
+			break;
+		case north_east:
+			direction = north;
 			break;
 		}
 	}
@@ -779,12 +825,12 @@ void mouse::turn_direction_slalom(const SLALOM_TYPE slalom_type,
 
 	case small:
 	case big_90:
-		turn_direction(right_or_left);
+		turn_90_dir(right_or_left);
 		break;
 
 	case big_180:
-		turn_direction(right_or_left);
-		turn_direction(right_or_left);
+		turn_90_dir(right_or_left);
+		turn_90_dir(right_or_left);
 		break;
 
 	case begin_45:
@@ -794,11 +840,15 @@ void mouse::turn_direction_slalom(const SLALOM_TYPE slalom_type,
 
 	case begin_135:
 	case end_135:
-		//FIX_ME 斜めの方向管理方法が確立されてない
+		turn_90_dir(right_or_left);
+		if (right_or_left == MUKI_RIGHT)
+			turn_45_dir(true);
+		else
+			turn_45_dir(false);
 		break;
 
 	case oblique_90:
-		//FIX_ME 斜めの方向管理方法が確立されてない
+		turn_90_dir(right_or_left);
 		break;
 	}
 }
@@ -1399,7 +1449,7 @@ void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 		accel_run(distance - correct, slalom_velocity, select_mode);
 	} else if (distance - correct < -0.045) {	//オーバーし過ぎたときは超信地にする
 		accel_run(distance - correct + 0.045 * MOUSE_MODE, 0, select_mode);
-		mouse::turn_direction(right_or_left);	//向きを90°変える
+		mouse::turn_90_dir(right_or_left);	//向きを90°変える
 		//時計回りが正
 		if (right_or_left == MUKI_RIGHT) {
 			run::spin_turn(90);
@@ -1492,7 +1542,7 @@ void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 	mouse::set_ideal_angular_accel(0);
 	mouse::set_ideal_angular_velocity(0);
 
-	mouse::turn_direction(right_or_left);	//向きを90°変える
+	mouse::turn_90_dir(right_or_left);	//向きを90°変える
 	//マウスの相対座標も変換する
 	if (right_or_left == MUKI_LEFT) {		//時計回りが正
 		mouse::set_relative_base_rad(slalom_type, false);
@@ -1731,33 +1781,6 @@ run::~run() {
 
 signed char adachi::direction_x, adachi::direction_y;
 
-void adachi::set_direction() {
-	unsigned char direction = mouse::get_direction();
-
-	switch (direction) {
-	case MUKI_RIGHT:
-		direction_x = 1;
-		direction_y = 0;
-		break;
-
-	case MUKI_LEFT:
-		direction_x = -1;
-		direction_y = 0;
-		break;
-
-	case MUKI_UP:
-		direction_x = 0;
-		direction_y = 1;
-		break;
-
-	case MUKI_DOWN:
-		direction_x = 0;
-		direction_y = -1;
-		break;
-	}
-
-}
-
 bool adachi::check_move_by_step(unsigned char target_x, unsigned char target_y,
 		unsigned char muki) {
 	signed char muki_x, muki_y;
@@ -1833,7 +1856,6 @@ unsigned int adachi::count_unknown_wall(unsigned char target_x,
 
 void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 	static uint8_t str_score = 0;	//壁制御をかけれる直線が何連続したか数える
-	bool check = false;
 
 	//直線でないときは壁制御信用できないのでスコアリセット
 	if (next_action != go_straight)
@@ -1877,7 +1899,7 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 			run::accel_run((0.045 * MOUSE_MODE), 0, 0);
 			run::spin_turn(90);
 			run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
-			mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
+			mouse::turn_90_dir(MUKI_RIGHT);	//向きを90°変える
 		}
 		break;
 	}
@@ -1890,7 +1912,7 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 			run::accel_run((0.045 * MOUSE_MODE), 0, 0);
 			run::spin_turn(270);
 			run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
-			mouse::turn_direction(MUKI_LEFT);	//向きを90°変える
+			mouse::turn_90_dir(MUKI_LEFT);	//向きを90°変える
 		}
 		break;
 	}
@@ -1910,8 +1932,8 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 			correct = 0.045 * MOUSE_MODE - 0.016;
 		run::accel_run((0.045 * MOUSE_MODE) - correct, 0, 0);			//半区間直進
 		run::spin_turn(180);// - degree(mouse::get_relative_rad()));//相対角度から上手く合うように変更する
-		mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
-		mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
+		mouse::turn_90_dir(MUKI_RIGHT);	//向きを90°変える
+		mouse::turn_90_dir(MUKI_RIGHT);	//向きを90°変える
 		mouse::set_relative_base_rad(big_180, true);		//180°基準角度変更
 		mouse::set_relative_side(-mouse::get_relative_side(), false);//相対座標を反転させる
 		mouse::set_relative_go(-mouse::get_relative_go(), false);	//相対座標を反転させる
@@ -1941,18 +1963,18 @@ void adachi::simulate_next_action(ACTION_TYPE next_action) {
 
 	case turn_right:
 		//半区間⇒超信地⇒半区間
-		mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
+		mouse::turn_90_dir(MUKI_RIGHT);	//向きを90°変える
 		break;
 
 	case turn_left:
 		//半区間⇒超信地⇒半区間
-		mouse::turn_direction(MUKI_LEFT);	//向きを90°変える
+		mouse::turn_90_dir(MUKI_LEFT);	//向きを90°変える
 		break;
 
 	case back:
 		//半区間進んで180°ターンして半区間直進
-		mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
-		mouse::turn_direction(MUKI_RIGHT);	//向きを90°変える
+		mouse::turn_90_dir(MUKI_RIGHT);	//向きを90°変える
+		mouse::turn_90_dir(MUKI_RIGHT);	//向きを90°変える
 		break;
 
 	case stop:
@@ -2114,66 +2136,65 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 //更に見てない壁の数が多ければpriority_directionの方にも候補として追加
 		if (check_move_by_step(now_x, now_y, MUKI_RIGHT)) {			//右
 			next_direction.element.right = 1;
-			/*
-			 target_unknown_count = count_unknown_wall((now_x + 1), now_y);
-			 if (target_unknown_count == max_unknown_count) {
-			 priority_direction.element.right = 1;
-			 } else if (target_unknown_count > max_unknown_count) {
-			 max_unknown_count = target_unknown_count;
-			 priority_direction.all = 0;			//他の方向はいらないのでリセット
-			 priority_direction.element.right = 1;
-			 }
-			 */
+
+			target_unknown_count = count_unknown_wall((now_x + 1), now_y);
+			if (target_unknown_count == max_unknown_count) {
+				priority_direction.element.right = 1;
+			} else if (target_unknown_count > max_unknown_count) {
+				max_unknown_count = target_unknown_count;
+				priority_direction.all = 0;			//他の方向はいらないのでリセット
+				priority_direction.element.right = 1;
+			}
+
 		}
 		if (check_move_by_step(now_x, now_y, MUKI_LEFT)) {			//左
 			next_direction.element.left = 1;
-			/*
-			 target_unknown_count = count_unknown_wall((now_x - 1), now_y);
-			 if (target_unknown_count == max_unknown_count) {
-			 priority_direction.element.left = 1;
-			 } else if (target_unknown_count > max_unknown_count) {
-			 max_unknown_count = target_unknown_count;
-			 priority_direction.all = 0;			//他の方向はいらないのでリセット
-			 priority_direction.element.left = 1;
-			 }
-			 */
+
+			target_unknown_count = count_unknown_wall((now_x - 1), now_y);
+			if (target_unknown_count == max_unknown_count) {
+				priority_direction.element.left = 1;
+			} else if (target_unknown_count > max_unknown_count) {
+				max_unknown_count = target_unknown_count;
+				priority_direction.all = 0;			//他の方向はいらないのでリセット
+				priority_direction.element.left = 1;
+			}
+
 		}
 		if (check_move_by_step(now_x, now_y, MUKI_UP)) {			//上
 			next_direction.element.up = 1;
-			/*
-			 target_unknown_count = count_unknown_wall(now_x, (now_y + 1));
-			 if (target_unknown_count == max_unknown_count) {
-			 priority_direction.element.up = 1;
-			 } else if (target_unknown_count > max_unknown_count) {
-			 max_unknown_count = target_unknown_count;
-			 priority_direction.all = 0;			//他の方向はいらないのでリセット
-			 priority_direction.element.up = 1;
-			 }
-			 */
+
+			target_unknown_count = count_unknown_wall(now_x, (now_y + 1));
+			if (target_unknown_count == max_unknown_count) {
+				priority_direction.element.up = 1;
+			} else if (target_unknown_count > max_unknown_count) {
+				max_unknown_count = target_unknown_count;
+				priority_direction.all = 0;			//他の方向はいらないのでリセット
+				priority_direction.element.up = 1;
+			}
 
 		}
 		if (check_move_by_step(now_x, now_y, MUKI_DOWN)) {			//下
 			next_direction.element.down = 1;
-			/*
-			 target_unknown_count = count_unknown_wall(now_x, (now_y - 1));
-			 if (target_unknown_count == max_unknown_count) {
-			 priority_direction.element.down = 1;
-			 } else if (target_unknown_count > max_unknown_count) {
-			 max_unknown_count = target_unknown_count;
-			 priority_direction.all = 0;			//他の方向はいらないのでリセット
-			 priority_direction.element.down = 1;
-			 }
-			 */
+
+			target_unknown_count = count_unknown_wall(now_x, (now_y - 1));
+			if (target_unknown_count == max_unknown_count) {
+				priority_direction.element.down = 1;
+			} else if (target_unknown_count > max_unknown_count) {
+				max_unknown_count = target_unknown_count;
+				priority_direction.all = 0;			//他の方向はいらないのでリセット
+				priority_direction.element.down = 1;
+			}
+
 		}
-		/*
-		 //未探索区間が候補の中にあるなら、次に行く方向はその中から選ぶ
-		 if ((priority_direction.all != 0) && is_FULUKAWA) {
-		 next_direction.all = priority_direction.all;
-		 }
-		 */
+
+		//未探索区間が候補の中にあるなら、次に行く方向はその中から選ぶ
+		if ((priority_direction.all != 0) && is_FULUKAWA) {
+			next_direction.all = priority_direction.all;
+		}
+
 //next_dirrctionから次行く方向を選び、行動する
 		next_action = get_next_action_old(next_direction,
-				mouse::get_direction());
+				compas_to_muki(mouse::get_compas()));
 		run_next_action(next_action, true);
 		my7seg::turn_off();
 
@@ -2483,7 +2504,7 @@ bool adachi::adachi_method_place(unsigned char target_x, unsigned char target_y,
 
 //next_dirrctionから次行く方向を選び、行動する
 		next_action = get_next_action_old(next_direction,
-				mouse::get_direction());
+				compas_to_muki(mouse::get_compas()));
 		if (next_action != go_straight)
 			run_next_action(next_action, true);
 		else {		//直進の場合は、通常とは異なり絶対座標基準の直進を行う
@@ -2600,8 +2621,7 @@ bool adachi::node_adachi(std::vector<std::pair<uint8_t, uint8_t> > finish,
 	run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);
 
 	//半区間進んだノードが0なら、目の前のマスがゴールなので終了
-	if (search.get_step(now_x, now_y, muki_to_compas(mouse::get_direction()))
-			== 0) {
+	if (search.get_step(now_x, now_y, mouse::get_compas()) == 0) {
 		run_next_action(stop, true);
 		//足立法成功なのでマップを保存する
 		map::output_map_data(&mouse::now_map);
@@ -2646,8 +2666,7 @@ bool adachi::node_adachi(std::vector<std::pair<uint8_t, uint8_t> > finish,
 		}
 
 		//next_dirrctionから次行く方向を選び、行動する
-		next_action = get_next_action(next_compas,
-				muki_to_compas(mouse::get_direction()));
+		next_action = get_next_action(next_compas, mouse::get_compas());
 		run_next_action(next_action, true);
 
 		//もし止まるべきと出たならココで足立法をやめる

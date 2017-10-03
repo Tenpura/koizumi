@@ -234,7 +234,7 @@ typedef struct {
 } COORDINATE;
 
 typedef enum {
-	east=0, west=1, north=2, south=3
+	east=0, west=1, north=2, south=3, north_east=4, south_east=5, south_west=6, north_west=7
 } compas;
 
 typedef enum {

@@ -14,10 +14,12 @@ uint32_t* const flash::BACKUP_SECTOR_START_POINTER =
 bool flash::clear() {
 
 	FLASH_Unlock();
+	//ここでフラグクリアしとかないと、ERROR_PROGRAMになる
 	FLASH_ClearFlag(FLASH_FLAG_PGSERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_WRPERR | FLASH_FLAG_OPERR | FLASH_FLAG_EOP); // clear error status
 	FLASH_Status result = FLASH_EraseSector(BACKUP_FLASH_NUM, VoltageRange_3);
 	FLASH_Lock();
 
+	/*	//デバック用
 	switch (result) {
 	case FLASH_BUSY:
 		myprintf("BUSY!%\n");
@@ -32,6 +34,7 @@ bool flash::clear() {
 		myprintf("ERROR_OPERATION!%\n");
 		break;
 	}
+	*/
 
 	return (result == FLASH_COMPLETE);
 }
@@ -42,13 +45,10 @@ uint32_t* flash::load() {
 }
 
 bool flash::write_block() {
-	myprintf("clear? \n");
 
 	//まずはFlashを消去
 	if (!clear())
 		return false;
-
-	myprintf("clear! \n");
 
 	FLASH_Unlock();
 
@@ -65,29 +65,23 @@ bool flash::write_block() {
 	}
 	FLASH_Lock();
 
-	if ((result == FLASH_COMPLETE))
-		myprintf("true");
-	else
-		myprintf("false");
-
 	return (result == FLASH_COMPLETE);
 
 }
+MAP_DATA size;
+const size_t flash_maze::maze_size = sizeof(MAP_DATA);//sizeof(size.x_wall)*4;
 
-const size_t flash_log::maze_size = sizeof(MAP_DATA);
-
-bool flash_log::save_maze(uint8_t index, const MAP_DATA* const input) {
+bool flash_maze::save_maze(uint8_t index, const MAP_DATA* const input) {
 	//保存最大数以上の迷路を書き込もうとしたら失敗
 	if (index >= save_maze_num)
 		return false;
 
 	//flash内のwork_ramのindex番目にmaze_dataを書き込む
-	memcpy(work_ram + maze_size * index, input, maze_size);
-
+	memcpy(flash::load() + maze_size * index, input, maze_size);
 	return flash::write_block();
 }
 
-bool flash_log::load_maze(uint8_t index, MAP_DATA* const output) {
+bool flash_maze::load_maze(uint8_t index, MAP_DATA* const output) {
 	//保存最大数以上の迷路を読み出そうとしたら失敗
 	if (index >= save_maze_num)
 		return false;
