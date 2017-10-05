@@ -12,6 +12,7 @@
 #include"hardware.h"
 #include"parameter.h"
 #include"map.h"
+#include"flash.h"
 #include <queue>
 #include<cmath>
 
@@ -156,19 +157,23 @@ public:
 
 public:
 	static void accel_run(const float distance_m, const float end_velocity,
-			const unsigned char select_mode);
+				const unsigned char select_mode);
 	static void accel_run_wall_eage(const float distance_m,
 			const float end_velocity, const unsigned char select_mode,
-			const float check_distance);
-	static void accel_run_by_place(const COORDINATE delta, const float end_velocity,
-			const unsigned char select_mode);	//絶対座標を基準に走る。 現在座標と目標座標の距離で考える
+			const float check_distance);		//探索用
+	static void path_run_wall_eage(const float distance_m,
+			const float end_velocity, const unsigned char select_mode);	//最短の大廻スラロームの前距離用
+	static void accel_run_by_distance(const float tar_L_m, const float end_velocity,
+				const unsigned char select_mode);	//割り込みの積算距離ではなく、初期座標と現在座標の間の距離を考える
+	static void accel_run_by_place(const COORDINATE finish, const float end_velocity,
+				const unsigned char select_mode);	//絶対座標を基準に走る。 現在座標と目標座標の距離で考える
 
 
 	static void fit_run(const unsigned char select_mode);//前壁に対してうまく合うように調整して止まる
 
 	static void slalom(const SLALOM_TYPE slalom_type,
 			const signed char right_or_left, const uint8_t select_mode);
-	//探索用のスラローム。前壁の値によって超信地になったり、前距離無視したりする
+	//探索用のスラローム。
 	static void slalom_for_search(const SLALOM_TYPE slalom_type,
 			const signed char right_or_left, const uint8_t select_mode);
 	static void spin_turn(const float target_degree);

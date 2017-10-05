@@ -58,7 +58,7 @@ int main(void) {
 	map::reset_maze();
 	map::output_map_data(&mouse::now_map);
 
-	//encoder::yi_correct();		//YI式補正
+	encoder::yi_correct();		//YI式補正
 
 	uint8_t select = 0;	//モード管理用
 	while (1) {
@@ -134,13 +134,17 @@ int main(void) {
 			break;
 
 		case 4:		//迷路データを呼び出す
-			select = mode::select_mode(2, right);
+			select = mode::select_mode(2 + 1, right);
+			if (select == 0)
+				break;
 			flash_maze fl;
-			if (fl.load_maze(select, &mouse::now_map))
+			MAP_DATA map;
+			if (fl.load_maze(select - 1, &map))
 				myprintf("true\n\r");
 			else
 				myprintf("false\n\r");
-			map::input_map_data(&mouse::now_map);
+			map::input_map_data(&map);
+			map::output_map_data(&mouse::now_map);
 			break;
 
 		case 5:	//調整用
@@ -155,7 +159,7 @@ int main(void) {
 			mouse::run_init(true, true);
 
 			flog[0][0] = -1;
-			run::accel_run(0.09, 0, 0);
+			run::accel_run(0.09 * 15, 0, 0);
 			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
 			//run::accel_run(0.045 + 0.09, SEARCH_VELOCITY, 0);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
@@ -174,11 +178,15 @@ int main(void) {
 			break;
 
 		case 6: {		//スラローム調整
-			select = mode::select_mode(slalom_type_count, right);
-			float b_dis = 0.09 * 2 * MOUSE_MODE;		//スラロームの前にどれだけ進むか
-			float a_dis = 0.09 * 2 * MOUSE_MODE;		//スラロームの後にどれだけ進むか
-			SLALOM_TYPE sla_type = none;
+
 			int8_t right_or_left = MUKI_RIGHT;
+			if (!mode::select_RorL(right))
+				right_or_left = MUKI_LEFT;
+
+			select = mode::select_mode(slalom_type_count, right);
+			float b_dis = 0.09 * 1 * MOUSE_MODE;		//スラロームの前にどれだけ進むか
+			float a_dis = 0.09 * 1 * MOUSE_MODE;		//スラロームの後にどれだけ進むか
+			SLALOM_TYPE sla_type = none;
 
 			switch (select) {
 			case none:
@@ -188,8 +196,8 @@ int main(void) {
 				break;
 			case small:
 				sla_type = small;
-				b_dis -= 0.045 * MOUSE_MODE;
-				a_dis -= 0.045 * MOUSE_MODE;
+				b_dis += 0.045 * MOUSE_MODE;
+				a_dis += 0.045 * MOUSE_MODE;
 				break;
 			case big_90:
 				sla_type = big_90;
@@ -282,11 +290,14 @@ int main(void) {
 			myprintf("node cal. count->%d\n\r", wait::get_count() - temp_cnt);
 			search.draw_step();
 
+			search.create_small_path(goal,
+					std::make_pair<uint8_t, uint8_t>(0, 0), north);
+			search.convert_path();
+			path::draw_path();
+
 			search.create_big_path(goal, std::make_pair<uint8_t, uint8_t>(0, 0),
 					north);
 			search.convert_path();
-
-			//path::create_path();
 			path::draw_path();
 
 			break;

@@ -99,10 +99,11 @@ private:
 
 	static void set_step_for_shortest(unsigned char target_x,unsigned char target_y);//最短用の歩数マップ作製
 	static void displace_path(unsigned int path_number);//path_number目のpathを消してからpathを一個ずらす
+
+public:
 	static void improve_path();//小回りだけのpathに大回りを追加
 	static void improve_advance_path();//小回りだけのpathに大回りと斜めを追加
 
-public:
 
 	static void create_path();//小回りだけのパス
 	static void create_path_advance();//大回りを追加したパス(ナナメはナシ)

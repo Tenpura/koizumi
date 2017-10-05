@@ -390,8 +390,10 @@ void mouse::cal_distance() {
 void mouse::cal_place() {
 	float theta = get_angle_radian();		//マウスの角度を取得
 	//微小時間にマウスが進む距離
-	float dx = velocity * CONTORL_PERIOD * sinf(theta);
-	float dy = velocity * CONTORL_PERIOD * cosf(theta);
+	float dl = (velocity + ideal_acceleration * CONTORL_PERIOD / 2)
+			* CONTORL_PERIOD;
+	float dx = dl * sinf(theta);
+	float dy = dl * cosf(theta);
 
 	place.x += dx;
 	place.y += dy;
@@ -835,7 +837,10 @@ void mouse::turn_direction_slalom(const SLALOM_TYPE slalom_type,
 
 	case begin_45:
 	case end_45:
-		//FIX_ME 斜めの方向管理方法が確立されてない
+		if (right_or_left == MUKI_RIGHT)
+			turn_45_dir(true);
+		else
+			turn_45_dir(false);
 		break;
 
 	case begin_135:
@@ -872,7 +877,7 @@ mouse::~mouse() {
 
 }
 
-//XXX 壁キレの距離[m]
+//XXX 壁キレの距離[m]　区画の境目までどれくらいの距離なのか
 // right left front_right front_left front
 float run::WALL_EAGE_DISTANCE[PHOTO_TYPE::element_count] = { 0.04, 0.035, 0, 0,
 		0 };
@@ -991,6 +996,8 @@ void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 
 	//1ms まってから次のセンサー値をみるために、割り込みがされたか判断するよう
 	uint32_t time_count = mouse::get_count_ms();
+
+	//安定しないので壁があるときだけ壁キレを読む
 	bool check_l = photo::check_wall(PHOTO_TYPE::left);
 	bool check_r = photo::check_wall(PHOTO_TYPE::right);
 
@@ -1057,6 +1064,234 @@ void run::accel_run_wall_eage(const float distance_m, const float end_velocity,
 	my7seg::turn_off();
 	mouse::set_distance_m(0);
 	GPIO_SetBits(GPIOC, GPIO_Pin_3);	//LED2
+}
+
+void run::path_run_wall_eage(const float distance_m, const float end_velocity,
+		const unsigned char select_mode) {
+
+	float run_dis = 0;		//走行距離
+	bool wall_eage_flag = true;
+	float wall_eage[PHOTO_TYPE::element_count];	//この値を下回ったら壁キレ
+	//壁キレのリファレンス
+	wall_eage[PHOTO_TYPE::right] = -0.015;
+	wall_eage[PHOTO_TYPE::left] = 0.02;
+
+	//この関数内でも加減速できるように
+	//雑に目標速度まで加速or減速しかしない
+	float accel_sign = 0;
+	if (mouse::get_ideal_velocity() < end_velocity) {			//現在速度が足りないとき
+		mouse::set_ideal_accel(
+				ABS(parameter::get_run_acceleration(select_mode)));	//加速
+		accel_sign = 1;	//加速なので正
+	} else if (mouse::get_ideal_velocity() > end_velocity) {	//現在速度が超過してるとき
+		mouse::set_ideal_accel(
+				-ABS(parameter::get_run_de_acceleration(select_mode)));	//減速
+		accel_sign = -1;	//減速なので負
+	}
+
+	//区画の境目からスタート想定
+
+	//直前まで壁があってから壁キレを見る　＝　閾値をまたぐのを判断するよう
+	uint8_t right = 0;
+	uint8_t left = 0;
+
+	//直前に何ms以上 閾値を超えていれば壁キレが起こると判断するか（値がバラつく対策）
+	static const uint8_t w_cnt = 3;
+
+	//1ms まってから次のセンサー値をみるために、割り込みがされたか判断するよう
+	uint32_t time_count = mouse::get_count_ms();
+
+	while (1) {
+		//フェイルセーフが掛かっていればそこで抜ける
+		if (mouse::get_fail_flag()) {
+			return;
+		}
+
+		while (time_count == mouse::get_count_ms()) {
+			//割り込みが入るまで待つ
+		}
+		time_count = mouse::get_count_ms();
+
+		if (accel_sign != 0) {		//加速or減速している場合
+			if (((mouse::get_ideal_velocity() - end_velocity) * accel_sign)
+					>= 0) {		//目標速度を超えたら
+				mouse::set_ideal_accel(0);		//加減速を止める
+				mouse::set_ideal_velocity(end_velocity);	//目標速度をセット
+			}
+		}
+
+		//区画の境目を中心に、どのくらいの位置にいるか
+		run_dis = mouse::get_relative_go() + 0.045 * MOUSE_MODE;
+		if (run_dis > 0.045 * MOUSE_MODE)		//オーバーフロー
+			run_dis -= 0.09 * MOUSE_MODE;
+
+		//目標距離走ったら抜ける
+		if (distance_m <= run_dis) {
+			break;
+		}
+
+		//壁キレ！
+		if (!wall_eage_flag) {
+			GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
+		} else {
+			//直前w_cnt[ms]以上閾値の反対側にいて、このときはじめて閾値を超えたなら
+			if (left >= w_cnt) {
+				if (photo::get_side_from_center(PHOTO_TYPE::left)
+						> wall_eage[PHOTO_TYPE::left]) {
+					mouse::set_relative_go(
+							0.045 * MOUSE_MODE
+									- WALL_EAGE_DISTANCE[PHOTO_TYPE::left],
+							true);	//区画中央を原点として位置を更新
+					wall_eage_flag = false;
+				}
+			} else {
+				//壁キレを待つ前にそもそも壁キレが起こるのかを判断
+				if (photo::get_side_from_center(PHOTO_TYPE::left)
+						< wall_eage[PHOTO_TYPE::left])
+					left++;
+				else
+					left = 0;
+			}
+			//直前w_cnt[ms]以上閾値の反対側にいて、このときはじめて閾値を超えたなら
+			if (right >= w_cnt) {
+				if (photo::get_side_from_center(PHOTO_TYPE::right)
+						< wall_eage[PHOTO_TYPE::right]) {
+					mouse::set_relative_go(
+							0.045 * MOUSE_MODE
+									- WALL_EAGE_DISTANCE[PHOTO_TYPE::right],
+							true);	//区画中央を原点として位置を更新
+					wall_eage_flag = false;
+				}
+			} else {
+				//壁キレを待つ前にそもそも壁キレが起こるのかを判断
+				if (photo::get_side_from_center(PHOTO_TYPE::right)
+						> wall_eage[PHOTO_TYPE::right])
+					right++;
+				else
+					right = 0;
+			}
+
+		}
+
+	}
+
+	my7seg::turn_off();
+	mouse::set_ideal_velocity(end_velocity);	//目標速度をセット
+	mouse::set_distance_m(0);
+	GPIO_SetBits(GPIOC, GPIO_Pin_3);	//LED2
+}
+
+void run::accel_run_by_distance(const float distance_m,
+		const float end_velocity, const unsigned char select_mode) {
+
+	COORDINATE init = mouse::get_place();
+	float max_velocity = parameter::get_run_max_velocity(select_mode);
+	float accel_value = ABS(parameter::get_run_acceleration(select_mode));
+	float de_accel_value = ABS(parameter::get_run_de_acceleration(select_mode));
+	float de_accel_distance = ABS(
+			mouse::get_ideal_velocity() * mouse::get_ideal_velocity()
+			- end_velocity * end_velocity) / (2 * de_accel_value);	//減速に必要な距離
+
+	float run_square = 0;		//走行距離の２乗
+
+	float sign = 1;
+	//バックするなら
+	if (distance_m < 0) {
+		sign = -1;
+		max_velocity *= -1;
+		accel_value *= -1;
+		de_accel_value *= -1;
+		de_accel_distance *= -1;
+	}
+
+	//加速
+	mouse::set_ideal_accel(accel_value);
+	while (0 < sign * (max_velocity - mouse::get_ideal_velocity())) {
+		//現在速度から減速にかかる距離を計算
+		de_accel_distance = (mouse::get_ideal_velocity()
+				* mouse::get_ideal_velocity() - end_velocity * end_velocity)
+				/ (2 * de_accel_value);
+
+		//絶対座標から移動距離を求める
+		run_square = (mouse::get_place().x - init.x)
+				* (mouse::get_place().x - init.x);
+		run_square += (mouse::get_place().y - init.y)
+				* (mouse::get_place().y - init.y);
+
+		//減速に距離が必要な距離が足りなくなったら抜ける
+		if (ABS(de_accel_distance * de_accel_distance)
+				>= sign * (distance_m * distance_m - run_square)) {
+			break;
+		}
+
+		if (mouse::get_fail_flag())
+			return;
+	}
+
+	//等速
+	mouse::set_ideal_accel(0);
+	while (1) {
+		//現在速度から減速にかかる距離を計算
+		de_accel_distance = (mouse::get_ideal_velocity()
+				* mouse::get_ideal_velocity() - end_velocity * end_velocity)
+				/ (2 * de_accel_value);
+
+		//絶対座標から移動距離を求める
+		run_square = (mouse::get_place().x - init.x)
+				* (mouse::get_place().x - init.x);
+		run_square += (mouse::get_place().y - init.y)
+				* (mouse::get_place().y - init.y);
+
+		//減速に距離が必要な距離が足りなくなったら抜ける
+		if (ABS(de_accel_distance * de_accel_distance)
+				>= sign * (distance_m * distance_m - run_square)) {
+			break;
+		}
+
+		if (mouse::get_fail_flag())
+			return;
+	}
+
+	//減速
+	mouse::set_ideal_accel(-de_accel_value);
+	while (sign * (mouse::get_ideal_velocity() - end_velocity) > 0) {
+		//絶対座標から移動距離を求める
+		run_square = (mouse::get_place().x - init.x)
+				* (mouse::get_place().x - init.x);
+		run_square += (mouse::get_place().y - init.y)
+				* (mouse::get_place().y - init.y);
+
+		//速度より先に距離がなくなったら抜ける
+		if (distance_m * distance_m < run_square)
+			break;
+
+		if (mouse::get_fail_flag())
+			return;
+
+	}
+
+	mouse::set_ideal_accel(0);
+	mouse::set_ideal_velocity(end_velocity);
+
+	//速度0だとここに閉じ込められてしまう
+	if (sign * end_velocity > 0) {
+		//もし速度が先に無くなっても、最後まで走りきるよう
+		while (1) {
+			//絶対座標から移動距離を求める
+			run_square = (mouse::get_place().x - init.x)
+					* (mouse::get_place().x - init.x);
+			run_square += (mouse::get_place().y - init.y)
+					* (mouse::get_place().y - init.y);
+
+			if (sign * (distance_m * distance_m - run_square) <= 0)
+				break;
+
+			if (mouse::get_fail_flag())
+				return;
+		}
+	}
+
+	mouse::set_distance_m(0);
 }
 
 void run::accel_run_by_place(const COORDINATE finish, const float end_velocity,
@@ -1305,10 +1540,20 @@ void run::slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
 	}
 
 	if (distance - correct > 0) {	//前距離の分走る
-		accel_run(distance - correct, slalom_velocity, select_mode);
+		switch(slalom_type){
+		case big_90:
+		case big_180:
+		case begin_45:
+		case begin_135:
+//			path_run_wall_eage(distance - correct, slalom_velocity, select_mode);
+			accel_run(distance - correct, slalom_velocity, select_mode);
+			break;
+		default:
+			accel_run(distance - correct, slalom_velocity, select_mode);
+			break;
+		}
 	}
 
-//mouse::slalom_flag = true;
 	control::stop_wall_control();
 
 //時計回りが正
@@ -1389,13 +1634,15 @@ void run::slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
 	//TODO マウスの相対座標も変換する
 
 //後ろ距離分走る
-	if (wall_flag)
-		control::start_wall_control();	//もともと壁制御がかかってたら復活させる
 
 	mouse::set_distance_m(0);
 	distance = parameter::get_slalom((slalom_type), after_distance,
 			right_or_left, select_mode);
 	accel_run(distance, slalom_velocity, select_mode);
+
+	if (wall_flag)
+		control::start_wall_control();	//もともと壁制御がかかってたら復活させる
+
 	//control::reset_delta(sen_gyro);
 
 }
@@ -1580,7 +1827,7 @@ void run::spin_turn(const float target_degree) {
 	float sign = 1;		//目標角度の符号を管理
 
 	control::stop_wall_control();
-	wait::ms(500);
+	wait::ms(200);
 
 	mouse::set_spin_flag(true);		//超信地開始
 
@@ -1661,7 +1908,8 @@ void run::spin_turn(const float target_degree) {
 	mouse::set_ideal_angular_accel(0);
 	mouse::set_ideal_angular_velocity(0);
 	mouse::set_distance_m(0);
-	wait::ms(500);
+
+	wait::ms(300);
 	control::reset_delta(sen_gyro);
 
 //もともと壁制御かかってたなら復活させる
@@ -1698,7 +1946,8 @@ void run::path(const float finish_velocity, const uint8_t _straight,
 			if ((path::get_path_flag(path_count)) == false) {
 				next_velocity = finish_velocity;
 				//例外処理なので最後の直線を走って終わり
-				run::accel_run(0.045 * MOUSE_MODE, next_velocity, _straight);
+				run::accel_run_by_distance(0.045 * MOUSE_MODE, next_velocity,
+						_straight);
 				break;
 			}
 		} else {
@@ -1707,8 +1956,9 @@ void run::path(const float finish_velocity, const uint8_t _straight,
 				if (path::get_path_turn_type(path_count) == none) {	//この直線で最後
 					next_velocity = finish_velocity;
 					//例外処理なので最後の直線を走って終わり
-					run::accel_run(path::get_path_straight(path_count),
-							next_velocity, _straight);
+					run::accel_run_by_distance(
+							path::get_path_straight(path_count), next_velocity,
+							_straight);
 					break;
 
 				} else {
@@ -1728,18 +1978,21 @@ void run::path(const float finish_velocity, const uint8_t _straight,
 
 			if (naname_flag) {	//ナナメ走行中
 				control::stop_wall_control();
-				run::accel_run(path::get_path_straight(path_count) * SQRT2,
+				run::accel_run_by_distance(
+						path::get_path_straight(path_count) * SQRT2,
 						next_velocity, _straight);
 				control::start_wall_control();
 			} else {				//普通の直進
 				control::start_wall_control();
-				if (path_count == 0)	//最初の直進の場合は壁キレ読めない気がするので普通に走る
-					run::accel_run(path::get_path_straight(path_count),
-							next_velocity, _straight);
-				else
+				if (path_count == 0) {	//最初の直進の場合は壁キレ読めない気がするので普通に走る
+					run::accel_run_by_distance(
+							path::get_path_straight(path_count), next_velocity,
+							_straight);
+				} else {
 					run::accel_run_wall_eage(
 							path::get_path_straight(path_count), next_velocity,
 							_straight, 0.045 * MOUSE_MODE);
+				}
 			}
 
 		}
@@ -1882,7 +2135,7 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 
 		//1区間直進
 		run::accel_run_wall_eage((0.09 * MOUSE_MODE), SEARCH_VELOCITY, 0,
-				(0.045 * MOUSE_MODE));
+				(0.07 * MOUSE_MODE));
 		//両壁あり直線が連続?回　くらいの補正がかかっていたら姿勢が正されていると判断し角度を修正
 		if (str_score >= 4) {
 			mouse::set_relative_rad(mouse::get_relative_rad() * 0.9, true);
@@ -1931,7 +2184,13 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 		if (0.045 * MOUSE_MODE - correct < 0.016)//減速しきる上限を切る　だいたい1/64 2ax=v^2 a=2,v=0.25
 			correct = 0.045 * MOUSE_MODE - 0.016;
 		run::accel_run((0.045 * MOUSE_MODE) - correct, 0, 0);			//半区間直進
+
 		run::spin_turn(180);// - degree(mouse::get_relative_rad()));//相対角度から上手く合うように変更する
+		static flash_maze flash_l;
+		static MAP_DATA temp;
+		map::output_map_data(&temp);
+		flash_l.save_maze(0, &temp);
+
 		mouse::turn_90_dir(MUKI_RIGHT);	//向きを90°変える
 		mouse::turn_90_dir(MUKI_RIGHT);	//向きを90°変える
 		mouse::set_relative_base_rad(big_180, true);		//180°基準角度変更
@@ -1939,6 +2198,7 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 		mouse::set_relative_go(-mouse::get_relative_go(), false);	//相対座標を反転させる
 		mouse::set_distance_m(0);
 		run::accel_run(-(0.03 * MOUSE_MODE), 0, 0);	//半区間直進
+
 //		if (check_right | check_left)
 //			run::accel_run_wall_eage((0.065 * MOUSE_MODE), SEARCH_VELOCITY, 0,
 //					(0.03 * MOUSE_MODE));	//半区間直進

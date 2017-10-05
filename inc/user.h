@@ -12,6 +12,7 @@
 #include "extern_c.h"
 #include "define.h"
 #include "hardware.h"
+#include "flash.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -71,6 +72,7 @@ private:
 public:
 	//今はスイッチで切替、スイッチが決定
 	static uint8_t select_mode(const unsigned char mode_number, const PHOTO_TYPE type);//mode選択し、選んだモード番号を返す
+	static bool select_RorL(const PHOTO_TYPE type);	//rightならtrue,leftならfalse
 
 	static bool search_mode();		//探索モード
 	static bool shortest_mode();	//最短モード

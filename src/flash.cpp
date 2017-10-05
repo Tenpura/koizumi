@@ -77,7 +77,7 @@ bool flash_maze::save_maze(uint8_t index, const MAP_DATA* const input) {
 		return false;
 
 	//flash“à‚Ìwork_ram‚Ìindex”Ô–Ú‚Émaze_data‚ğ‘‚«‚Ş
-	memcpy(flash::load() + maze_size * index, input, maze_size);
+	memcpy((flash::load() + maze_size * index), input, maze_size);
 	return flash::write_block();
 }
 

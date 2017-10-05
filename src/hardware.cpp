@@ -1412,6 +1412,7 @@ void control::cal_delta() {
 			photo_delta.P = 0;//mouse::get_relative_side();		//センサを信用しない　= 推定値を突っ込んどく
 		}
 
+
 		//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
 		if (mouse::get_ideal_velocity() < SEARCH_VELOCITY * 0.5) {
 			photo_delta.P = 0;

@@ -105,6 +105,41 @@ uint8_t mode::select_mode(const unsigned char mode_number,
 
 	return select;
 }
+bool mode::select_RorL(const PHOTO_TYPE type){
+	bool is_right = true;
+	bool stnby_flag = true;		//モード送り可能のときtrue	センサーを反応させてるとき高速でモードが送られないように
+
+	while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {	//押されたら決定
+		my7seg::turn_off();
+		if(is_right)
+			my7seg::light(my7seg::DIRECTION::right);
+		else
+			my7seg::light(my7seg::DIRECTION::left);
+		wait::ms(10);
+
+		if (photo::check_wall(type)) {
+			if (stnby_flag) {
+				is_right = !is_right;	//正負反転
+				stnby_flag = false;
+			}
+		} else {
+			stnby_flag = true;
+		}
+
+	}
+	//決定したときは選択したモードを強調
+	for (int i = 0; i < 5; i++) {
+		if(is_right)
+			my7seg::light(my7seg::DIRECTION::right);
+		else
+			my7seg::light(my7seg::DIRECTION::left);
+		wait::ms(250);
+		my7seg::turn_off();
+		wait::ms(250);
+	}
+
+	return is_right;
+}
 
 bool mode::search_mode() {
 	//ゴール座標を変数に
@@ -130,23 +165,38 @@ bool mode::search_mode() {
 	case 1:		//1は普通の足立法
 		mouse::set_position(0, 0);
 		mouse::set_direction(north);
-		adachi::adachi_method(GOAL_x, GOAL_y, false);
+		if(adachi::adachi_method(GOAL_x, GOAL_y, false)){		//足立方が成功したら
+			flash_maze flash_l;
+			MAP_DATA temp;
+			map::output_map_data(&temp);
+			flash_l.save_maze(0, &temp);
+			flash_l.save_maze(1, &temp);
+		}
 		break;
 
 	case 2:		//2は帰りもあるよ
 		mouse::set_position(0, 0);
 		mouse::set_direction(north);
 		if (adachi::adachi_method(GOAL_x, GOAL_y, false)) {	//足立法が成功したら
-			wait::ms(100);
+			flash_maze flash_l;
+			MAP_DATA temp;
+			map::output_map_data(&temp);
+			flash_l.save_maze(0, &temp);
+			flash_l.save_maze(1, &temp);
+
 			mouse::set_position(GOAL_x, GOAL_y);
 			run::spin_turn(180);
 			mouse::turn_90_dir(MUKI_RIGHT);
 			mouse::turn_90_dir(MUKI_RIGHT);
-			wait::ms(100);
+			wait::ms(500);
 
-			adachi::adachi_method(0, 0, false);
+			if(adachi::adachi_method(0, 0, false)){
+				map::output_map_data(&temp);
+				flash_l.save_maze(0, &temp);
+				flash_l.save_maze(1, &temp);
+			}
+
 		}
-
 		break;
 
 	case 3:			//ノード型足立法
@@ -158,7 +208,34 @@ bool mode::search_mode() {
 	case 4:
 		mouse::set_position(0, 0);
 		mouse::set_direction(north);
-		if (adachi::adachi_method(GOAL_x, GOAL_y, true)) {	//足立法が成功したら
+		if (adachi::adachi_method(15, 0, false)) {	//足立法が成功したら
+			flash_maze flash_l;
+			MAP_DATA temp;
+			map::output_map_data(&temp);
+			flash_l.save_maze(0, &temp);
+			flash_l.save_maze(1, &temp);
+
+			mouse::set_position(15, 0);
+			run::spin_turn(180);
+			mouse::turn_90_dir(MUKI_RIGHT);
+			mouse::turn_90_dir(MUKI_RIGHT);
+			wait::ms(500);
+
+			if (adachi::adachi_method(GOAL_x, GOAL_y, false)) {	//足立法が成功したら
+				flash_maze flash_l;
+				MAP_DATA temp;
+				map::output_map_data(&temp);
+				flash_l.save_maze(0, &temp);
+				flash_l.save_maze(1, &temp);
+
+				mouse::set_position(GOAL_x, GOAL_y);
+				run::spin_turn(180);
+				mouse::turn_90_dir(MUKI_RIGHT);
+				mouse::turn_90_dir(MUKI_RIGHT);
+				wait::ms(500);
+
+				adachi::adachi_method(0, 0, false);
+			}
 
 		}
 		break;
@@ -166,15 +243,20 @@ bool mode::search_mode() {
 	case 5:
 		mouse::set_position(0, 0);
 		mouse::set_direction(north);
-		if (adachi::adachi_method(GOAL_x, GOAL_y, false)) {
-			wait::ms(100);
+		if (adachi::adachi_method(GOAL_x, GOAL_y, true)) {	//足立法が成功したら
+			flash_maze flash_l;
+			MAP_DATA temp;
+			map::output_map_data(&temp);
+			flash_l.save_maze(0, &temp);
+			flash_l.save_maze(1, &temp);
+
 			mouse::set_position(GOAL_x, GOAL_y);
 			run::spin_turn(180);
 			mouse::turn_90_dir(MUKI_RIGHT);
 			mouse::turn_90_dir(MUKI_RIGHT);
-			wait::ms(100);
+			wait::ms(500);
 
-			adachi::adachi_method(0, 0, true);
+			adachi::adachi_method(0, 0, false);
 		}
 		break;
 
@@ -208,8 +290,13 @@ bool mode::shortest_mode() {
 	goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y + 1));
 
 	static node_search search;
+	search.set_weight_algo(based_distance);		//重みづけの方法を設定
 	search.input_map_data(&mouse::now_map);
 	search.set_weight_algo(adachi);		//重みづけの方法を設定
+
+	if(!search.create_small_path(goal,std::make_pair<uint8_t, uint8_t>(0,0),north))
+		return false;
+	search.convert_path();
 
 
 	uint8_t select = select_mode(5+1, PHOTO_TYPE::right);
@@ -227,14 +314,12 @@ bool mode::shortest_mode() {
 			return false;
 		search.convert_path();
 */
-		path::create_path();
-		search.create_big_path(goal,std::make_pair<uint8_t, uint8_t>(0,0),north);
-		search.convert_path();
+		search.convert_path();	//小回り
 
 		break;
 	}
 	case 2:
-		path::create_path_advance();
+		path::improve_path();
 		break;
 	default:{
 		/*
@@ -243,7 +328,7 @@ bool mode::shortest_mode() {
 		else
 			return false;
 		*/
-		path::create_path_naname();
+		path::improve_advance_path();
 		break;
 	}
 	}

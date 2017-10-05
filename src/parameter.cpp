@@ -25,10 +25,10 @@ const TRAPEZOID parameter::straight_run[RUN_MODE_NUMBER] = {
 //速度、角度、加速角度、前距離、後ろ距離、角加速度、最高角速度
 //小回り90°ターン
 const std::array<INIT_SLALOM, 2> right_small_half = { {
-		{ SEARCH_VELOCITY, 91, 30, 0.010, 0.008, 119.1789, 11.17156, 0 },
+		{ SEARCH_VELOCITY, 91, 30, 0.010, 0.007, 119.1789, 11.17156, 0 },
 		{ 0.35, 91, 30, 0.01, 0.01, 171.1409, 15.45826, 0 }, } };
 const std::array<INIT_SLALOM, 2> left_small_half = { {
-		{ SEARCH_VELOCITY, 90, 30, 0.012, 0.008, 119.1789, 11.17156, 0 },
+		{ SEARCH_VELOCITY, 90.5, 30, 0.01, 0.017, 119.1789, 11.17156, 0 },
 		{ 0.35, 90, 30, 0.01, 0.01, 171.1409, 15.45826, 0 } } };
 
 //大まわり90°ターン
@@ -57,7 +57,7 @@ const std::array<INIT_SLALOM, 3> left_big180_half ={ {
 
 //入り45°ターン
 const std::array<INIT_SLALOM, 1> right_begin45_half = { {
-		{ 0.5, 45, 20, 0.012, 0.03064, 195.0775, 11.67003, 0 },
+		{ 0.5, 45.8, 20, 0.020, 0.025, 195.0775, 11.67003, 0 },
 } };
 const std::array<INIT_SLALOM, 1> left_begin45_half = { {
 		{ 0.5, 45, 20, 0.012, 0.03064, 195.0775, 11.67003, 0 },
@@ -65,7 +65,7 @@ const std::array<INIT_SLALOM, 1> left_begin45_half = { {
 
 //出の45°ターン
 const std::array<INIT_SLALOM, 1> right_end45_half = { {
-		{ 0.5, 45, 20, 0.03064, 0.012, 195.0775, 11.67003, 0 },
+		{ 0.5, 45.8, 20, 0.035, 0.014, 195.0775, 11.67003, 0 },
 } };
 const std::array<INIT_SLALOM, 1> left_end45_half = { {
 		{ 0.5, 45, 20, 0.03064, 0.012, 195.0775, 11.67003, 0 },
@@ -73,23 +73,28 @@ const std::array<INIT_SLALOM, 1> left_end45_half = { {
 
 //入り135°ターン
 const std::array<INIT_SLALOM, 1> right_begin135_half = { {
-		{ 0.5, 135, 45, 0.02, 0.01228, 141.1387, 14.89, 0 },
+		{ 0.5, 136, 45, 0.024, 0.022, 141.1387, 14.89, 0 },
 } };
 const std::array<INIT_SLALOM, 1> left_begin135_half = { {
-		{ 0.5, 135, 45, 0.02, 0.01228, 141.1387, 14.89, 0 },
+		{ 0.5, 136, 45, 0.02, 0.01228, 141.1387, 14.89, 0 },
 } };
 
 //出の135°ターン
 const std::array<INIT_SLALOM, 1> right_end135_half = { {
-		{ 0.5, 135, 45, 0.0123, 0.02, 141.1387, 14.89, 0 },
+		{ 0.5, 136, 45, 0.016, 0.028, 141.1387, 14.89, 0 },
 } };
 const std::array<INIT_SLALOM, 1> left_end135_half = { {
-		{ 0.5, 90, 40, 0.01,0.01, 194.223, 16.46773, 0 },
+		{ 0.5, 135, 45, 0.016, 0.028, 141.1387, 14.89, 0 },
 } };
 
 //ななめ90°ターン
-const std::array<INIT_SLALOM, 1> right_obli90_half = { 0 };
-const std::array<INIT_SLALOM, 1> left_obli90_half = { 0 };
+const std::array<INIT_SLALOM, 1> right_obli90_half = { {
+		{ 0.5, 90, 40, 0.005, 0.005, 162.5137, 15.0636, 0 },
+} };
+const std::array<INIT_SLALOM, 1> left_obli90_half = { {
+		{ 0.5, 90, 40, 0.005, 0.005, 162.5137, 15.0636, 0 },
+} };
+
 
 float parameter::get_run_acceleration(const unsigned char select_mode) {
 	if (select_mode >= RUN_MODE_NUMBER) {			//存在しないモードを選択したらエラー

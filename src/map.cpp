@@ -2244,7 +2244,7 @@ bool node_path::create_path(std::pair<uint8_t, uint8_t> init,
 			dx = -1;
 			dy = 0;
 			break;
-		default:	//斜めは非対応
+		default:	//斜めは予期せぬエラー
 			return false;
 			break;
 		}
@@ -2289,6 +2289,9 @@ bool node_path::create_path(std::pair<uint8_t, uint8_t> init,
 		//now_x -= 1;
 		dx = -1;
 		dy = 0;
+		break;
+	default:	//斜めになるのは予期せぬ場合だけ
+		return false;
 		break;
 	}
 
@@ -2380,13 +2383,9 @@ void node_path::improve_path() {
 			if (count + 1 < size) {	//count+1でもパスが終わらないなら
 
 				if (path.at(count + 1).distance >= 1) {	//ターン後も90mm以上直進するなら	大回りのチェックを行う
-
-					if ((count != 0) || (path.at(0).distance > 1)) {//初っ端のターンじゃなければ
-						path.at(count).turn = big_90;	//大回りターンに変更
-						path.at(count).distance -= 1;	//直線距離を90mm減らす
-						path.at(count + 1).distance -= 1;	//直線距離を90mm減らす
-
-					}
+					path.at(count).turn = big_90;	//大回りターンに変更
+					path.at(count).distance -= 1;	//直線距離を90mm減らす
+					path.at(count + 1).distance -= 1;	//直線距離を90mm減らす
 
 				} else {							//ターン後90mm直進はしないなら
 
