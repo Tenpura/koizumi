@@ -117,7 +117,8 @@ public:
 	//static unsigned char get_direction();	//defineされたMUKI_??で返す
 	static compas get_compas();	//defineされたMUKI_??で返す
 	static void get_direction(signed char *direction_x,
-			signed char *direction_y);		//引数の値をポインタ経由で変更する
+				signed char *direction_y);		//引数の値をポインタ経由で変更する
+	static void get_direction(float *dir_x, float *dir_y);		//斜め対応
 	static void set_direction(const compas dir);
 	static void set_direction(const signed char direction_x,
 			const signed char direction_y);

@@ -1411,6 +1411,7 @@ void control::cal_delta() {
 				< (half_section * 0.6)) {
 			photo_delta.P = 0;//mouse::get_relative_side();		//センサを信用しない　= 推定値を突っ込んどく
 		}
+		//photo_delta.P = mouse::get_relative_side();		//センサを信用しない　= 推定値を突っ込んどく
 
 
 		//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る

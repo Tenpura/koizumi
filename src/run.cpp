@@ -195,7 +195,7 @@ COORDINATE mouse::get_place() {
 }
 
 float mouse::get_relative_side() {
-	signed char dir_x, dir_y;		//マウスの方向
+	float dir_x, dir_y;		//マウスの方向
 	mouse::get_direction(&dir_x, &dir_y);
 
 	//TODO 斜めのときオドメトリから計算したずれをどう扱うかは要検討
@@ -206,7 +206,7 @@ float mouse::get_relative_side() {
 }
 
 float mouse::get_relative_go() {
-	signed char dir_x, dir_y;		//マウスの方向
+	float dir_x, dir_y;		//マウスの方向
 	mouse::get_direction(&dir_x, &dir_y);
 
 	//TODO 斜めのときオドメトリから計算した相対位置をどう扱うかは要検討
@@ -217,7 +217,7 @@ float mouse::get_relative_go() {
 }
 
 void mouse::set_relative_go(float set_value, bool updata_abs) {
-	signed char dir_x, dir_y;		//マウスの方向
+	float dir_x, dir_y;		//マウスの方向
 	mouse::get_direction(&dir_x, &dir_y);
 	float delta = set_value - get_relative_go();		//現在値との差分
 
@@ -233,7 +233,7 @@ void mouse::set_relative_go(float set_value, bool updata_abs) {
 }
 
 void mouse::set_relative_side(float set_value, bool updata_abs) {
-	signed char dir_x, dir_y;		//マウスの方向
+	float dir_x, dir_y;		//マウスの方向
 	mouse::get_direction(&dir_x, &dir_y);
 	float delta = set_value - get_relative_side();		//現在値との差分
 
@@ -328,6 +328,48 @@ void mouse::get_direction(signed char *direction_x, signed char *direction_y) {
 		*direction_y = 0;
 		break;
 	}
+}
+
+void mouse::get_direction(float *dir_x, float *dir_y) {
+	switch (direction) {
+	case east:
+		*dir_x = 1;
+		*dir_y = 0;
+		break;
+
+	case west:
+		*dir_x = -1;
+		*dir_y = 0;
+		break;
+
+	case north:
+		*dir_x = 0;
+		*dir_y = 1;
+		break;
+
+	case south:
+		*dir_x = 0;
+		*dir_y = -1;
+		break;
+
+	case north_east:
+		*dir_x = SQRT2 / 2;
+		*dir_y = SQRT2 / 2;
+		break;
+	case north_west:
+		*dir_x = -SQRT2 / 2;
+		*dir_y = SQRT2 / 2;
+		break;
+	case south_east:
+		*dir_x = SQRT2 / 2;
+		*dir_y = -SQRT2 / 2;
+		break;
+	case south_west:
+		*dir_x = -SQRT2 / 2;
+		*dir_y = -SQRT2 / 2;
+		break;
+	}
+
 }
 
 void mouse::set_direction(const compas dir) {
@@ -1540,7 +1582,7 @@ void run::slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
 	}
 
 	if (distance - correct > 0) {	//前距離の分走る
-		switch(slalom_type){
+		switch (slalom_type) {
 		case big_90:
 		case big_180:
 		case begin_45:
@@ -1700,14 +1742,8 @@ void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 		//時計回りが正
 		if (right_or_left == MUKI_RIGHT) {
 			run::spin_turn(90);
-			float rel_go = mouse::get_relative_go();
-			mouse::set_relative_go(-mouse::get_relative_side(), false);	//マウスの相対座標も変換する
-			mouse::set_relative_side(rel_go, false);
 		} else {
 			run::spin_turn(-90);
-			float rel_go = mouse::get_relative_go();
-			mouse::set_relative_go(mouse::get_relative_side(), false);//マウスの相対座標も変換する
-			mouse::set_relative_side(-rel_go, false);
 		}
 		accel_run(0.045 * MOUSE_MODE, slalom_velocity, select_mode);	//半区画前進
 		return;		//スラロームはしないで終了
@@ -1789,18 +1825,12 @@ void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 	mouse::set_ideal_angular_accel(0);
 	mouse::set_ideal_angular_velocity(0);
 
-	mouse::turn_90_dir(right_or_left);	//向きを90°変える
+	mouse::turn_direction_slalom(small, right_or_left);	//向きを90°変える
 	//マウスの相対座標も変換する
 	if (right_or_left == MUKI_LEFT) {		//時計回りが正
 		mouse::set_relative_base_rad(slalom_type, false);
-		float rel_go = mouse::get_relative_go();
-		mouse::set_relative_go(-mouse::get_relative_side(), false);
-		mouse::set_relative_side(rel_go, false);
 	} else {
 		mouse::set_relative_base_rad(slalom_type, true);
-		float rel_go = mouse::get_relative_go();
-		mouse::set_relative_go(mouse::get_relative_side(), false);
-		mouse::set_relative_side(-rel_go, false);
 	}
 
 //後ろ距離分走る
@@ -2194,8 +2224,6 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 		mouse::turn_90_dir(MUKI_RIGHT);	//向きを90°変える
 		mouse::turn_90_dir(MUKI_RIGHT);	//向きを90°変える
 		mouse::set_relative_base_rad(big_180, true);		//180°基準角度変更
-		mouse::set_relative_side(-mouse::get_relative_side(), false);//相対座標を反転させる
-		mouse::set_relative_go(-mouse::get_relative_go(), false);	//相対座標を反転させる
 		mouse::set_distance_m(0);
 		run::accel_run(-(0.03 * MOUSE_MODE), 0, 0);	//半区間直進
 
