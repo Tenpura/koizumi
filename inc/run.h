@@ -104,11 +104,11 @@ public:
 	static void set_place(const float x, const float y);
 	static COORDINATE get_place();
 
-	//TODO 関数名をもっとわかりやすくしたい
+	//TODO 斜めの処理
 	static float get_relative_side();		//進行方向と垂直方向にどれだけずれているか[m] マウスから見て右側正
 	static float get_relative_go();		//区画中心を原点としたとき、進行方向にどれだけ進んでいるか[m]
-	static void set_relative_go(float set_value, bool updata_abs);		//updata_abs は絶対座標を更新するかどうか
-	static void set_relative_side(float set_value, bool updata_abs);		//updata_abs は絶対座標を更新するかどうか
+	static void set_relative_go(float _set_value);		//updata_abs は絶対座標を更新するかどうか
+	static void set_relative_side(float _set_value);		//updata_abs は絶対座標を更新するかどうか
 
 	static float get_relative_rad();		//進行方向を0としたときにどれだけずれているか
 	static void set_relative_rad(float set_rad, bool updata_abs);		//relative_radがset_radになるように修正する
@@ -163,9 +163,12 @@ public:
 			const float end_velocity, const unsigned char select_mode,
 			const float check_distance);		//探索用
 	static void path_run_wall_eage(const float distance_m,
-			const float end_velocity, const unsigned char select_mode);	//最短の大廻スラロームの前距離用
-	static void accel_run_by_distance(const float tar_L_m, const float end_velocity,
-				const unsigned char select_mode);	//割り込みの積算距離ではなく、初期座標と現在座標の間の距離を考える
+			const float end_velocity, const unsigned char select_mode);	//最短の大廻スラロームの前距離用  distance_mは区画の中心からどれくらい進むか
+	static void path_accel_run_wall_eage(float distance_m,
+				float end_v, COORDINATE init, uint8_t select);	//最短用の走行関数　壁キレを読んだら相対角度を補正する　最後だけ読むとかでなく、走行中ずっと読む
+
+	static void accel_run_by_distance(float tar_L_m, float end_velocity,
+			COORDINATE init, uint8_t select_mode);	//割り込みの積算距離ではなく、初期座標と現在座標の間の距離を考える
 	static void accel_run_by_place(const COORDINATE finish, const float end_velocity,
 				const unsigned char select_mode);	//絶対座標を基準に走る。 現在座標と目標座標の距離で考える
 

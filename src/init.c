@@ -27,7 +27,7 @@ void init_system() {
 	//SysTick割り込みの優先度は15で最低。忘れそうだからメモしておく。
 
 }
-
+/*
 void init_tim(void) {
 
 	//割り込みコントローラー
@@ -52,7 +52,7 @@ void init_tim(void) {
 	TIM_ITConfig(TIM9, TIM_IT_Update, ENABLE); //タイマ更新イベントでの割り込みを許可
 
 }
-
+*/
 void init_gpio(void) {
 	/* Reset HSEON, CSSON and PLLON bits */
 	RCC->CR &= (uint32_t) 0xFEF6FFFF; //HSEオシレーターは使用しないので、リセットしておく(SystemInit()内でONになっているため)

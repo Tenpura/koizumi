@@ -736,7 +736,7 @@ float encoder::get_velocity() {
 	 */
 }
 
-volatile float encoder::raw_to_correct(ENC_SIDE enc_side, int16_t raw_delta) {
+float encoder::raw_to_correct(ENC_SIDE enc_side, int16_t raw_delta) {
 	float temp_delta = 0;						//エンコーダーの前回との差分をとる
 	static float correct_cnt[2] = { 0 };		//補正後の値を記録
 
@@ -862,6 +862,13 @@ signed int photo::right_ad, photo::left_ad, photo::front_right_ad,
 signed int photo::right_ref, photo::left_ref, photo::front_right_ref,
 		photo::front_left_ref, photo::front_ref;
 bool photo::light_flag = false;
+//right left front_right front_left front
+const std::array<float, PHOTO_TYPE::element_count> photo::wall_edge_down = {
+		-0.02, 0.02, 0, 0, 0 };	//この値を越えたら壁キレ
+const std::array<float, PHOTO_TYPE::element_count> photo::wall_edge_up = {
+		-0.02, 0.02, 0, 0, 0 };	//この値を越えたら壁キレ
+const std::array<float, PHOTO_TYPE::element_count> photo::edge_distance = {
+		0.010, 0.007, 0, 0, 0 };	//壁キレを検知した距離　区画中心を0としてそこからどれだけ進んでいるか
 
 void photo::switch_led(PHOTO_TYPE sensor_type, bool is_light) {
 	GPIO_TypeDef* GPIOx;
@@ -1137,23 +1144,23 @@ void photo::set_ref(PHOTO_TYPE sensor_type, int16_t set_value) {
 float photo::get_value(PHOTO_TYPE sensor_type) {
 	int16_t ad = 0;
 	switch (sensor_type) {
-	case PHOTO_TYPE::right:{
+	case PHOTO_TYPE::right: {
 		ad = right_ad;
 		break;
 	}
-	case PHOTO_TYPE::left:{
+	case PHOTO_TYPE::left: {
 		ad = left_ad;
 		break;
 	}
-	case PHOTO_TYPE::front_right:{
+	case PHOTO_TYPE::front_right: {
 		ad = front_right_ad;
 		break;
 	}
-	case PHOTO_TYPE::front_left:{
+	case PHOTO_TYPE::front_left: {
 		ad = front_left_ad;
 		break;
 	}
-	case PHOTO_TYPE::front:{
+	case PHOTO_TYPE::front: {
 		ad = front_ad;
 		break;
 	}
@@ -1164,66 +1171,25 @@ float photo::get_value(PHOTO_TYPE sensor_type) {
 	return static_cast<float>(ad) * 4.0 / get_battery();	//電圧で値が減っている気がするので補正
 }
 
-float photo::get_displacement_from_center_debag(PHOTO_TYPE sensor_type) {
-
+float photo::get_displa_from_center_debag(PHOTO_TYPE type) {
+	my7seg::light(1);
+	get_displa_from_center_void(type, (photo::get_value(type)));//現在のセンサ値に対して求める
 	my7seg::light(4);
-
-	float f;
-	f = photo::get_value(sensor_type);		//現在のセンサ値に対して求める
-
-	my7seg::light(5);
-
-	float f_c = static_cast<float>(parameter::get_ideal_photo(sensor_type));//中心位置におけるセンサ値
-
-	//フォトセンサの特性を示すパラメータ
-	float a = 0;
-
-	switch (sensor_type) {
-	case PHOTO_TYPE::right:
-		a = 0.058;
-		break;
-
-	case PHOTO_TYPE::left:
-		a = -0.056;
-		break;
-
-	case PHOTO_TYPE::front_right:
-		a = 0;
-		break;
-
-	case PHOTO_TYPE::front_left:
-		a = 0;
-		break;
-
-	case PHOTO_TYPE::front:
-		a = 0.0398;
-		break;
-
-	default:
-		break;
-	}
-
-	my7seg::light(6);
-	//センサ値fは f=f_c*exp(a*x) と仮定し、xを求める。-> x = 1/a*log(f/f_c)
-	//f_c:中心のセンサ値、x:中心からのずれ[mm]
-	if (a == 0)
-		return 0;
-	return (my_math::log(f / f_c) / a * 0.001);		//[m]
-
+	return 0;
 }
 
-float photo::get_side_from_center(PHOTO_TYPE type) {
-	float val = (photo::get_value(type));		//現在のセンサ値に対して求める
-	return (get_side_from_center(type, val));
+float photo::get_displa_from_center(PHOTO_TYPE type) {
+	return get_displa_from_center(type, (photo::get_value(type)));//現在のセンサ値に対して求める
 }
 
-float photo::get_side_from_center(PHOTO_TYPE sensor_type, float val) {
+void photo::get_displa_from_center_void(PHOTO_TYPE sensor_type, float val) {
+	my7seg::light(2);
 
 	float f = val;		//対称のセンサ値
 	float f_c = static_cast<float>(parameter::get_ideal_photo(sensor_type));//中心位置におけるセンサ値
 
 	//フォトセンサの特性を示すパラメータ
-	float a = 0;
+	float a = 0.1;
 
 	switch (sensor_type) {
 	case PHOTO_TYPE::right:
@@ -1235,11 +1201,9 @@ float photo::get_side_from_center(PHOTO_TYPE sensor_type, float val) {
 		break;
 
 	case PHOTO_TYPE::front_right:
-		a = 0;
 		break;
 
 	case PHOTO_TYPE::front_left:
-		a = 0;
 		break;
 
 	case PHOTO_TYPE::front: {
@@ -1248,12 +1212,59 @@ float photo::get_side_from_center(PHOTO_TYPE sensor_type, float val) {
 	}
 
 	default:
+		return;
 		break;
 	}
 
 	//センサ値fは f=f_c*exp(a*x) と仮定し、xを求める。-> x = 1/a*log(f/f_c)
 	//f_c:中心のセンサ値、x:中心からのずれ[mm]
-	return (my_math::log(f / f_c) / a * 0.001);		//[m]
+//	return (my_math::log(f / f_c) / a * 0.001);		//[m]
+
+
+	float ans = logf(f / f_c) / a * 0.001;
+	my7seg::light(3);
+	return;		//[m]
+
+}
+
+float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
+
+	float f = val;		//対称のセンサ値
+	float f_c = static_cast<float>(parameter::get_ideal_photo(sensor_type));//中心位置におけるセンサ値
+
+	//フォトセンサの特性を示すパラメータ
+	float a = 0.1;
+
+	switch (sensor_type) {
+	case PHOTO_TYPE::right:
+		a = 0.058;
+		break;
+
+	case PHOTO_TYPE::left:
+		a = -0.056;
+		break;
+
+	case PHOTO_TYPE::front_right:
+		break;
+
+	case PHOTO_TYPE::front_left:
+		break;
+
+	case PHOTO_TYPE::front: {
+		a = 0.0398;
+		break;
+	}
+
+	default:
+		return 0;
+		break;
+	}
+
+	//センサ値fは f=f_c*exp(a*x) と仮定し、xを求める。-> x = 1/a*log(f/f_c)
+	//f_c:中心のセンサ値、x:中心からのずれ[mm]
+//	return (my_math::log(f / f_c) / a * 0.001);		//[m]
+	return logf(f / f_c) / a * 0.001;
+
 }
 
 bool photo::check_wall(unsigned char muki) {
@@ -1306,19 +1317,45 @@ bool photo::check_wall(PHOTO_TYPE type) {
  }
  return count;
  }
+
+ bool photo::check_wall_gap(PHOTO_TYPE type, float threshold) {
+ //壁の切れ目ならtrue
+ //急に壁が現れた時も制御を切る
+
+ float before_val = get_side_from_center(type, ave_buf[type][0]);
+ float now_val = get_side_from_center(type,
+ ave_buf[type][GAP_AVE_COUNT - 1]);
+
+ if (ABS(now_val-before_val) > ABS(threshold)) {		//壁の切れ目
+ return true;
+ }
+
+ return false;
+
+ }
  */
-bool photo::check_wall_gap(PHOTO_TYPE type, float threshold) {
-	//壁の切れ目ならtrue
-	//急に壁が現れた時も制御を切る
+bool photo::check_wall_edge(PHOTO_TYPE _type, bool _over_threshold) {
+	//壁キレ検知でtrue
 
-	float before_val = get_side_from_center(type, ave_buf[type][0]);
-	float now_val = get_side_from_center(type,
-			ave_buf[type][GAP_AVE_COUNT - 1]);
-
-	if (ABS(now_val-before_val) > ABS(threshold)) {		//壁の切れ目
-		return true;
+	float sign = -1;		//下から上に超えるか(-1)、上から下に超えるか(+1)
+	float thre = wall_edge_up.at(_type);	//閾値
+	if (_over_threshold) {
+		sign = 1;
+		thre = wall_edge_down.at(_type);	//閾値
 	}
 
+	//閾値を通り超えたら壁キレ
+	photo::get_displa_from_center_debag(_type);
+	if ((thre - 0)
+			* sign >= 0) {
+		my7seg::light(5);
+		mouse::set_relative_go(edge_distance.at(_type));		//座標を補正
+		my7seg::turn_off();
+		return true;
+	}
+	my7seg::light(5);
+
+	my7seg::turn_off();
 	return false;
 
 }
@@ -1386,33 +1423,49 @@ void control::cal_delta() {
 	float photo_right_delta = 0, photo_left_delta = 0;
 	before_p_delta = photo_delta.P;
 	if (control::get_wall_control_phase()) {
-		if (photo::check_wall(PHOTO_TYPE::right)) {
-			//if (!photo::check_wall_gap(right, 0.005))		//壁キレでないなら
-			photo_right_delta = photo::get_side_from_center(
-					PHOTO_TYPE::right);		//中心からのずれてる距離[m]
-		}
-		if (photo::check_wall(PHOTO_TYPE::left)) {
-			//if (!photo::check_wall_gap(left, 0.025))		//壁キレでないなら
-			photo_left_delta = photo::get_side_from_center(
-					PHOTO_TYPE::left);		//中心からのずれてる距離[m]
-		}
+		switch (mouse::get_compas()) {
+		//斜めじゃなければ何もしない
+		case north:
+		case south:
+		case west:
+		case east:
+			if (photo::check_wall(PHOTO_TYPE::right)) {
+				photo_right_delta = photo::get_displa_from_center(
+						PHOTO_TYPE::right);	//中心からのずれてる距離[m]
+			}
+			if (photo::check_wall(PHOTO_TYPE::left)) {
+				photo_left_delta = photo::get_displa_from_center(
+						PHOTO_TYPE::left);	//中心からのずれてる距離[m]
+			}
 
-		if (photo_right_delta == 0)
-			photo_left_delta *= 2;
-		else if (photo_left_delta == 0)
-			photo_right_delta *= 2;
+			if (photo_right_delta == 0)
+				photo_left_delta *= 2;
+			else if (photo_left_delta == 0)
+				photo_right_delta *= 2;
 
-		//photo_correct = (photo_right_delta + photo_left_delta) / 2;		//センサ値から推定した値をカルマンフィルタの推定値とする
-		photo_delta.P = (photo_right_delta + photo_left_delta) / 2;
+			//photo_correct = (photo_right_delta + photo_left_delta) / 2;		//センサ値から推定した値をカルマンフィルタの推定値とする
+			photo_delta.P = (photo_right_delta + photo_left_delta) / 2;
 
-		static const float half_section = 0.045 * MOUSE_MODE;	//1区間の半分の長さ
-		//柱近傍はセンサ値を信用しない。 区画の中央部分
-		if (ABS(mouse::get_relative_go() - 0.01 * MOUSE_MODE)
-				< (half_section * 0.6)) {
-			photo_delta.P = 0;//mouse::get_relative_side();		//センサを信用しない　= 推定値を突っ込んどく
+			static const float half_section = 0.045 * MOUSE_MODE;	//1区間の半分の長さ
+			//柱近傍はセンサ値を信用しない。 区画の中央部分
+			if (ABS(mouse::get_relative_go() - 0.01 * MOUSE_MODE)
+					< (half_section * 0.5)) {
+				photo_delta.P = 0;//mouse::get_relative_side();		//センサを信用しない　= 推定値を突っ込んどく
+			}
+
+			break;
+
+			//斜めなら
+		case north_east:
+		case north_west:
+		case south_east:
+		case south_west:
+
+			photo_delta.P = mouse::get_relative_side();
+			break;
+
 		}
 		//photo_delta.P = mouse::get_relative_side();		//センサを信用しない　= 推定値を突っ込んどく
-
 
 		//速度が低いと制御が効きすぎるので（相対的に制御が大きくなる）、切る
 		if (mouse::get_ideal_velocity() < SEARCH_VELOCITY * 0.5) {
@@ -1420,8 +1473,8 @@ void control::cal_delta() {
 		}
 		photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
 		photo_delta.D = mouse::get_velocity() * mouse::get_relative_rad();//Vθ オドメトリから求めたD項　Sinθ~θと近似
-		//if(photo_delta.P != 0)
-		//	photo_delta.D = (photo_delta.P - before_p_delta) / CONTROL_PERIOD;
+				//if(photo_delta.P != 0)
+				//	photo_delta.D = (photo_delta.P - before_p_delta) / CONTROL_PERIOD;
 	} else {
 		//壁制御かけないときは初期化し続ける。
 		photo_delta.P = 0;
@@ -1436,13 +1489,7 @@ void control::cal_delta() {
 	gyro_delta.P -= cross_delta_gain(sen_photo);		//壁制御量を目標角速度に追加
 	gyro_delta.I += (gyro_delta.P * CONTORL_PERIOD);
 	gyro_delta.D = (gyro_delta.P - before_p_delta) / CONTROL_PERIOD;
-	/*
-	 //加速度の偏差計算
-	 before_p_delta = accel_delta.P;	//積分用
-	 accel_delta.P = (mouse::get_ideal_accel() - accelmeter::get_accel());
-	 accel_delta.I += (accel_delta.P * CONTORL_PERIOD);
-	 accel_delta.D = (accel_delta.P - before_p_delta) / CONTORL_PERIOD;
-	 */
+
 }
 
 float control::control_accel() {

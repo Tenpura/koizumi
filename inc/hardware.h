@@ -15,6 +15,8 @@
 #include "ad_convert.h"
 #include "parameter.h"
 #include"run.h"
+#include <array>
+#include <cmath>
 
 //自作7セグ関連
 class my7seg {
@@ -24,7 +26,7 @@ public:
 		front, back, right, left
 	};
 
-	static void light(const my7seg::DIRECTION direction);//up,right,leftを指定すると上辺、右辺、左辺が光る
+	static void light(const my7seg::DIRECTION direction); //up,right,leftを指定すると上辺、右辺、左辺が光る
 	static void light(const unsigned char number);		//つける
 	static void turn_off();		//消す
 
@@ -103,9 +105,8 @@ protected:
 	static uint16_t read_spi(uint16_t read_reg);		//SPI通信でregレジスタから読みだす
 	static void write_spi(uint16_t reg, uint16_t data);	//SPI通信でregレジスタにdataを書き込む
 
-
 public:
-	static volatile int16_t get_mpu_val(SEN_TYPE sen, AXIS_t axis);//senセンサーのaxis軸方向のデータを読む
+	static volatile int16_t get_mpu_val(SEN_TYPE sen, AXIS_t axis);	//senセンサーのaxis軸方向のデータを読む
 
 	mpu6000();
 
@@ -117,7 +118,8 @@ public:
 };
 
 class accelmeter: public mpu6000 {
-public:		//松井式速度推定法で用いるため
+public:
+	//松井式速度推定法で用いるため
 	static const uint8_t AVERAGE_COUNT;		//加速度計の平均取る回数[回]
 	static const float ACCEL_PERIOD;		//加速度計の制御周期[s]
 private:
@@ -195,7 +197,7 @@ private:
 
 	encoder();
 
-	static volatile float raw_to_correct(ENC_SIDE enc_side, int16_t raw_delta);	//補正テーブルで生値を補正する,返り値はコンバートした後の差分値
+	static float raw_to_correct(ENC_SIDE enc_side, int16_t raw_delta);//補正テーブルで生値を補正する,返り値はコンバートした後の差分値
 
 public:
 	static float right_velocity, left_velocity, velocity;
@@ -204,7 +206,7 @@ public:
 	static void interrupt();		//モーターのEncoderの値計算
 	static float get_velocity();	//左右の平均(重心速度)のEncoder取得[m/s]　 移動平均取ってることに注意！
 
-	static volatile void yi_correct(ENC_SIDE enc_right);		//片方ずつY.I.式補正法を行う。（補正テーブルの作成）
+	static volatile void yi_correct(ENC_SIDE enc_right);//片方ずつY.I.式補正法を行う。（補正テーブルの作成）
 	static void yi_correct();		//Y.I.式補正法を行う。（補正テーブルの作成）
 
 	static void draw_correct(bool right, bool left);		//Y.I.式補正テーブルを表示
@@ -216,20 +218,17 @@ public:
 class photo {
 private:
 	static const int16_t PHOTO_AVERAGE_TIME = 5;	//XXX ad値のいくつの移動平均をとるか
-	static const uint16_t GAP_AVE_COUNT=10;		//XXX 壁の切れ目対策にいくつの平均をとるか
+	static const uint16_t GAP_AVE_COUNT = 10;		//XXX 壁の切れ目対策にいくつの平均をとるか
 
 	static float ave_buf[element_count][GAP_AVE_COUNT];	//センサー値（平均取ったやつ）のバッファ　壁の切れ目チェックとかで使う
 	//static float diff_buf[element_count][GAP_AVE_COUNT];	//今のセンサー値とave_bufの差　壁の切れ目チェックとかで使う
 	//static uint8_t gap_buf[element_count][GAP_AVE_COUNT];		//count_wall_gapで数え上げた値を保存しておく
-
-
 
 	static signed int right_ad, left_ad, front_right_ad, front_left_ad,
 			front_ad;
 	static signed int right_ref, left_ref, front_right_ref, front_left_ref,
 			front_ref;
 	static bool light_flag;		//赤外線LEDを光らせてセンサー値を読むかどうかのフラグ
-
 
 	static void switch_led(PHOTO_TYPE sensor_type, bool is_light);//LEDをつけたり消したり
 
@@ -239,6 +238,12 @@ private:
 	photo();
 
 public:
+	//この値を越えたら壁キレ
+	static const std::array<float, PHOTO_TYPE::element_count> wall_edge_down;
+	static const std::array<float, PHOTO_TYPE::element_count> wall_edge_up;
+
+	//壁キレを検知した距離　区画中心を0としてそこからどれだけ進んでいるか
+	static const std::array<float, PHOTO_TYPE::element_count> edge_distance;
 
 	static uint16_t get_ad(PHOTO_TYPE sensor_type);			//??_adの値を取得
 	static void set_ad(PHOTO_TYPE sensor_type, int16_t set_value);	//??_adに値を代入
@@ -253,18 +258,20 @@ public:
 	static float get_value(PHOTO_TYPE sensor_type);
 
 	//センサ値から距離に変換し、区画中心からどれだけずれているのか[m]を返す。右側正
-	static float get_side_from_center(PHOTO_TYPE type);
-	static float get_side_from_center(PHOTO_TYPE type, float val);
+	static float get_displa_from_center_debag(PHOTO_TYPE type);
+	static void get_displa_from_center_void(PHOTO_TYPE type, float val);
+	static float get_displa_from_center(PHOTO_TYPE type);
+	static float get_displa_from_center(PHOTO_TYPE type, float val);
 
-	static float get_displacement_from_center_debag(PHOTO_TYPE type);
-
+	//static float get_displacement_from_center_debag(PHOTO_TYPE type);
 
 	//TODO この関数はマウスclassにあるべきかも
 	static bool check_wall(unsigned char muki);
 	static bool check_wall(PHOTO_TYPE type);
 
 	//static int8_t count_wall_gap(PHOTO_TYPE);	//diff_gapに保存されてる値の正負を数え上げて返す。
-	static bool check_wall_gap(PHOTO_TYPE type, float threshold);	//移動平均をとったやつでGAP_AVE_COUNT前と比較して絶対値がthreshold以上なら、壁の切れ目だからtrue
+	//static bool check_wall_gap(PHOTO_TYPE type, float threshold);	//移動平均をとったやつでGAP_AVE_COUNT前と比較して絶対値がthreshold以上なら、壁の切れ目だからtrue
+	static bool check_wall_edge(PHOTO_TYPE _type, bool _over_threshold);//壁キレが起こったか検知する　閾値をまたいだら壁キレ　over_threshold閾値のどっちにいるか
 
 	~photo();
 
@@ -301,7 +308,7 @@ private:
 public:
 	static PID gyro_delta, photo_delta, encoder_delta, accel_delta;	//各種Δ
 
-	static volatile float cross_delta_gain(SEN_TYPE sensor);		//P_GAIN*P_DELTA+・・・を行う
+	static volatile float cross_delta_gain(SEN_TYPE sensor);//P_GAIN*P_DELTA+・・・を行う
 
 	static void cal_delta();	//割り込み関数内で、偏差を計算する
 
@@ -327,24 +334,24 @@ public:
 
 //カルマンフィルタを行う
 //値と分散を管理する用の構造体
-class kalman{
+class kalman {
 //変数名の名づけ方はWikiに従う
 //https://ja.wikipedia.org/wiki/%E3%82%AB%E3%83%AB%E3%83%9E%E3%83%B3%E3%83%95%E3%82%A3%E3%83%AB%E3%82%BF%E3%83%BC
 private:
 	float x;		//現在の値
 	float p;		//現在の分散
-	float EstP,ObsP;	//推定値と観測値の分散
+	float EstP, ObsP;	//推定値と観測値の分散
 
 public:
 	//カルマンフィルタによる補正を行う。
-	void update(float EstimateU, float ObserveZ);		//前回の値からどれだけ変化するかの推定値EstimateU,観測値ObserveZを入れると補正する。
+	void update(float EstimateU, float ObserveZ);//前回の値からどれだけ変化するかの推定値EstimateU,観測値ObserveZを入れると補正する。
 
 	float get_value();				//現在の値を返す
 	float get_dispersion();			//現在の分散を返す
 
 	kalman();
 	kalman(float EstimateP, float ObserveP);	//最初に推定値の分散と観測値の分散をパラメータとして入れる
-	kalman(float initX, float initP, float EstimateP, float ObserveP);	//さらに初期値も入れたいなら
+	kalman(float initX, float initP, float EstimateP, float ObserveP);//さらに初期値も入れたいなら
 	~kalman();
 };
 

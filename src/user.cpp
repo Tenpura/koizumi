@@ -166,11 +166,14 @@ bool mode::search_mode() {
 		mouse::set_position(0, 0);
 		mouse::set_direction(north);
 		if(adachi::adachi_method(GOAL_x, GOAL_y, false)){		//足立方が成功したら
+			wait::ms(300);
+			motor::sleep_motor();
 			flash_maze flash_l;
 			MAP_DATA temp;
 			map::output_map_data(&temp);
 			flash_l.save_maze(0, &temp);
-			flash_l.save_maze(1, &temp);
+		//	flash_l.save_maze(1, &temp);
+
 		}
 		break;
 
@@ -178,11 +181,12 @@ bool mode::search_mode() {
 		mouse::set_position(0, 0);
 		mouse::set_direction(north);
 		if (adachi::adachi_method(GOAL_x, GOAL_y, false)) {	//足立法が成功したら
+			wait::ms(300);
 			flash_maze flash_l;
 			MAP_DATA temp;
 			map::output_map_data(&temp);
 			flash_l.save_maze(0, &temp);
-			flash_l.save_maze(1, &temp);
+			//flash_l.save_maze(1, &temp);
 
 			mouse::set_position(GOAL_x, GOAL_y);
 			run::spin_turn(180);
@@ -191,9 +195,12 @@ bool mode::search_mode() {
 			wait::ms(500);
 
 			if(adachi::adachi_method(0, 0, false)){
+				wait::ms(300);
 				map::output_map_data(&temp);
 				flash_l.save_maze(0, &temp);
-				flash_l.save_maze(1, &temp);
+				//flash_l.save_maze(1, &temp);
+				motor::sleep_motor();
+
 			}
 
 		}
@@ -202,7 +209,16 @@ bool mode::search_mode() {
 	case 3:			//ノード型足立法
 		mouse::set_position(0, 0);
 		mouse::set_direction(north);
-		adachi::node_adachi(goal_vect, adachi);
+		if(adachi::adachi_method(GOAL_x, GOAL_y, true)){		//足立方が成功したら
+			wait::ms(300);
+			motor::sleep_motor();
+			flash_maze flash_l;
+			MAP_DATA temp;
+			map::output_map_data(&temp);
+			flash_l.save_maze(0, &temp);
+		//	flash_l.save_maze(1, &temp);
+
+		}
 		break;
 
 	case 4:
@@ -292,14 +308,12 @@ bool mode::shortest_mode() {
 	static node_search search;
 	search.set_weight_algo(based_distance);		//重みづけの方法を設定
 	search.input_map_data(&mouse::now_map);
-	search.set_weight_algo(adachi);		//重みづけの方法を設定
 
 	if(!search.create_small_path(goal,std::make_pair<uint8_t, uint8_t>(0,0),north))
 		return false;
 	search.convert_path();
 
-
-	uint8_t select = select_mode(5+1, PHOTO_TYPE::right);
+	uint8_t select = select_mode(3+1, PHOTO_TYPE::right);
 
 	switch (select) {
 	case 0:		//0はメニューに戻る
@@ -321,7 +335,7 @@ bool mode::shortest_mode() {
 	case 2:
 		path::improve_path();
 		break;
-	default:{
+	case 3:{
 		/*
 		if(search.create_big_path(goal,init,north))
 			break;
@@ -333,9 +347,11 @@ bool mode::shortest_mode() {
 	}
 	}
 
+	uint8_t straight = select_mode(5+1, PHOTO_TYPE::right);
+
 	uint8_t curve = select_mode(3, PHOTO_TYPE::right);
 
-	while (select != 0) {
+	while (straight != 0) {
 		my7seg::blink(8, 500, 1);
 		if (photo::check_wall(PHOTO_TYPE::front))
 			break;
@@ -344,7 +360,7 @@ bool mode::shortest_mode() {
 	mouse::run_init(true, true);
 	my7seg::count_down(3, 500);
 
-	run::path(0, select-1,curve);
+	run::path(0, straight-1,curve);
 
 	wait::ms(500);
 	motor::sleep_motor();

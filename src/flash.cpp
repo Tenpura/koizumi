@@ -87,6 +87,6 @@ bool flash_maze::load_maze(uint8_t index, MAP_DATA* const output) {
 		return false;
 
 	//flash“à‚Ìwork_ram‚©‚çindex”Ô–Ú‚Ìmaze_data‚ğˆø‚«o‚·
-	memcpy(output, flash::load() + maze_size * index, maze_size);
+	memcpy(output, (flash::load() + maze_size * index), maze_size);
 	return true;
 }

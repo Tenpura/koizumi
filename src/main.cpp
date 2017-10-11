@@ -43,12 +43,13 @@ int main(void) {
 	init_all();
 	mouse::reset_count();
 
+	my7seg::blink(8, 200, 5);
+
 	myprintf("Compile DATE: %s\n\r", __DATE__);
 	myprintf("Compile TIME: %s\n\r", __TIME__);
 
 	myprintf("vol -> %f\n\r", get_battery());
 
-	my7seg::blink(8, 200, 5);
 
 	mpu6000::init();
 
@@ -159,19 +160,21 @@ int main(void) {
 			mouse::run_init(true, true);
 
 			flog[0][0] = -1;
-			run::accel_run(0.09 * 15, 0, 0);
-			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
+			//run::accel_run(0.09, 0, 1);
+			//run::path_run_wall_eage(0.03, 0.5, 1);
 			//run::accel_run(0.045 + 0.09, SEARCH_VELOCITY, 0);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
 			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
-			//run::accel_run(0.045* 2, 0, 0);
+			//run::accel_run(0.045+0.015, 0, 1);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
 			//control::stop_wall_control();
 			//run::accel_run(0.045*3, 0, 0);
-			//run::spin_turn(-360);
+			//run::accel_run_by_distance(0.09 * 7, 0, mouse::get_place(), 2);
+			run::path_accel_run_wall_eage(0.09 * 7, 0, mouse::get_place(), 0);
+			//run::spin_turn(-180);
+			//run::accel_run(0.09 * 7, 0, 2);
 			//run::spin_turn(360);
 			//flog[0][0] = -1;
-			//run::accel_run(0.09 * 5, 0, 0);
 			wait::ms(2000);
 			motor::sleep_motor();
 			my7seg::turn_off();
@@ -338,8 +341,8 @@ void interrupt_timer() {
 		}
 	} else if (i < flog_number) {
 		flog[0][i] = mouse::get_place().y;
-		flog[1][i] = photo::get_displacement_from_center_debag(front);//photo::get_value(right);
-		flog[2][i] = photo::get_displacement_from_center_debag(left);//photo::get_value(left);
+		flog[1][i] = photo::get_displa_from_center(right);
+		flog[2][i] = photo::get_displa_from_center(left);//photo::get_value(left);
 		i++;
 	} else if (i == flog_number) {
 		flog[0][0] = 0;
