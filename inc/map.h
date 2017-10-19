@@ -139,7 +139,7 @@ private:
 	bool is_outside_array(uint8_t x_index, uint8_t y_index);		//配列の添え字でみた座標系（X方向だけ倍）で迷路外（配列外）に出ているか
 
 public:
-	static const uint16_t init_step = 999;
+	static const uint16_t init_step = 19999;
 	bool set_step(uint8_t x, uint8_t y, compas muki, uint16_t step_val, bool by_known);
 	bool set_step_double(uint8_t _double_x, uint8_t _double_y, uint16_t step_val, bool by_known);
 	uint16_t get_step(uint8_t x, uint8_t y, compas muki);

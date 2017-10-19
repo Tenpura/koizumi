@@ -854,7 +854,8 @@ encoder::~encoder() {
 
 }
 
-float photo::ave_buf[PHOTO_TYPE::element_count][GAP_AVE_COUNT] = { 0.0f };
+float photo::ave_buf[static_cast<unsigned int>(PHOTO_TYPE::element_count)][GAP_AVE_COUNT] =
+		{ 0.0f };
 //float photo::diff_buf[PHOTO_TYPE::element_count][GAP_AVE_COUNT] = { 0 };
 //uint8_t photo::gap_buf[PHOTO_TYPE::element_count][GAP_AVE_COUNT] = { 0 };
 signed int photo::right_ad, photo::left_ad, photo::front_right_ad,
@@ -863,12 +864,12 @@ signed int photo::right_ref, photo::left_ref, photo::front_right_ref,
 		photo::front_left_ref, photo::front_ref;
 bool photo::light_flag = false;
 //right left front_right front_left front
-const std::array<float, PHOTO_TYPE::element_count> photo::wall_edge_down = {
-		-0.02, 0.02, 0, 0, 0 };	//この値を越えたら壁キレ
-const std::array<float, PHOTO_TYPE::element_count> photo::wall_edge_up = {
-		-0.02, 0.02, 0, 0, 0 };	//この値を越えたら壁キレ
-const std::array<float, PHOTO_TYPE::element_count> photo::edge_distance = {
-		0.010, 0.007, 0, 0, 0 };	//壁キレを検知した距離　区画中心を0としてそこからどれだけ進んでいるか
+const std::array<float, static_cast<unsigned int>(PHOTO_TYPE::element_count)> photo::wall_edge_down =
+		{ -0.02, 0.02, 0, 0, 0 };	//この値を越えたら壁キレ
+const std::array<float, static_cast<unsigned int>(PHOTO_TYPE::element_count)> photo::wall_edge_up =
+		{ -0.02, 0.02, 0, 0, 0 };	//この値を越えたら壁キレ
+const std::array<float, static_cast<unsigned int>(PHOTO_TYPE::element_count)> photo::edge_distance =
+		{ 0.010, 0.007, 0, 0, 0 };	//壁キレを検知した距離　区画中心を0としてそこからどれだけ進んでいるか
 
 void photo::switch_led(PHOTO_TYPE sensor_type, bool is_light) {
 	GPIO_TypeDef* GPIOx;
@@ -878,23 +879,23 @@ void photo::switch_led(PHOTO_TYPE sensor_type, bool is_light) {
 	switch (sensor_type) {
 
 	//左右は同時発行
-	case right:
-	case left:
+	case PHOTO_TYPE::right:
+	case PHOTO_TYPE::left:
 		GPIOx = GPIOD;
 		GPIO_Pin = GPIO_Pin_2;
 		break;
 
-	case front_right:
+	case PHOTO_TYPE::front_right:
 		GPIOx = GPIOC;
 		GPIO_Pin = GPIO_Pin_11;
 		break;
 
-	case front_left:
+	case PHOTO_TYPE::front_left:
 		GPIOx = GPIOC;
 		GPIO_Pin = GPIO_Pin_10;
 		break;
 
-	case front:
+	case PHOTO_TYPE::front:
 		GPIOx = GPIOC;
 		GPIO_Pin = GPIO_Pin_12;
 		break;
@@ -939,7 +940,8 @@ uint16_t photo::get_ad(PHOTO_TYPE sensor_type) {
 
 	case PHOTO_TYPE::front:
 		ADCx = ADC1;
-		ADC_CH = ADC_Channel_14;
+		//ADC_CH = ADC_Channel_14;
+		ADC_CH = ADC_Channel_3;
 		break;
 
 	default:
@@ -967,39 +969,42 @@ void photo::turn_off(PHOTO_TYPE sensor_type) {
 }
 
 void photo::turn_off_all() {
-	turn_off(right);
-	turn_off(left);
-	turn_off(front_right);
-	turn_off(front_left);
+	turn_off(PHOTO_TYPE::right);
+	turn_off(PHOTO_TYPE::left);
+	turn_off(PHOTO_TYPE::front_right);
+	turn_off(PHOTO_TYPE::front_left);
+	turn_off(PHOTO_TYPE::front);
 
 }
 
-void photo::set_ad(PHOTO_TYPE sensor_type, int16_t set_value) {
+void photo::set_ad(PHOTO_TYPE _sensor_type, int16_t set_value) {
 
-	static int16_t buf[element_count][PHOTO_AVERAGE_TIME] = { 0 };
+	static int16_t buf[static_cast<unsigned int>(PHOTO_TYPE::element_count)][PHOTO_AVERAGE_TIME] =
+			{ 0 };
 
+	uint8_t sen_type = static_cast<unsigned int>(_sensor_type);
 	int16_t sum = 0;
 	float ave_sum = 0;
 
 	for (uint8_t i = 0; (i + 1) < MAX(PHOTO_AVERAGE_TIME, GAP_AVE_COUNT); i++) {
 		if ((i + 1) < PHOTO_AVERAGE_TIME) {		//配列の要素外にアクセスしないように
-			buf[sensor_type][i] = buf[sensor_type][i + 1];	//配列を1つずらす
-			sum += buf[sensor_type][i];			//ついでに加算する
+			buf[sen_type][i] = buf[sen_type][i + 1];	//配列を1つずらす
+			sum += buf[sen_type][i];			//ついでに加算する
 		}
 		if ((i + 1) < GAP_AVE_COUNT) {		//配列の要素外にアクセスしないように
-			ave_buf[sensor_type][i] = ave_buf[sensor_type][i + 1];	//配列を1つずらす
+			ave_buf[sen_type][i] = ave_buf[sen_type][i + 1];	//配列を1つずらす
 			//diff_buf[sensor_type][i] = diff_buf[sensor_type][i + 1];//配列を1つずらす
 			//gap_buf[sensor_type][i] = gap_buf[sensor_type][i + 1];	//配列を1つずらす
-			ave_sum += ave_buf[sensor_type][i];			//ついでに加算する
+			ave_sum += ave_buf[sen_type][i];			//ついでに加算する
 		}
 	}
 
 	//配列の最後に入れる
-	buf[sensor_type][(PHOTO_AVERAGE_TIME - 1)] = set_value;	//count*[rad/count]/[sec]*[m]
+	buf[sen_type][(PHOTO_AVERAGE_TIME - 1)] = set_value;//count*[rad/count]/[sec]*[m]
 	sum += set_value;
 
 	int16_t now_val = sum / PHOTO_AVERAGE_TIME; 	//見やすさのため名前を付ける
-	switch (sensor_type) {
+	switch (_sensor_type) {
 	case PHOTO_TYPE::right:
 		right_ad = now_val;
 		break;
@@ -1016,7 +1021,7 @@ void photo::set_ad(PHOTO_TYPE sensor_type, int16_t set_value) {
 		front_left_ad = now_val;
 		break;
 
-	case front:
+	case PHOTO_TYPE::front:
 		front_ad = now_val;
 		break;
 
@@ -1024,7 +1029,7 @@ void photo::set_ad(PHOTO_TYPE sensor_type, int16_t set_value) {
 		break;
 	}
 
-	ave_buf[sensor_type][(GAP_AVE_COUNT - 1)] = now_val;
+	ave_buf[sen_type][(GAP_AVE_COUNT - 1)] = now_val;
 
 	/*
 	 ave_sum += get_displacement_from_center(sensor_type);
@@ -1041,48 +1046,53 @@ void photo::interrupt(bool is_light) {
 	const static int wait_number = 1200;	//1000でだいたい100us弱	1500で120usくらい
 	photo::turn_off_all();
 
-	photo::set_ref(right, get_ad(right));		//消えてる時をrefにする
-	photo::set_ref(left, get_ad(left));		//消えてる時をrefにする
-	photo::set_ref(front_right, get_ad(front_right));		//消えてる時をrefにする
-	photo::set_ref(front_left, get_ad(front_left));		//消えてる時をrefにする
-	photo::set_ref(front, get_ad(front));		//消えてる時をrefにする
+	photo::set_ref(PHOTO_TYPE::right, get_ad(PHOTO_TYPE::right));//消えてる時をrefにする
+	photo::set_ref(PHOTO_TYPE::left, get_ad(PHOTO_TYPE::left));	//消えてる時をrefにする
+	photo::set_ref(PHOTO_TYPE::front_right, get_ad(PHOTO_TYPE::front_right));//消えてる時をrefにする
+	photo::set_ref(PHOTO_TYPE::front_left, get_ad(PHOTO_TYPE::front_left));	//消えてる時をrefにする
+	photo::set_ref(PHOTO_TYPE::front, get_ad(PHOTO_TYPE::front));//消えてる時をrefにする
 
 	//左右の発光は回路的に同時におこるので、同時に左右の値をとる
 	if (is_light) {
-		photo::light(right);
-		photo::light(left);
+		photo::light(PHOTO_TYPE::right);
+		photo::light(PHOTO_TYPE::left);
 		for (int i = 0; i < wait_number * 2; i++) {
-
 		}
 	}
-	photo::set_ad(right, get_ad(right) - get_ref(right));		//差分を代入
-	photo::set_ad(left, get_ad(left) - get_ref(left));		//差分を代入
-	photo::turn_off(right);
-//FIX_ME 左右の発光時間を延ばすために、斜めセンサは切ってる
+	photo::set_ad(PHOTO_TYPE::right,
+			get_ad(PHOTO_TYPE::right) - get_ref(PHOTO_TYPE::right));	//差分を代入
+	photo::set_ad(PHOTO_TYPE::left,
+			get_ad(PHOTO_TYPE::left) - get_ref(PHOTO_TYPE::left));		//差分を代入
+	photo::turn_off(PHOTO_TYPE::right);
+	photo::turn_off(PHOTO_TYPE::left);
 	/*
 	 if (is_light) {
-	 photo::light(front_right);
+	 photo::light(PHOTO_TYPE::front_right);
 	 for (int i = 0; i < wait_number; i++) {
 	 }
 	 }
-	 photo::set_ad(front_right, get_ad(front_right) - get_ref(front_right));	//差分を代入
-	 photo::turn_off(front_right);
+	 photo::set_ad(PHOTO_TYPE::front_right, get_ad(PHOTO_TYPE::front_right) - get_ref(PHOTO_TYPE::front_right));	//差分を代入
+	 photo::turn_off(PHOTO_TYPE::front_right);
 
 	 if (is_light) {
-	 photo::light(front_left);
+	 photo::light(PHOTO_TYPE::front_left);
 	 for (int i = 0; i < wait_number; i++) {
 	 }
 	 }
-	 photo::set_ad(front_left, get_ad(front_left) - get_ref(front_left));//差分を代入
-	 photo::turn_off(front_left);
+	 photo::set_ad(PHOTO_TYPE::front_left, get_ad(PHOTO_TYPE::front_left) - get_ref(PHOTO_TYPE::front_left));//差分を代入
+	 photo::turn_off(PHOTO_TYPE::front_left);
 	 */
 	if (is_light) {
-		photo::light(front);
+		photo::light(PHOTO_TYPE::front);
 		for (int i = 0; i < wait_number * 2; i++) {
 		}
 	}
-	photo::set_ad(front, get_ad(front) - get_ref(front));	//差分を代入
-	photo::turn_off(front);
+	photo::set_ad(PHOTO_TYPE::front,
+			get_ad(PHOTO_TYPE::front) - get_ref(PHOTO_TYPE::front));	//差分を代入
+			//photo::set_ad(PHOTO_TYPE::front, get_ad(PHOTO_TYPE::front));	//差分を代入
+	photo::turn_off(PHOTO_TYPE::front);
+
+	photo::turn_off_all();
 }
 
 int16_t photo::get_ref(PHOTO_TYPE sensor_type) {
@@ -1142,6 +1152,11 @@ void photo::set_ref(PHOTO_TYPE sensor_type, int16_t set_value) {
 }
 
 float photo::get_value(PHOTO_TYPE sensor_type) {
+	static bool ReEntrant = false;
+	if (ReEntrant)
+		return 0;
+	ReEntrant = true;
+
 	int16_t ad = 0;
 	switch (sensor_type) {
 	case PHOTO_TYPE::right: {
@@ -1167,14 +1182,21 @@ float photo::get_value(PHOTO_TYPE sensor_type) {
 	default:
 		break;
 	}
-
+	ReEntrant = false;
 	return static_cast<float>(ad) * 4.0 / get_battery();	//電圧で値が減っている気がするので補正
 }
 
 float photo::get_displa_from_center_debag(PHOTO_TYPE type) {
-	my7seg::light(1);
-	get_displa_from_center_void(type, (photo::get_value(type)));//現在のセンサ値に対して求める
+	static bool ReEntrant = false;
+	if (ReEntrant)
+		return 0;
+	ReEntrant = true;
+	my7seg::light(0);
+	float val = (photo::get_value(type));
 	my7seg::light(4);
+	get_displa_from_center_void(type, val);	//現在のセンサ値に対して求める
+	my7seg::light(7);
+	ReEntrant = false;
 	return 0;
 }
 
@@ -1183,8 +1205,7 @@ float photo::get_displa_from_center(PHOTO_TYPE type) {
 }
 
 void photo::get_displa_from_center_void(PHOTO_TYPE sensor_type, float val) {
-	my7seg::light(2);
-
+	my7seg::light(5);
 	float f = val;		//対称のセンサ値
 	float f_c = static_cast<float>(parameter::get_ideal_photo(sensor_type));//中心位置におけるセンサ値
 
@@ -1220,17 +1241,20 @@ void photo::get_displa_from_center_void(PHOTO_TYPE sensor_type, float val) {
 	//f_c:中心のセンサ値、x:中心からのずれ[mm]
 //	return (my_math::log(f / f_c) / a * 0.001);		//[m]
 
-
 	float ans = logf(f / f_c) / a * 0.001;
-	my7seg::light(3);
+	my7seg::light(6);
 	return;		//[m]
 
 }
 
 float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
-
+	float a0, a1, a2, alog;	//小島近似の係数	x^0,x,x^2,logの係数
 	float f = val;		//対称のセンサ値
-	float f_c = static_cast<float>(parameter::get_ideal_photo(sensor_type));//中心位置におけるセンサ値
+	float f_c = (parameter::get_ideal_photo(sensor_type));//中心位置におけるセンサ値
+
+	if (f <= 0) {
+		return -40 * 0.001;
+	}
 
 	//フォトセンサの特性を示すパラメータ
 	float a = 0.1;
@@ -1251,7 +1275,16 @@ float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
 		break;
 
 	case PHOTO_TYPE::front: {
-		a = 0.0398;
+		a0 = -300 + f_c;
+		a1 = -0.03;
+		a2 = 3.5 * 0.000001;
+		alog = 47.7675;
+
+		float ans = a2 * f + a1;
+		ans = ans * f + a0 + alog * logf(f);
+		return ans * 0.001;
+
+		a = 0.0369;
 		break;
 	}
 
@@ -1264,7 +1297,6 @@ float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
 	//f_c:中心のセンサ値、x:中心からのずれ[mm]
 //	return (my_math::log(f / f_c) / a * 0.001);		//[m]
 	return logf(f / f_c) / a * 0.001;
-
 }
 
 bool photo::check_wall(unsigned char muki) {
@@ -1300,6 +1332,16 @@ bool photo::check_wall(unsigned char muki) {
 }
 
 bool photo::check_wall(PHOTO_TYPE type) {
+	/*
+	float displa = photo::get_displa_from_center(type);
+	if (type == PHOTO_TYPE::left) {
+		displa *= -1;
+	}
+
+	if (displa > -0.01)
+		return true;
+	return false;
+	*/
 	if (photo::get_value(type) >= parameter::get_min_wall_photo(type))
 		return true;
 	else
@@ -1337,19 +1379,19 @@ bool photo::check_wall(PHOTO_TYPE type) {
 bool photo::check_wall_edge(PHOTO_TYPE _type, bool _over_threshold) {
 	//壁キレ検知でtrue
 
+	int sen_type = static_cast<int>(_type);
 	float sign = -1;		//下から上に超えるか(-1)、上から下に超えるか(+1)
-	float thre = wall_edge_up.at(_type);	//閾値
+	float thre = wall_edge_up.at(sen_type);	//閾値
 	if (_over_threshold) {
 		sign = 1;
-		thre = wall_edge_down.at(_type);	//閾値
+		thre = wall_edge_down.at(sen_type);	//閾値
 	}
 
 	//閾値を通り超えたら壁キレ
 	photo::get_displa_from_center_debag(_type);
-	if ((thre - 0)
-			* sign >= 0) {
+	if ((thre - 0) * sign >= 0) {
 		my7seg::light(5);
-		mouse::set_relative_go(edge_distance.at(_type));		//座標を補正
+		mouse::set_relative_go(edge_distance.at(sen_type));		//座標を補正
 		my7seg::turn_off();
 		return true;
 	}
@@ -1369,7 +1411,7 @@ photo::~photo() {
 //XXX 各種ゲイン
 //control関連
 const PID gyro_gain = { 15, 750, 0.015 };
-const PID photo_gain = { 200, 0, 0.002 };
+const PID photo_gain = /*{ 100,0,0.003};*/{ 200, 0, 0.002 };
 const PID encoder_gain = { 200, 1000, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
 const PID accel_gain = { 0, 0, 0 };	//{50, 0, 0 };
 
@@ -1452,7 +1494,7 @@ void control::cal_delta() {
 					< (half_section * 0.5)) {
 				photo_delta.P = 0;//mouse::get_relative_side();		//センサを信用しない　= 推定値を突っ込んどく
 			}
-
+			//photo_delta.P = mouse::get_relative_side();
 			break;
 
 			//斜めなら
@@ -1638,10 +1680,10 @@ void control::fail_safe() {
 
 	//閾値どのくらいかわからない。Gyroも参照すべき？
 	if (ABS(encoder_delta.P) > 1) {
-		if (ABS(gyro_delta.P) > 3) {
-			motor::sleep_motor();
-			mouse::set_fail_flag(true);
-		}
+//		if (ABS(gyro_delta.P) > 1) {
+		motor::sleep_motor();
+		mouse::set_fail_flag(true);
+//		}
 	}
 }
 

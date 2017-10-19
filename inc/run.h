@@ -119,7 +119,7 @@ public:
 	static void get_direction(signed char *direction_x,
 				signed char *direction_y);		//引数の値をポインタ経由で変更する
 	static void get_direction(float *dir_x, float *dir_y);		//斜め対応
-	static void set_direction(const compas dir);
+	static void set_direction(compas dir);
 	static void set_direction(const signed char direction_x,
 			const signed char direction_y);
 
@@ -154,7 +154,7 @@ class run {
 private:
 	run();
 public:
-	static float WALL_EAGE_DISTANCE[PHOTO_TYPE::element_count];
+	static float WALL_EAGE_DISTANCE[static_cast<unsigned int>(PHOTO_TYPE::element_count)];
 
 public:
 	static void accel_run(const float distance_m, const float end_velocity,
@@ -169,8 +169,8 @@ public:
 
 	static void accel_run_by_distance(float tar_L_m, float end_velocity,
 			COORDINATE init, uint8_t select_mode);	//割り込みの積算距離ではなく、初期座標と現在座標の間の距離を考える
-	static void accel_run_by_place(const COORDINATE finish, const float end_velocity,
-				const unsigned char select_mode);	//絶対座標を基準に走る。 現在座標と目標座標の距離で考える
+	static void accel_run_by_place(COORDINATE finish, float end_velocity,
+				uint8_t select_mode);	//絶対座標を基準に走る。 現在座標と目標座標の距離で考える
 
 
 	static void fit_run(const unsigned char select_mode);//前壁に対してうまく合うように調整して止まる
@@ -178,8 +178,8 @@ public:
 	static void slalom(const SLALOM_TYPE slalom_type,
 			const signed char right_or_left, const uint8_t select_mode);
 	//探索用のスラローム。
-	static void slalom_for_search(const SLALOM_TYPE slalom_type,
-			const signed char right_or_left, const uint8_t select_mode);
+	static void slalom_for_search(SLALOM_TYPE slalom_type,
+			signed char right_or_left, uint8_t select_mode);
 	static void spin_turn(const float target_degree);
 
 	static void path(const float finish_velocity, const uint8_t _straight, const uint8_t _curve);

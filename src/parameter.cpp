@@ -8,18 +8,20 @@
 #include"parameter.h"
 //ideal_photo[x][y]	xは0がハーフ,1がクラシック	yが光学センサの向きに対応。
 //right left front_right front_left,front
-const unsigned int parameter::ideal_photo[2][5] = { { 125, 270, 0, 1900, 600 },
+const float parameter::ideal_photo[2][5] = { { 120, 180, 0, 0, 0/*中心からどれだけオフセットがあるか[mm]*/ },
 		{ 3250, 3200, 10815, 10100, 0 } };
-const int16_t parameter::min_wall_photo[2][5] = { { 40, 80, 1400, 130, 200 }, {
+const int16_t parameter::min_wall_photo[2][5] = { { 60, 100, 1400, 130, 300 }, {
 		20000, 20000, 0, 0, 0 } };
 
 //0番目は探索用
+//				普通							斜め
+//		加速度、最高速、減速度、		加速度、最高速、減速度
 const TRAPEZOID parameter::straight_run[RUN_MODE_NUMBER] = {
-		{ 3.0, SEARCH_VELOCITY, 3.0 },
-		{ 3.0, 0.5, 3.0 },
-		{ 3.0, 1.5, 3.0 },
-		{ 5.0, 1.5, 5.0 },
-		{ 5.0, 2.5, 5.0 } };
+		{ 3.0, SEARCH_VELOCITY, 3.0, 3.0, SEARCH_VELOCITY, 3.0 },
+		{ 5.0, 0.5, 5.0, 3.0, 0.5, 3.0 },
+		{ 5.0, 1.0, 5.0, 3.0, 0.5, 3.0 },
+		{ 5.0, 1.5, 5.0, 6.0, 0.7, 6.0 },
+		{ 6.0, 2.0, 6.0, 6.0, 1.0, 6.0 } };
 
 //XXX スラロームパラメータ
 //速度、角度、加速角度、前距離、後ろ距離、角加速度、最高角速度
@@ -29,7 +31,7 @@ const std::array<INIT_SLALOM, 2> right_small_half = { {
 		{ 0.35, 91, 30, 0.007, 0.008, 171.1409, 15.45826, 0 }, } };
 const std::array<INIT_SLALOM, 2> left_small_half = { {
 		{ SEARCH_VELOCITY, 89.6, 30, 0.008, 0.01, 119.1789, 11.17156, 0 },
-		{ 0.35, 90, 30, 0.01, 0.012, 171.1409, 15.45826, 0 } } };
+		{ 0.35, 90, 30, 0.01, 0.07, 171.1409, 15.45826, 0 } } };
 
 //大まわり90°ターン
 const std::array<INIT_SLALOM, 3> right_big90_half = { {
@@ -38,29 +40,27 @@ const std::array<INIT_SLALOM, 3> right_big90_half = { {
 		{ 0.6, 91.5, 30, 0.015, 0.025, 149.4980, 12.51215, 0 },
 } };
 const std::array<INIT_SLALOM, 3> left_big90_half = { {
-		{ 0.5, 89, 30, 0.015, 0.022, 112.6498, 10.86124, 0 },
+		{ 0.5, 89, 30, 0.018, 0.017, 112.6498, 10.86124, 0 },
 		{ 0.5, 89, 30, 0.018, 0.028, 112.6498, 10.86124, 0 },
 		{ 0.6, 89, 30, 0.010, 0.03, 149.4980, 12.51215, 0 },
 } };
 
 //大まわり180°ターン
 const std::array<INIT_SLALOM, 3> right_big180_half ={ {
-		{ 0.5, 181.5, 40, 0.020, 0.030, 97.73437, 11.74134, 0 },
-		{ 0.5, 181.5, 40, 0.020, 0.030, 83.56877, 10.80203, 0 },
+		{ 0.5, 181.5, 38, 0.020, 0.030, 94.5770, 11.49152, 0 },
 //		{ 0.6, 180, 40, 0.020, 0.040, 148.5666, 14.40271, 0 },
 } };
 const std::array<INIT_SLALOM, 3> left_big180_half ={ {
-		{ 0.5, 179.8, 40, 0.020, 0.027, 98.73437, 11.74134, 0 },
-		{ 0.5, 180, 40, 0.020, 0.022, 98.73437, 11.74134, 0 },
+		{ 0.5, 180, 40, 0.020, 0.008, 98.73437, 11.74134, 0 },
 //		{ 0.6, 180, 40, 0.020, 0.030, 148.5666, 14.40271, 0 },
 } };
 
 //入り45°ターン
 const std::array<INIT_SLALOM, 1> right_begin45_half = { {
-		{ 0.5, 45.8, 20, 0.014, 0.026, 195.0775, 11.67003, 0 },
+		{ 0.5, 45.8, 20, 0.016, 0.030, 195.0775, 11.67003, 0 },
 } };
 const std::array<INIT_SLALOM, 1> left_begin45_half = { {
-		{ 0.5, 45, 20, 0.010, 0.03064, 195.0775, 11.67003, 0 },
+		{ 0.5, 45, 20, 0.008, 0.032, 195.0775, 11.67003, 0 },
 } };
 
 //出の45°ターン
@@ -73,10 +73,10 @@ const std::array<INIT_SLALOM, 1> left_end45_half = { {
 
 //入り135°ターン
 const std::array<INIT_SLALOM, 1> right_begin135_half = { {
-		{ 0.5, 136, 45, 0.023, 0.027, 141.1387, 14.89, 0 },
+		{ 0.5, 135, 45, 0.023, 0.027, 141.1387, 14.89, 0 },
 } };
 const std::array<INIT_SLALOM, 1> left_begin135_half = { {
-		{ 0.5, 135.9, 45, 0.025, 0.025, 141.1387, 14.89, 0 },
+		{ 0.5, 135.7, 45, 0.025, 0.025, 141.1387, 14.89, 0 },
 } };
 
 //出の135°ターン
@@ -96,100 +96,83 @@ const std::array<INIT_SLALOM, 1> left_obli90_half = { {
 } };
 
 
-float parameter::get_run_acceleration(const unsigned char select_mode) {
-	if (select_mode >= RUN_MODE_NUMBER) {			//存在しないモードを選択したらエラー
+float parameter::get_run_acceleration(const uint8_t _select_mode) {
+	if (_select_mode >= RUN_MODE_NUMBER) {			//存在しないモードを選択したらエラー
 		mouse::error();
-		myprintf("存在しない走行モード[%d]の加速度を選択しています!!", select_mode);
+		myprintf("存在しない走行モード[%d]の加速度を選択しています!!", _select_mode);
 		return 0;
 	}
-	return straight_run[select_mode].acceleration;
+	return straight_run[_select_mode].accel;
 }
 
-unsigned int parameter::get_ideal_photo(PHOTO_TYPE photo_type) {
-	switch (photo_type) {
-	case right:
-		return ideal_photo[MOUSE_MODE - 1][right];
-		break;
+float parameter::get_ideal_photo(const PHOTO_TYPE _type) {
 
-	case left:
-		return ideal_photo[MOUSE_MODE - 1][left];
+	switch (_type) {
+	case PHOTO_TYPE::right:
+	case PHOTO_TYPE::left:
+	case PHOTO_TYPE::front_right:
+	case PHOTO_TYPE::front_left:
+	case PHOTO_TYPE::front:
 		break;
-
-	case front_right:
-		return ideal_photo[MOUSE_MODE - 1][front_right];
+	default:
+		return 0;
 		break;
+	}
+	return ideal_photo[MOUSE_MODE - 1][static_cast<int>(_type)];
+}
 
-	case front_left:
-		return ideal_photo[MOUSE_MODE - 1][front_left];
-		break;
-
-	case front:
-		return ideal_photo[MOUSE_MODE - 1][front];
+int16_t parameter::get_min_wall_photo(const PHOTO_TYPE _type) {
+	switch (_type) {
+	case PHOTO_TYPE::right:
+	case PHOTO_TYPE::left:
+	case PHOTO_TYPE::front_right:
+	case PHOTO_TYPE::front_left:
+	case PHOTO_TYPE::front:
 		break;
 
 	default:
+		return 0;
 		break;
 	}
-
-	return 0;
+	return min_wall_photo[MOUSE_MODE - 1][static_cast<int>(_type)];
 }
 
-int16_t parameter::get_min_wall_photo(PHOTO_TYPE photo_type) {
-	switch (photo_type) {
-	case right:
-		return min_wall_photo[MOUSE_MODE - 1][right];
-		break;
-
-	case left:
-		return min_wall_photo[MOUSE_MODE - 1][left];
-		break;
-
-	case front_right:
-		return min_wall_photo[MOUSE_MODE - 1][front_right];
-		break;
-
-	case front_left:
-		return min_wall_photo[MOUSE_MODE - 1][front_left];
-		break;
-
-	case front:
-		return min_wall_photo[MOUSE_MODE - 1][front];
-		break;
-
-	default:
-		break;
-	}
-
-	return 0;
-}
-
-float parameter::get_run_max_velocity(const unsigned char select_mode) {
-	if (select_mode >= RUN_MODE_NUMBER) {			//存在しないモードを選択したらエラー
+float parameter::get_run_max_velocity(const uint8_t _select_mode) {
+	if (_select_mode >= RUN_MODE_NUMBER) {			//存在しないモードを選択したらエラー
 		mouse::error();
-		myprintf("存在しない走行モード[%d]の最高速度を選択しています!!", select_mode);
+		myprintf("存在しない走行モード[%d]の最高速度を選択しています!!", _select_mode);
 		return 0;
 	}
-	return straight_run[select_mode].max_velocity;
+	return straight_run[_select_mode].max_v;
 }
 
-float parameter::get_run_de_acceleration(const unsigned char select_mode) {
-	if (select_mode >= RUN_MODE_NUMBER) {			//存在しないモードを選択したらエラー
+float parameter::get_run_de_acceleration(const uint8_t _select_mode) {
+	if (_select_mode >= RUN_MODE_NUMBER) {			//存在しないモードを選択したらエラー
 		mouse::error();
-		myprintf("存在しない走行モード[%d]の減速度を選択しています!!", select_mode);
+		myprintf("存在しない走行モード[%d]の減速度を選択しています!!", _select_mode);
 		return 0;
 	}
-	return straight_run[select_mode].de_acceleration;
+	return straight_run[_select_mode].de_accel;
 }
+
+const TRAPEZOID* const parameter::get_run(uint8_t _select_mode){
+	if (_select_mode >= RUN_MODE_NUMBER) {			//存在しないモードを選択したらエラー
+		mouse::error();
+		myprintf("存在しない走行モード[%d]を選択しています!!", _select_mode);
+		return &straight_run[0];
+	}
+	return &straight_run[_select_mode];
+}
+
 
 float parameter::get_slalom(const SLALOM_TYPE slalom_type,
 		const SLALOM_ELEMENT slalom_element, const signed char right_or_left,
 		const unsigned char select_mode) {
 	const INIT_SLALOM* tar;
-
-	if (right_or_left == MUKI_RIGHT)
-		tar = get_slalom(slalom_type, true, select_mode);
-	else
-		tar = get_slalom(slalom_type, false, select_mode);
+	bool isR = true;
+	if (right_or_left == MUKI_LEFT)
+		isR = false;
+	tar = get_slalom_p(slalom_type, isR, select_mode);
 
 	switch (slalom_element) {
 	case velocity:
@@ -209,156 +192,10 @@ float parameter::get_slalom(const SLALOM_TYPE slalom_type,
 	case time:
 		return tar->time;
 	}
-
-	/*
-	 if (select_mode >= RUN_MODE_NUMBER) {			//存在しないモードを選択したらエラー
-	 mouse::error();
-	 myprintf("存在しない走行モード[%d]のスラローム要素を参照しています!!", select_mode);
-	 return 0;
-	 }
-
-	 //クラシックなら
-	 if (MOUSE_MODE == 2) {
-	 switch (slalom_element) {
-	 case velocity:
-	 if (right_or_left == MUKI_RIGHT) {
-	 return right_slalom[slalom_type][select_mode].velocity;
-	 } else {
-	 return left_slalom[slalom_type][select_mode].velocity;
-	 }
-	 break;
-
-	 case target_angle:
-	 if (right_or_left == MUKI_RIGHT) {
-	 return right_slalom[slalom_type][select_mode].target_angle;
-	 } else {
-	 return left_slalom[slalom_type][select_mode].target_angle;
-	 }
-	 break;
-
-	 case clothoid_angle:
-	 if (right_or_left == MUKI_RIGHT) {
-	 return right_slalom[slalom_type][select_mode].clothoid_angle;
-	 } else {
-	 return left_slalom[slalom_type][select_mode].clothoid_angle;
-	 }
-	 break;
-
-	 case before_distance:
-	 if (right_or_left == MUKI_RIGHT) {
-	 return right_slalom[slalom_type][select_mode].before_distance;
-	 } else {
-	 return left_slalom[slalom_type][select_mode].before_distance;
-	 }
-	 break;
-
-	 case after_distance:
-	 if (right_or_left == MUKI_RIGHT) {
-	 return right_slalom[slalom_type][select_mode].after_distance;
-	 } else {
-	 return left_slalom[slalom_type][select_mode].after_distance;
-	 }
-	 break;
-
-	 case angular_accel:
-	 if (right_or_left == MUKI_RIGHT) {
-	 return right_slalom[slalom_type][select_mode].angular_accel;
-	 } else {
-	 return left_slalom[slalom_type][select_mode].angular_accel;
-	 }
-	 break;
-
-	 case max_angular_velocity:
-	 if (right_or_left == MUKI_RIGHT) {
-	 return right_slalom[slalom_type][select_mode].max_angular_velocity;
-	 } else {
-	 return left_slalom[slalom_type][select_mode].max_angular_velocity;
-	 }
-	 break;
-
-	 case time:
-	 if (right_or_left == MUKI_RIGHT) {
-	 return right_slalom[slalom_type][select_mode].time;
-	 } else {
-	 return left_slalom[slalom_type][select_mode].time;
-	 }
-	 break;
-	 }
-
-	 //ハーフなら
-	 } else {
-	 switch (slalom_element) {
-	 case velocity:
-	 if (right_or_left == MUKI_RIGHT) {
-	 return right_slalom_half[slalom_type][select_mode].velocity;
-	 } else {
-	 return left_slalom_half[slalom_type][select_mode].velocity;
-	 }
-	 break;
-
-	 case target_angle:
-	 if (right_or_left == MUKI_RIGHT) {
-	 return right_slalom_half[slalom_type][select_mode].target_angle;
-	 } else {
-	 return left_slalom_half[slalom_type][select_mode].target_angle;
-	 }
-	 break;
-
-	 case clothoid_angle:
-	 if (right_or_left == MUKI_RIGHT) {
-	 return right_slalom_half[slalom_type][select_mode].clothoid_angle;
-	 } else {
-	 return left_slalom_half[slalom_type][select_mode].clothoid_angle;
-	 }
-	 break;
-
-	 case before_distance:
-	 if (right_or_left == MUKI_RIGHT) {
-	 return right_slalom_half[slalom_type][select_mode].before_distance;
-	 } else {
-	 return left_slalom_half[slalom_type][select_mode].before_distance;
-	 }
-	 break;
-
-	 case after_distance:
-	 if (right_or_left == MUKI_RIGHT) {
-	 return right_slalom_half[slalom_type][select_mode].after_distance;
-	 } else {
-	 return left_slalom_half[slalom_type][select_mode].after_distance;
-	 }
-	 break;
-
-	 case angular_accel:
-	 if (right_or_left == MUKI_RIGHT) {
-	 return right_slalom_half[slalom_type][select_mode].angular_accel;
-	 } else {
-	 return left_slalom_half[slalom_type][select_mode].angular_accel;
-	 }
-	 break;
-
-	 case max_angular_velocity:
-	 if (right_or_left == MUKI_RIGHT) {
-	 return right_slalom_half[slalom_type][select_mode].max_angular_velocity;
-	 } else {
-	 return left_slalom_half[slalom_type][select_mode].max_angular_velocity;
-	 }
-	 break;
-
-	 case time:
-	 if (right_or_left == MUKI_RIGHT) {
-	 return right_slalom_half[slalom_type][select_mode].time;
-	 } else {
-	 return left_slalom_half[slalom_type][select_mode].time;
-	 }
-	 break;
-	 }
-
-	 }
-	 */
 	return 0;
 }
 
-const INIT_SLALOM* const parameter::get_slalom(const SLALOM_TYPE _type,
+const INIT_SLALOM* const parameter::get_slalom_p(const SLALOM_TYPE _type,
 		bool _is_right, uint8_t _mode) {
 	switch (_type) {
 	case none:
@@ -498,6 +335,8 @@ const INIT_SLALOM* const parameter::get_slalom(const SLALOM_TYPE _type,
 					return &left_obli90_half.at(_mode);
 			}
 		}
+		break;
+	default:
 		break;
 	}
 

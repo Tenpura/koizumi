@@ -37,21 +37,22 @@
 
 class parameter {
 private:
-	const static unsigned int ideal_photo[2][5];			//ideal_photo[クラシックorハーフ][光学センサの向き]
+	const static float ideal_photo[2][5];			//ideal_photo[クラシックorハーフ][光学センサの向き]
 	const static int16_t min_wall_photo[2][5];			//壁がある時の最小値[クラシックorハーフ][光学センサの向き]
 	const static TRAPEZOID straight_run[RUN_MODE_NUMBER];
 
 public:
-	static unsigned int get_ideal_photo(const PHOTO_TYPE photo_type);
-	static int16_t get_min_wall_photo(const PHOTO_TYPE photo_type);
+	static float get_ideal_photo(PHOTO_TYPE _type);
+	static int16_t get_min_wall_photo(PHOTO_TYPE _type);
 
-	static float get_run_acceleration(const unsigned char select_mode);
-	static float get_run_max_velocity(const unsigned char select_mode);
-	static float get_run_de_acceleration(const unsigned char select_mode);
+	static float get_run_acceleration(uint8_t _select_mode);
+	static float get_run_max_velocity(uint8_t _select_mode);
+	static float get_run_de_acceleration(uint8_t _select_mode);
+	static const TRAPEZOID* const get_run(uint8_t _select_mode);
 
 	static float get_slalom(const SLALOM_TYPE slalom_type, const SLALOM_ELEMENT slalom_element,
 				const signed char right_or_left, const unsigned char select_mode);
-	static const INIT_SLALOM* const get_slalom(const SLALOM_TYPE type, bool is_right, uint8_t select_mode);
+	static const INIT_SLALOM* const get_slalom_p(const SLALOM_TYPE _type, bool is_right, uint8_t select_mode);
 
 };
 

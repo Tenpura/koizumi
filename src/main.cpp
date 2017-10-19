@@ -102,11 +102,11 @@ int main(void) {
 		switch (select) {
 		case 0:		//壁の値を読むだけ	事故防止のためにモード0は実害ない奴にしとく
 			while (1) {
-				myprintf("right %4.3f  ", photo::get_value(right));
-				myprintf("left %4.3f  ", photo::get_value(left));
-				myprintf("f_r %4.3f  ", photo::get_value(front_right));
-				myprintf("f_l %4.3f  ", photo::get_value(front_left));
-				myprintf("front %4.3f  ", photo::get_value(front));
+				myprintf("right %4.3f  ", photo::get_value(PHOTO_TYPE::right));
+				myprintf("left %4.3f  ", photo::get_value(PHOTO_TYPE::left));
+				myprintf("f_r %4.3f  ", photo::get_value(PHOTO_TYPE::front_right));
+				myprintf("f_l %4.3f  ", photo::get_value(PHOTO_TYPE::front_left));
+				myprintf("front %4.3f  ", photo::get_value(PHOTO_TYPE::front));
 				myprintf("\n\r");
 
 				wait::ms(100);
@@ -135,7 +135,7 @@ int main(void) {
 			break;
 
 		case 4:		//迷路データを呼び出す
-			select = mode::select_mode(2 + 1, right);
+			select = mode::select_mode(2 + 1, PHOTO_TYPE::right);
 			if (select == 0)
 				break;
 			flash_maze fl;
@@ -160,17 +160,17 @@ int main(void) {
 			mouse::run_init(true, true);
 
 			flog[0][0] = -1;
-			//run::accel_run(0.09, 0, 1);
+			//run::accel_run(0.09, SEARCH_VELOCITY, 0);
 			//run::path_run_wall_eage(0.03, 0.5, 1);
 			//run::accel_run(0.045 + 0.09, SEARCH_VELOCITY, 0);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
-			//run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
-			//run::accel_run(0.045+0.015, 0, 1);
+			run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
+			run::accel_run(0.045, 0, 0);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
 			//control::stop_wall_control();
-			//run::accel_run(0.045*3, 0, 0);
-			//run::accel_run_by_distance(0.09 * 7, 0, mouse::get_place(), 2);
-			run::path_accel_run_wall_eage(0.09 * 7, 0, mouse::get_place(), 0);
+			//run::accel_run_by_distance(0.045*2*7,0,mouse::get_place(),2);
+			//run::accel_run_by_distance(0.09, 0, mouse::get_place(), 0);
+			//run::path_accel_run_wall_eage(0.09 * 7, 0, mouse::get_place(), 2);
 			//run::spin_turn(-180);
 			//run::accel_run(0.09 * 7, 0, 2);
 			//run::spin_turn(360);
@@ -183,10 +183,10 @@ int main(void) {
 		case 6: {		//スラローム調整
 
 			int8_t right_or_left = MUKI_RIGHT;
-			if (!mode::select_RorL(right))
+			if (!mode::select_RorL(PHOTO_TYPE::right))
 				right_or_left = MUKI_LEFT;
 
-			select = mode::select_mode(slalom_type_count, right);
+			select = mode::select_mode(slalom_type_count, PHOTO_TYPE::right);
 			float b_dis = 0.09 * 1 * MOUSE_MODE;		//スラロームの前にどれだけ進むか
 			float a_dis = 0.09 * 1 * MOUSE_MODE;		//スラロームの後にどれだけ進むか
 			SLALOM_TYPE sla_type = none;
@@ -232,7 +232,7 @@ int main(void) {
 			}
 			if (b_dis != 0) {		//前距離0のパターン(none,spin_turn)は調整しない
 
-				select = mode::select_mode(3, right);
+				select = mode::select_mode(3, PHOTO_TYPE::right);
 
 				while (1) {
 					my7seg::blink(8, 500, 1);
@@ -244,7 +244,7 @@ int main(void) {
 
 				flog[0][0] = -1;
 				run::accel_run(b_dis,
-						parameter::get_slalom(sla_type, true, select)->velocity,
+						parameter::get_slalom_p(sla_type, true, select)->velocity,
 						1);
 				run::slalom(sla_type, right_or_left, select);
 				run::accel_run(a_dis, 0, 1);
@@ -281,13 +281,13 @@ int main(void) {
 			goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y));
 			goal.emplace_back(std::make_pair(GOAL_x, GOAL_y + 1));
 			goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y + 1));
-			node_search search;
+			node_search search(999);
 			search.input_map_data(&mouse::now_map);		//保存していたマップを読みだす
 			search.set_weight_algo(based_distance);		//重みづけの方法を設定
 			uint32_t temp_cnt = wait::get_count();
 			step::spread_step(GOAL_x, GOAL_y, false);		//歩数マップを作製
 			myprintf("square cal. count->%d\n\r", wait::get_count() - temp_cnt);
-			//			map::draw_map(true);
+			//map::draw_map(true);
 			temp_cnt = wait::get_count();
 			search.spread_step(goal, false);		//歩数マップを作製
 			myprintf("node cal. count->%d\n\r", wait::get_count() - temp_cnt);
@@ -341,8 +341,8 @@ void interrupt_timer() {
 		}
 	} else if (i < flog_number) {
 		flog[0][i] = mouse::get_place().y;
-		flog[1][i] = photo::get_displa_from_center(right);
-		flog[2][i] = photo::get_displa_from_center(left);//photo::get_value(left);
+		flog[1][i] = photo::get_value(PHOTO_TYPE::front);
+		flog[2][i] = photo::get_displa_from_center(PHOTO_TYPE::front);//photo::get_value(left);
 		i++;
 	} else if (i == flog_number) {
 		flog[0][0] = 0;

@@ -168,15 +168,18 @@ typedef struct {
 } MAP_DATA;
 
 //光学センサの種類
-enum PHOTO_TYPE {
+enum class PHOTO_TYPE : uint8_t{
 	right = 0, left = 1, front_right = 2, front_left = 3, front = 4, element_count
 };
 
 //台形加速に用いるパラメータ用構造体
 typedef struct {
-	float acceleration;
-	float max_velocity;
-	float de_acceleration;
+	float accel;
+	float max_v;
+	float de_accel;
+	float obli_accel;
+	float obli_max_v;
+	float obli_de_accel;
 } TRAPEZOID;
 
 //スラモームの種類

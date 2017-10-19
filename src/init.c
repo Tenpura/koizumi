@@ -28,31 +28,31 @@ void init_system() {
 
 }
 /*
-void init_tim(void) {
+ void init_tim(void) {
 
-	//割り込みコントローラー
-	NVIC_InitTypeDef NVIC_InitStructure;
-	NVIC_InitStructure.NVIC_IRQChannel = TIM1_BRK_TIM9_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x03;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
+ //割り込みコントローラー
+ NVIC_InitTypeDef NVIC_InitStructure;
+ NVIC_InitStructure.NVIC_IRQChannel = TIM1_BRK_TIM9_IRQn;
+ NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x03;
+ NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+ NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+ NVIC_Init(&NVIC_InitStructure);
 
-	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitSturcture;	//初期化用構造体を宣言
+ TIM_TimeBaseInitTypeDef TIM_TimeBaseInitSturcture;	//初期化用構造体を宣言
 
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM9, ENABLE);	//TIM9にクロック供給
+ RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM9, ENABLE);	//TIM9にクロック供給
 
-	TIM_TimeBaseInitSturcture.TIM_Period = 420 - 1;	//カウンタクリア要因
-	TIM_TimeBaseInitSturcture.TIM_Prescaler = 10 - 1; //プリスケーラ(カウンタがPrescaler回カウントされたタイミングで，TIM9のカウンタが1加算される)
-	TIM_TimeBaseInitSturcture.TIM_ClockDivision = 0; //デットタイム発生回路用の分周。通常0(分周しない)。
-	TIM_TimeBaseInitSturcture.TIM_CounterMode = TIM_CounterMode_Up;	//アップカウント
-	TIM_TimeBaseInit(TIM9, &TIM_TimeBaseInitSturcture);	//設定
+ TIM_TimeBaseInitSturcture.TIM_Period = 420 - 1;	//カウンタクリア要因
+ TIM_TimeBaseInitSturcture.TIM_Prescaler = 10 - 1; //プリスケーラ(カウンタがPrescaler回カウントされたタイミングで，TIM9のカウンタが1加算される)
+ TIM_TimeBaseInitSturcture.TIM_ClockDivision = 0; //デットタイム発生回路用の分周。通常0(分周しない)。
+ TIM_TimeBaseInitSturcture.TIM_CounterMode = TIM_CounterMode_Up;	//アップカウント
+ TIM_TimeBaseInit(TIM9, &TIM_TimeBaseInitSturcture);	//設定
 
-	TIM_ClearITPendingBit(TIM9, TIM_IT_Update); //タイマ更新イベントでの割り込みフラグをクリア
-	TIM_ITConfig(TIM9, TIM_IT_Update, ENABLE); //タイマ更新イベントでの割り込みを許可
+ TIM_ClearITPendingBit(TIM9, TIM_IT_Update); //タイマ更新イベントでの割り込みフラグをクリア
+ TIM_ITConfig(TIM9, TIM_IT_Update, ENABLE); //タイマ更新イベントでの割り込みを許可
 
-}
-*/
+ }
+ */
 void init_gpio(void) {
 	/* Reset HSEON, CSSON and PLLON bits */
 	RCC->CR &= (uint32_t) 0xFEF6FFFF; //HSEオシレーターは使用しないので、リセットしておく(SystemInit()内でONになっているため)
@@ -66,7 +66,6 @@ void init_gpio(void) {
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);	//クロック供給
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);	//クロック供給
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOH, ENABLE);
-
 
 	//GPIOB
 	GPIO_StructInit(&GPIO_InitStructure);	//構造体を初期化
@@ -118,10 +117,9 @@ void init_gpio(void) {
 	GPIO_SetBits(GPIOH, GPIO_Pin_0);
 	GPIO_SetBits(GPIOH, GPIO_Pin_1);
 
-
 	//センサーLEDよう
 	GPIO_StructInit(&GPIO_InitStructure);	//構造体を初期化
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12;	//設定するピンを決める
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12;//設定するピンを決める
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;		//クロック
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;		//出力に設定
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;		//オープンドレインorプッシュプル
@@ -140,6 +138,7 @@ void init_gpio(void) {
 void init_adc(void) {
 //GPIO側でアナログモードに設定
 	GPIO_InitTypeDef GPIO_InitStructure;
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
 	GPIO_StructInit(&GPIO_InitStructure);
@@ -151,6 +150,10 @@ void init_adc(void) {
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_4
 			| GPIO_Pin_5;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
 
 //AD変換の設定
 	ADC_InitTypeDef ADC_InitStructure;		//初期設定用の構造体定義

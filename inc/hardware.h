@@ -220,7 +220,7 @@ private:
 	static const int16_t PHOTO_AVERAGE_TIME = 5;	//XXX ad値のいくつの移動平均をとるか
 	static const uint16_t GAP_AVE_COUNT = 10;		//XXX 壁の切れ目対策にいくつの平均をとるか
 
-	static float ave_buf[element_count][GAP_AVE_COUNT];	//センサー値（平均取ったやつ）のバッファ　壁の切れ目チェックとかで使う
+	static float ave_buf[static_cast<unsigned int>(PHOTO_TYPE::element_count)][GAP_AVE_COUNT];	//センサー値（平均取ったやつ）のバッファ　壁の切れ目チェックとかで使う
 	//static float diff_buf[element_count][GAP_AVE_COUNT];	//今のセンサー値とave_bufの差　壁の切れ目チェックとかで使う
 	//static uint8_t gap_buf[element_count][GAP_AVE_COUNT];		//count_wall_gapで数え上げた値を保存しておく
 
@@ -239,14 +239,14 @@ private:
 
 public:
 	//この値を越えたら壁キレ
-	static const std::array<float, PHOTO_TYPE::element_count> wall_edge_down;
-	static const std::array<float, PHOTO_TYPE::element_count> wall_edge_up;
+	static const std::array<float, static_cast<unsigned int>(PHOTO_TYPE::element_count)> wall_edge_down;
+	static const std::array<float, static_cast<unsigned int>(PHOTO_TYPE::element_count)> wall_edge_up;
 
 	//壁キレを検知した距離　区画中心を0としてそこからどれだけ進んでいるか
-	static const std::array<float, PHOTO_TYPE::element_count> edge_distance;
+	static const std::array<float, static_cast<unsigned int>(PHOTO_TYPE::element_count)> edge_distance;
 
 	static uint16_t get_ad(PHOTO_TYPE sensor_type);			//??_adの値を取得
-	static void set_ad(PHOTO_TYPE sensor_type, int16_t set_value);	//??_adに値を代入
+	static void set_ad(PHOTO_TYPE _sensor_type, int16_t set_value);	//??_adに値を代入
 
 	static void light(PHOTO_TYPE sensor_type);
 	static void turn_off(PHOTO_TYPE sensor_type);
