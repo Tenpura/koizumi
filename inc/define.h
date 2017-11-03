@@ -15,10 +15,10 @@
 
 #define MAZE_SIZE	32
 
-#define GOAL_x 5
-#define GOAL_y 6
+#define GOAL_x 4
+#define GOAL_y 4
 
-#define PATH_MAX 200
+#define PATH_MAX 300
 
 static const uint8_t log_count = 100;	//Logの配列個数
 static const uint16_t buf_count = 100;	//バッファ式ログのバッファ数。
@@ -237,7 +237,7 @@ typedef struct {
 } COORDINATE;
 
 typedef enum {
-	east=0, west=1, north=2, south=3, north_east=4, south_east=5, south_west=6, north_west=7
+	east=0, west=1, north=2, south=3, north_east=4, south_east=5, south_west=6, north_west=7, center = 8
 } compas;
 
 typedef enum {

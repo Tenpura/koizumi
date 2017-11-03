@@ -59,7 +59,7 @@ int main(void) {
 	map::reset_maze();
 	map::output_map_data(&mouse::now_map);
 
-	encoder::yi_correct();		//YI式補正
+	//encoder::yi_correct();		//YI式補正
 
 	uint8_t select = 0;	//モード管理用
 	while (1) {
@@ -123,7 +123,6 @@ int main(void) {
 			break;
 
 		case 2:		//最短
-			//TODO パス作れなかったら抜けるように
 			mode::shortest_mode();
 			motor::sleep_motor();
 			break;
@@ -164,13 +163,17 @@ int main(void) {
 			//run::path_run_wall_eage(0.03, 0.5, 1);
 			//run::accel_run(0.045 + 0.09, SEARCH_VELOCITY, 0);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
-			run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
-			run::accel_run(0.045, 0, 0);
+//			run::accel_run(0.09*3, 0.5, 2);
+//			run::wall_eage_run_for_slalom(0.04,0.5,2,false);
+//			run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
+//			run::accel_run(0.05, 0, 2);
+			run::accel_run_by_distance(0.09, 1, mouse::get_place(), 2);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
 			//control::stop_wall_control();
-			//run::accel_run_by_distance(0.045*2*7,0,mouse::get_place(),2);
 			//run::accel_run_by_distance(0.09, 0, mouse::get_place(), 0);
-			//run::path_accel_run_wall_eage(0.09 * 7, 0, mouse::get_place(), 2);
+			run::wall_eage_run_for_slalom(0.04, 1, 2,true);
+			run::accel_run_by_distance(0.09+0.005, 0.5, mouse::get_place(), 2);
+			run::accel_run_by_distance(0.09, 0, mouse::get_place(), 0);
 			//run::spin_turn(-180);
 			//run::accel_run(0.09 * 7, 0, 2);
 			//run::spin_turn(360);
@@ -274,6 +277,7 @@ int main(void) {
 			flash_maze flash_l;
 			MAP_DATA temp;
 			map::output_map_data(&temp);
+			flash_l.save_maze(0, &temp);
 			flash_l.save_maze(1, &temp);
 
 			std::vector<std::pair<uint8_t, uint8_t> > goal;
@@ -341,8 +345,8 @@ void interrupt_timer() {
 		}
 	} else if (i < flog_number) {
 		flog[0][i] = mouse::get_place().y;
-		flog[1][i] = photo::get_value(PHOTO_TYPE::front);
-		flog[2][i] = photo::get_displa_from_center(PHOTO_TYPE::front);//photo::get_value(left);
+		flog[1][i] = mouse::get_ideal_velocity();//photo::get_displa_from_center(PHOTO_TYPE::right);
+		flog[2][i] = mouse::get_velocity();//photo::get_displa_from_center(PHOTO_TYPE::left);//photo::get_value(left);
 		i++;
 	} else if (i == flog_number) {
 		flog[0][0] = 0;

@@ -1056,7 +1056,7 @@ void photo::interrupt(bool is_light) {
 	if (is_light) {
 		photo::light(PHOTO_TYPE::right);
 		photo::light(PHOTO_TYPE::left);
-		for (int i = 0; i < wait_number * 2; i++) {
+		for (volatile int i = 0; i < wait_number * 2; i++) {
 		}
 	}
 	photo::set_ad(PHOTO_TYPE::right,
@@ -1065,26 +1065,28 @@ void photo::interrupt(bool is_light) {
 			get_ad(PHOTO_TYPE::left) - get_ref(PHOTO_TYPE::left));		//差分を代入
 	photo::turn_off(PHOTO_TYPE::right);
 	photo::turn_off(PHOTO_TYPE::left);
-	/*
-	 if (is_light) {
-	 photo::light(PHOTO_TYPE::front_right);
-	 for (int i = 0; i < wait_number; i++) {
-	 }
-	 }
-	 photo::set_ad(PHOTO_TYPE::front_right, get_ad(PHOTO_TYPE::front_right) - get_ref(PHOTO_TYPE::front_right));	//差分を代入
-	 photo::turn_off(PHOTO_TYPE::front_right);
 
-	 if (is_light) {
-	 photo::light(PHOTO_TYPE::front_left);
-	 for (int i = 0; i < wait_number; i++) {
-	 }
-	 }
-	 photo::set_ad(PHOTO_TYPE::front_left, get_ad(PHOTO_TYPE::front_left) - get_ref(PHOTO_TYPE::front_left));//差分を代入
-	 photo::turn_off(PHOTO_TYPE::front_left);
-	 */
+	if (is_light) {
+		photo::light(PHOTO_TYPE::front_right);
+		for (volatile int i = 0; i < wait_number; i++) {
+		}
+	}
+	photo::set_ad(PHOTO_TYPE::front_right,
+			get_ad(PHOTO_TYPE::front_right) - get_ref(PHOTO_TYPE::front_right));//差分を代入
+	photo::turn_off(PHOTO_TYPE::front_right);
+
+	if (is_light) {
+		photo::light(PHOTO_TYPE::front_left);
+		for (volatile int i = 0; i < wait_number; i++) {
+		}
+	}
+	photo::set_ad(PHOTO_TYPE::front_left,
+			get_ad(PHOTO_TYPE::front_left) - get_ref(PHOTO_TYPE::front_left));//差分を代入
+	photo::turn_off(PHOTO_TYPE::front_left);
+
 	if (is_light) {
 		photo::light(PHOTO_TYPE::front);
-		for (int i = 0; i < wait_number * 2; i++) {
+		for (volatile int i = 0; i < wait_number * 2; i++) {
 		}
 	}
 	photo::set_ad(PHOTO_TYPE::front,
@@ -1250,10 +1252,11 @@ void photo::get_displa_from_center_void(PHOTO_TYPE sensor_type, float val) {
 float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
 	float a0, a1, a2, alog;	//小島近似の係数	x^0,x,x^2,logの係数
 	float f = val;		//対称のセンサ値
-	float f_c = (parameter::get_ideal_photo(sensor_type));//中心位置におけるセンサ値
+	float f_c = ABS(parameter::get_ideal_photo(sensor_type));	//中心位置におけるセンサ値
+	float ans = 0;
 
 	if (f <= 0) {
-		return -40 * 0.001;
+		f = 0.1;
 	}
 
 	//フォトセンサの特性を示すパラメータ
@@ -1280,7 +1283,7 @@ float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
 		a2 = 3.5 * 0.000001;
 		alog = 47.7675;
 
-		float ans = a2 * f + a1;
+		ans = a2 * f + a1;
 		ans = ans * f + a0 + alog * logf(f);
 		return ans * 0.001;
 
@@ -1294,8 +1297,7 @@ float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
 	}
 
 	//センサ値fは f=f_c*exp(a*x) と仮定し、xを求める。-> x = 1/a*log(f/f_c)
-	//f_c:中心のセンサ値、x:中心からのずれ[mm]
-//	return (my_math::log(f / f_c) / a * 0.001);		//[m]
+	//f_c:中心のセンサ値、x:中心からのずれ[m]
 	return logf(f / f_c) / a * 0.001;
 }
 
@@ -1333,15 +1335,15 @@ bool photo::check_wall(unsigned char muki) {
 
 bool photo::check_wall(PHOTO_TYPE type) {
 	/*
-	float displa = photo::get_displa_from_center(type);
-	if (type == PHOTO_TYPE::left) {
-		displa *= -1;
-	}
+	 float displa = photo::get_displa_from_center(type);
+	 if (type == PHOTO_TYPE::left) {
+	 displa *= -1;
+	 }
 
-	if (displa > -0.01)
-		return true;
-	return false;
-	*/
+	 if (displa > -0.01)
+	 return true;
+	 return false;
+	 */
 	if (photo::get_value(type) >= parameter::get_min_wall_photo(type))
 		return true;
 	else

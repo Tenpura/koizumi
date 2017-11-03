@@ -521,7 +521,7 @@ bool map::get_wall(unsigned char wall_x, unsigned char wall_y,
 		} else {		//適切でない値が入ってる
 			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("存在しないx座標の壁を読もうとしています->%d\n\r",target_x);
+			myprintf("存在しないx座標の壁を読もうとしています->%d\n\r", target_x);
 			myprintf("get_wall関数内\n\r");
 			return false;
 		}
@@ -541,7 +541,7 @@ bool map::get_wall(unsigned char wall_x, unsigned char wall_y,
 		} else {		//適切でない値が入ってる
 			mouse::error();
 			myprintf("\n\r!!!ERROR!!!\n\r");
-			myprintf("存在しないy座標の壁を読もうとしています->%d\n\r",target_y);
+			myprintf("存在しないy座標の壁を読もうとしています->%d\n\r", target_y);
 			myprintf("get_wall関数内\n\r");
 			return false;
 		}
@@ -1569,8 +1569,8 @@ unsigned char path::get_path_turn_muki(unsigned int index_number) {
 	return path_memory[index_number].element.muki;
 }
 
-bool path::set_path(uint16_t _index,PATH _path){
-	if(_index >= PATH_MAX)
+bool path::set_path(uint16_t _index, PATH _path) {
+	if (_index >= PATH_MAX)
 		return false;
 
 	path_memory[_index] = _path;
@@ -1611,25 +1611,28 @@ std::pair<int8_t, int8_t> compas_to_direction(compas tar) {
 	return ans;
 }
 
-
 uint16_t node_step::step[x_size][y_size];
 
-bool node_step::able_set_step(uint8_t x, uint8_t y, compas muki,
+bool node_step::able_set_step(uint8_t double_x, uint8_t y, compas muki,
 		uint16_t step_val, bool by_known) {
 	uint8_t def_muki = compas_to_muki(muki);
 
 //見ていない部分には書き込めない
 	if (by_known) {
-		if (!map::check_exist(x, y, def_muki))
+		if (!map::check_exist(double_x / 2, y, def_muki))
 			return false;
 	}
 
+//配列の要素外なら何もしない
+	if (is_outside_array(double_x, y))
+		return false;
+
 //壁がある部分には書き込めない
-	if (map::get_wall(x, y, def_muki))
+	if (map::get_wall(double_x / 2, y, def_muki))
 		return false;
 
 //書き込む歩数より小さい場所には書き込めない
-	if (get_step(x, y, muki) <= step_val)
+	if (step[double_x][y] <= step_val)
 		return false;
 
 	return true;
@@ -1655,17 +1658,16 @@ bool node_step::set_step(uint8_t x, uint8_t y, compas muki, uint16_t step_val,
 	uint8_t step_y = y;
 
 	switch (muki) {
-//南向きと西向きに変更してやりなおし
+		//南向きと西向きに変更してやりなおし
 	case north:
-		return set_step(x, y + 1, south, step_val, by_known);
+		step_y++;	//yを1つ増やして南向き扱いに
+		step_x = 2 * x + 1;	//南向きだと横向きの壁なので、x方向が2x+1
 		break;
-	case east:
-		return set_step(x + 1, y, west, step_val, by_known);
-		break;
-
-		//南と西なら配列用にX座標を対応させる
 	case south:
 		step_x = 2 * x + 1;	//南向きだと横向きの壁なので、x方向が2x+1
+		break;
+	case east:
+		step_x = 2 * (x + 1);	//xを1つ増やして、西向き扱い　縦向きの壁なので、x方向は2x
 		break;
 	case west:
 		step_x = 2 * x;	//西向きだと縦向きの壁なので、x方向は2x
@@ -1675,12 +1677,8 @@ bool node_step::set_step(uint8_t x, uint8_t y, compas muki, uint16_t step_val,
 		return false;
 	}
 
-//配列の要素外に書き込むなら何もしない
-	if (is_outside_array(step_x, step_y))
-		return false;
-
 //書き込めるなら
-	if (able_set_step(x, y, muki, step_val, by_known)) {
+	if (able_set_step(step_x, step_y, muki, step_val, by_known)) {
 		step[step_x][step_y] = step_val;	//配列に歩数代入
 		return true;
 	}
@@ -1692,18 +1690,14 @@ bool node_step::set_step_double(uint8_t _double_x, uint8_t _double_y,
 		uint16_t step_val, bool by_known) {
 	//代入用の変数
 	uint8_t step_x = _double_x;
-	uint8_t step_y = _double_y / 2;
-
-	//配列の要素外に書き込むなら何もしない
-	if (is_outside_array(step_x, step_y))
-		return false;
+	uint8_t step_y = static_cast<uint8_t>(_double_y / 2);
 
 	compas muki = south;
 	if (step_x % 2 == 0)
 		muki = west;
 
 	//書き込めるなら
-	if (able_set_step(step_x / 2, step_y, muki, step_val, by_known)) {
+	if (able_set_step(step_x, step_y, muki, step_val, by_known)) {
 		step[step_x][step_y] = step_val;	//配列に歩数代入
 		return true;
 	}
@@ -1719,15 +1713,14 @@ uint16_t node_step::get_step(uint8_t x, uint8_t y, compas muki) {
 	switch (muki) {
 //南向きと西向きに変更してやりなおして終了
 	case north:
-		return get_step(x, y + 1, south);
+		step_y++;	//1つ増やして南向き扱いに。
+		step_x = 2 * x + 1;	//南向きだと横向きの壁なので、x方向が2x+1
 		break;
-	case east:
-		return get_step(x + 1, y, west);
-		break;
-
-		//南と西なら配列用にX座標を対応させる
 	case south:
 		step_x = 2 * x + 1;	//南向きだと横向きの壁なので、x方向が2x+1
+		break;
+	case east:
+		step_x = 2 * (x + 1);	//1つ増やして西向き扱いに。縦向きの壁なので、x方向は2x
 		break;
 	case west:
 		step_x = 2 * x;	//西向きだと縦向きの壁なので、x方向は2x
@@ -1780,8 +1773,6 @@ void node_step::reset_step(uint16_t reset_val) {
 	}
 
 }
-
-
 
 void node_step::draw_step() {
 	signed char tekitou_x = 0, tekitou_y = MAZE_SIZE - 1;
@@ -1880,6 +1871,8 @@ weight_algo node_search::get_weight_algo() {
 
 void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 		bool by_known) {
+	bool debranch = false;	//枝切するか否か
+
 //座標管理は歩数の配列(X方向だけ倍)と異なりX,Y方向両方で倍にする　隣接座標の取り扱いが楽だから
 	union {
 		int8_t xy;
@@ -1887,6 +1880,12 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 			int8_t x :4;
 			int8_t y :4;
 		};
+
+		void set(int8_t _x, int8_t _y){
+			x = _x;
+			y = _y;
+		}
+
 	} dir;			//方向管理用　int8_tでxy両方管理したかった
 
 	my_queue x_queue;		//座標管理用Queue
@@ -1894,25 +1893,33 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 	my_queue dir_queue;		//方向管理用Queue
 	uint8_t x, y;		//2倍座標
 
+	//マウスのいる座標
+	uint8_t mouse_x = mouse::get_x_position();
+	uint8_t mouse_y = mouse::get_y_position();
+	uint16_t mouse_step = get_step(mouse_x, mouse_y,
+			get_min_compas(mouse_x, mouse_y));
+
 //歩数をリセット
 	node_step::reset_step(init_step);
 
 //目標座標を最初にキューにぶち込む
 	for (uint16_t index = 0; index < finish.size(); index++) {
-		for (int i = 0; i <= 2; i++) {
-			for (int j = 0; j <= 2; j++) {
-				if ((i + j) % 2 != 0) {		//2倍座標系では区画の間は奇数にしかありえない
-					x = 2 * finish.at(index).first + i;
-					y = 2 * finish.at(index).second + j;
-					if (set_step_double(x, y, 0, by_known)) {
-						x_queue.push(2 * finish.at(index).first + i);
-						y_queue.push(2 * finish.at(index).second + j);
-						dir.x = i - 1;
-						dir.y = j - 1;
-						dir_queue.push(dir.xy);
-						//方向も記録
-					}
-				}
+		for (int i = -1; i < 2; i += 2) {
+			x = 2 * finish.at(index).first + 1;
+			y = 2 * finish.at(index).second + 1;
+			if (set_step_double(x + i, y, 0, by_known)) {
+				x_queue.push(x + i);
+				y_queue.push(y);
+				dir.set(i,0);
+				dir_queue.push(dir.xy);
+				//方向も記録
+			}
+			if (set_step_double(x, y + i, 0, by_known)) {
+				x_queue.push(x);
+				y_queue.push(y + i);
+				dir.set(0,i);
+				dir_queue.push(dir.xy);
+				//方向も記録
 			}
 		}
 	}
@@ -1923,51 +1930,41 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 
 //直進する歩数の重みを管理
 	uint8_t straight;
+	uint32_t loop=0;
 	while (x_queue.size() != 0) {
+		loop++;
+
 		//キューから座標を取り出す
-		x = x_queue.front();
-		y = y_queue.front();
-		x_queue.pop();	//取り出したので削除
-		y_queue.pop();	//取り出したので削除
+		x = x_queue.pop();	//取り出して削除
+		y = y_queue.pop();	//取り出して削除
 		next_step = get_step_double(x, y);
 
 		//キューから方向を取り出す
-		dir.xy = dir_queue.front();
-		dir_queue.pop();	//取り出したので削除
+		dir.xy = dir_queue.pop();	//取り出して削除
 
-		for (int n = -1; n <= 1; n++) {
-			//次に行く方向は3パターンしか見ない　区画中心より今の方向側にある3種　ex.now(1,1)ならdx>0の(1,1)(2,0)(-1,0)
-			//つまるところ、ここの歩数にたどり着く直前で候補にあったやつらは、その時に行ったほうが早いに決まってるので無視
-			if (x % 2 == 0) {		//縦壁の時
-				dx = (2 - ABS(n)) * SIGN(dir.x);
-				dy = n;
-				curve_index = ABS(dir.y - dy);		//0が直進、1が45°、2が90°
-			} else {			//縦でなければ横（y%2==0）しかない
-				dx = n;
-				dy = (2 - ABS(n)) * SIGN(dir.y);
-				curve_index = ABS(dir.x - dx);			//0が直進、1が45°、2が90°
-			}
-
-			if (algo == adachi || algo == based_distance) {
-				//直線が続くと足していく歩数は小さくなっていく
-				if (n == 0) {		//区画を横切るとき
-					straight = straight_w.at(0);//要素外に出る場合は値を更新しない＝最後の値が続く
-				} else {			//斜め方向の直進のとき
-					straight = oblique_w.at(0);	//要素外に出る場合は値を更新しない＝最後の値が続く
+		//現在のマスより歩数が大きくなるなら枝切り　by_known=trueつまりパス生成時には行わない　バグ怖いから
+		if (debranch && (next_step > mouse_step)) {
+			//何もしない
+		} else {
+			for (int n = -1; n <= 1; n++) {
+				//次に行く方向は3パターンしか見ない　区画中心より今の方向側にある3種　ex.now(1,1)ならdx>0の(1,1)(2,0)(-1,0)
+				//つまるところ、ここの歩数にたどり着く直前で候補にあったやつらは、その時に行ったほうが早いに決まってるので無視
+				if (!(x % 2)) {		//縦壁の時
+					dx = (2 - ABS(n)) * SIGN(dir.x);
+					dy = n;
+					curve_index = ABS(dir.y - dy);		//0が直進、1が45°、2が90°
+				} else {			//縦でなければ横（y%2==0）しかない
+					dx = n;
+					dy = (2 - ABS(n)) * SIGN(dir.y);
+					curve_index = ABS(dir.x - dx);			//0が直進、1が45°、2が90°
 				}
-				//歩数を書き込めたら、書き込んだ座標をQueueにぶっこむ
-				if (set_step_double(x + dx, y + dy,	(next_step + straight), by_known)) {
-					x_queue.push(x + dx);
-					y_queue.push(y + dy);
-					dir.x = dx;
-					dir.y = dy;
-					dir_queue.push(dir.xy);
-				}
-			} else {
 				next_step += curve_w.at(curve_index);	//カーブすることに対する重みを足す
-				//その直線方向に、書き込めなくなるまで書き込んでいく
+				dir.set(dx,dy);
+
+
+//その直線方向に、書き込めなくなるまで書き込んでいく
 				for (uint8_t i = 0;; i++) {
-					//直線が続くと足していく歩数は小さくなっていく
+//直線が続くと足していく歩数は小さくなっていく
 					if (n == 0) {		//区画を横切るとき
 						if (i < straight_w.size())
 							straight = straight_w.at(i);//要素外に出る場合は値を更新しない＝最後の値が続く
@@ -1975,22 +1972,31 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 						if (i < oblique_w.size())
 							straight = oblique_w.at(i);	//要素外に出る場合は値を更新しない＝最後の値が続く
 					}
-					//歩数を書き込めたら、書き込んだ座標をQueueにぶっこむ
+//歩数を書き込めたら、書き込んだ座標をQueueにぶっこむ
 					if (set_step_double(x + dx * (i + 1), y + dy * (i + 1),
 							(next_step + straight), by_known)) {
 						next_step += straight;		//ステップを更新
 						x_queue.push(x + (i + 1) * dx);
 						y_queue.push(y + (i + 1) * dy);
-						dir.x = dx;
-						dir.y = dy;
 						dir_queue.push(dir.xy);
-						//break;	ここにbreakつけないと47ms, つけると39ms
-					} else
+					} else{
 						break;	//書き込めなくなったらループを抜ける
+					}
+//直線が続くことによる重みの減少がないなら一回だけで抜ける
+					if (algo == adachi || algo == based_distance) {
+						break;
+					}
+//枝切り
+					if (debranch && (next_step > mouse_step)) {
+						break;
+					}
 				}
+
 			}
 		}
 	}
+
+
 
 }
 
@@ -2014,7 +2020,6 @@ bool node_search::create_big_path(
 	return false;
 }
 
-
 void node_search::reset_finish() {
 //目的地情報をすべてリセット
 	for (int i = 0; i < MAZE_SIZE; i++) {
@@ -2023,7 +2028,7 @@ void node_search::reset_finish() {
 	}
 }
 
-void node_search::set_finish(uint8_t _x, uint8_t _y) {
+void node_search::set_finish_cell(uint8_t _x, uint8_t _y) {
 	set_finish(_x, _y, north);
 	set_finish(_x, _y, south);
 	set_finish(_x, _y, east);
@@ -2186,7 +2191,7 @@ bool node_path::is_right_turn(compas now, compas next) {
 void node_path::format() {
 	//distance=0, sla_type=none, is_right=true　を1つだけ用意し、それでpathを初期化
 	std::vector<path_element>().swap(path);
-	path_element init = {0,none,true};
+	path_element init = { 0, none, true };
 	path.emplace_back(init);
 }
 
@@ -2198,7 +2203,7 @@ void node_path::push_small_turn(bool is_right) {
 	(path.back()).turn = small;		//種類は小回り
 	(path.back()).is_right = is_right;		//右向き
 
-	path_element temp={0,none,true};
+	path_element temp = { 0, none, true };
 	path.emplace_back(temp);		//次の要素を作っておく
 
 }
@@ -2261,7 +2266,7 @@ bool node_path::create_path(std::pair<uint8_t, uint8_t> init,
 		if (now_compas == next_compas)
 			node_path::push_straight(2);		//今の向きと同じ方向に進むなら直進
 		else
-			node_path::push_small_turn(is_right_turn(now_compas, next_compas));			//ターン以外の選択肢はないはず
+			node_path::push_small_turn(is_right_turn(now_compas, next_compas));	//ターン以外の選択肢はないはず
 
 		now_step = next_step;		//歩数を更新
 		now_compas = next_compas;		//方角を更新
@@ -2371,7 +2376,7 @@ void node_path::improve_path() {
 						}
 					}
 				} else {			//TODO 斜めのままパスが終了する　とりあえず入りきらずに終了する
-					//FIX_ME 斜めのまま終了するときの処理
+//FIX_ME 斜めのまま終了するときの処理
 					path.at(count).distance += 1;				//斜めの直線距離を1増やす
 					path.at(count).turn = none;
 					count = size;							//終了
@@ -2433,14 +2438,14 @@ void node_path::improve_path() {
 
 PATH node_path::get_path(uint16_t index) {
 	if (index >= path.size()) {		//要素外アクセス禁止
-		path_element temp={0,none,true};
+		path_element temp = { 0, none, true };
 		PATH ans = to_PATH(temp);
 		ans.element.flag = FALSE;
 		return ans;
 	}
 	path_element tar = path.at(index);
 	if ((tar.distance == 0) && (tar.turn == none)) {
-		//path.erase(path.begin() + index);		//直進なしかつターンなしの場合（起こりうるのは末尾だけのはず）いらないので削除
+//path.erase(path.begin() + index);		//直進なしかつターンなしの場合（起こりうるのは末尾だけのはず）いらないので削除
 		return get_path(index + 1);
 	}
 	return to_PATH(tar);
@@ -2455,10 +2460,10 @@ node_path::~node_path() {
 
 }
 
-void node_path::convert_path(){
+void node_path::convert_path() {
 	path::path_reset();
-	for(int i = 0; i < PATH_MAX; i++){
-		path::set_path(i,get_path(i));
+	for (int i = 0; i < PATH_MAX; i++) {
+		path::set_path(i, get_path(i));
 	}
 
 }

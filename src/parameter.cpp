@@ -8,9 +8,9 @@
 #include"parameter.h"
 //ideal_photo[x][y]	xは0がハーフ,1がクラシック	yが光学センサの向きに対応。
 //right left front_right front_left,front
-const float parameter::ideal_photo[2][5] = { { 120, 180, 0, 0, 0/*中心からどれだけオフセットがあるか[mm]*/ },
+const float parameter::ideal_photo[2][5] = { { 130, 200, 0, 0, 0/*中心からどれだけオフセットがあるか[mm]*/ },
 		{ 3250, 3200, 10815, 10100, 0 } };
-const int16_t parameter::min_wall_photo[2][5] = { { 60, 100, 1400, 130, 300 }, {
+const int16_t parameter::min_wall_photo[2][5] = { { 50, 70, 1400, 130, 300 }, {
 		20000, 20000, 0, 0, 0 } };
 
 //0番目は探索用
@@ -18,9 +18,9 @@ const int16_t parameter::min_wall_photo[2][5] = { { 60, 100, 1400, 130, 300 }, {
 //		加速度、最高速、減速度、		加速度、最高速、減速度
 const TRAPEZOID parameter::straight_run[RUN_MODE_NUMBER] = {
 		{ 3.0, SEARCH_VELOCITY, 3.0, 3.0, SEARCH_VELOCITY, 3.0 },
-		{ 5.0, 0.5, 5.0, 3.0, 0.5, 3.0 },
-		{ 5.0, 1.0, 5.0, 3.0, 0.5, 3.0 },
-		{ 5.0, 1.5, 5.0, 6.0, 0.7, 6.0 },
+		{ 3.0, 0.5, 3.0, 3.0, 0.5, 3.0 },
+		{ 6.0, 1.0, 6.0, 3.0, 0.5, 3.0 },
+		{ 8.0, 2.0, 8.0, 6.0, 0.7, 6.0 },
 		{ 6.0, 2.0, 6.0, 6.0, 1.0, 6.0 } };
 
 //XXX スラロームパラメータ
@@ -34,23 +34,21 @@ const std::array<INIT_SLALOM, 2> left_small_half = { {
 		{ 0.35, 90, 30, 0.01, 0.07, 171.1409, 15.45826, 0 } } };
 
 //大まわり90°ターン
-const std::array<INIT_SLALOM, 3> right_big90_half = { {
+const std::array<INIT_SLALOM, 2> right_big90_half = { {
 		{ 0.5, 91.5, 30, 0.021, 0.022, 119.1789, 11.17156, 0 },
-		{ 0.5, 91.5, 30, 0.022, 0.025, 119.1789, 11.17156, 0 },
 		{ 0.6, 91.5, 30, 0.015, 0.025, 149.4980, 12.51215, 0 },
 } };
-const std::array<INIT_SLALOM, 3> left_big90_half = { {
+const std::array<INIT_SLALOM, 2> left_big90_half = { {
 		{ 0.5, 89, 30, 0.018, 0.017, 112.6498, 10.86124, 0 },
-		{ 0.5, 89, 30, 0.018, 0.028, 112.6498, 10.86124, 0 },
 		{ 0.6, 89, 30, 0.010, 0.03, 149.4980, 12.51215, 0 },
 } };
 
 //大まわり180°ターン
-const std::array<INIT_SLALOM, 3> right_big180_half ={ {
+const std::array<INIT_SLALOM, 1> right_big180_half ={ {
 		{ 0.5, 181.5, 38, 0.020, 0.030, 94.5770, 11.49152, 0 },
 //		{ 0.6, 180, 40, 0.020, 0.040, 148.5666, 14.40271, 0 },
 } };
-const std::array<INIT_SLALOM, 3> left_big180_half ={ {
+const std::array<INIT_SLALOM, 1> left_big180_half ={ {
 		{ 0.5, 180, 40, 0.020, 0.008, 98.73437, 11.74134, 0 },
 //		{ 0.6, 180, 40, 0.020, 0.030, 148.5666, 14.40271, 0 },
 } };

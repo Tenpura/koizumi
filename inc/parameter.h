@@ -12,7 +12,7 @@
 
 //パラメータ
 #define MASS	(20 * 0.001)			//マウスの重さ[kg]
-#define tire_R (7.52 * 0.001)	//タイヤの半径　[m]
+#define tire_R (7.5 * 0.001)	//タイヤの半径　[m]
 #define TREAD_W	(44*0.001)		//トレッド幅[m]
 
 #define LEAST_SQUARE_TIME	2000		//ジャイロの最小二乗法を何ms出かけるか
@@ -50,9 +50,9 @@ public:
 	static float get_run_de_acceleration(uint8_t _select_mode);
 	static const TRAPEZOID* const get_run(uint8_t _select_mode);
 
-	static float get_slalom(const SLALOM_TYPE slalom_type, const SLALOM_ELEMENT slalom_element,
-				const signed char right_or_left, const unsigned char select_mode);
-	static const INIT_SLALOM* const get_slalom_p(const SLALOM_TYPE _type, bool is_right, uint8_t select_mode);
+	static float get_slalom(SLALOM_TYPE slalom_type, SLALOM_ELEMENT slalom_element,
+				signed char right_or_left, unsigned char select_mode);
+	static const INIT_SLALOM* const get_slalom_p(SLALOM_TYPE _type, bool is_right, uint8_t select_mode);
 
 };
 

@@ -306,9 +306,10 @@ bool mode::shortest_mode() {
 	goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y + 1));
 
 	static node_search search;
-	search.set_weight_algo(based_distance);		//重みづけの方法を設定
+	search.set_weight_algo(T_Wataru_method);		//重みづけの方法を設定
 	search.input_map_data(&mouse::now_map);
 
+	mouse::set_position(0,0);		//マウスの現在位置を初期位置に
 	if(!search.create_small_path(goal,std::make_pair<uint8_t, uint8_t>(0,0),north))
 		return false;
 	search.convert_path();
@@ -321,34 +322,19 @@ bool mode::shortest_mode() {
 		break;
 
 	case 1:{
-/*
-		if(search.create_small_path(goal,init,north))
-			break;
-		else
-			return false;
-		search.convert_path();
-*/
-		search.convert_path();	//小回り
-
+		//小回り
 		break;
 	}
 	case 2:
 		path::improve_path();
 		break;
 	case 3:{
-		/*
-		if(search.create_big_path(goal,init,north))
-			break;
-		else
-			return false;
-		*/
 		path::improve_advance_path();
 		break;
 	}
 	}
 
 	uint8_t straight = select_mode(5+1, PHOTO_TYPE::right);
-
 	uint8_t curve = select_mode(3, PHOTO_TYPE::right);
 
 	while (straight != 0) {
@@ -360,7 +346,7 @@ bool mode::shortest_mode() {
 	mouse::run_init(true, true);
 	my7seg::count_down(3, 500);
 
-	run::path(0, straight-1,curve);
+	run::path(0, straight,curve);
 
 	wait::ms(500);
 	motor::sleep_motor();
@@ -386,12 +372,14 @@ uint16_t my_queue::size() {
 	return (head + QUEUE_SIZE - tail) % QUEUE_SIZE;
 }
 
-void my_queue::pop() {
+int8_t my_queue::pop() {
+	int8_t ans = queue[tail];
 	//リング内でtailを1進める
 	if(tail + 1 == QUEUE_SIZE)
 		tail = 0;
 	else
 		tail++;
+	return ans;
 }
 
 void my_queue::push(int8_t _var) {

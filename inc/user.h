@@ -90,7 +90,7 @@ private:
 public:
 	void reset();
 	uint16_t size();
-	void pop();
+	int8_t pop();
 	void push(int8_t _var);
 	int8_t front();
 

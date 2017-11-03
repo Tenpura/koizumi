@@ -154,16 +154,16 @@ class run {
 private:
 	run();
 public:
-	static float WALL_EAGE_DISTANCE[static_cast<unsigned int>(PHOTO_TYPE::element_count)];
+	static float DOWN_WALLEAGE_DISTANCE[static_cast<unsigned int>(PHOTO_TYPE::element_count)];
 
 public:
-	static void accel_run(const float distance_m, const float end_velocity,
-				const unsigned char select_mode);
-	static void accel_run_wall_eage(const float distance_m,
+	static void accel_run(float distance_m, float end_velocity,
+				unsigned char select_mode);
+	static void wall_eage_run_for_search(const float distance_m,
 			const float end_velocity, const unsigned char select_mode,
 			const float check_distance);		//探索用
-	static void path_run_wall_eage(const float distance_m,
-			const float end_velocity, const unsigned char select_mode);	//最短の大廻スラロームの前距離用  distance_mは区画の中心からどれくらい進むか
+	static void wall_eage_run_for_slalom(float distance_m,
+			float end_velocity, uint8_t select_mode, bool run_to_edge);	//最短の大廻スラロームの前距離用  distance_mは区画の中心からどれくらい進むか,run_to_edgeは壁キレ見るまで走り続けるか
 	static void path_accel_run_wall_eage(float distance_m,
 				float end_v, COORDINATE init, uint8_t select);	//最短用の走行関数　壁キレを読んだら相対角度を補正する　最後だけ読むとかでなく、走行中ずっと読む
 
@@ -210,16 +210,13 @@ private:
 	static void simulate_next_action(ACTION_TYPE next_action);//機体は動かない。仮想的に変数とか更新。デバック用
 
 	//次行く方向と今の向きを与えると、次に取る行動を返す。優先度は、直進、右ターン、左ターン、バックの順
-	static ACTION_TYPE get_next_action_old(DIRECTION next_direction, uint8_t now_muki);
+	static ACTION_TYPE get_next_action(DIRECTION next_direction, uint8_t now_muki);
 	static ACTION_TYPE get_next_action(compas next, compas now);
 
 public:
 	static bool adachi_method(const unsigned char target_x,
 			const unsigned char target_y, bool is_FULUKAWA);
 	//static bool adachi_method_spin(unsigned char target_x,unsigned char target_y, bool is_FULUKAWA);
-	static bool adachi_method_place(unsigned char target_x,
-			unsigned char target_y, bool is_FULUKAWA);		//直進時の距離の管理をオドメトリから求めた絶対座標にしたVer
-
 	//static bool left_hand_method(const uint8_t target_x,const uint8_t target_y);
 
 
