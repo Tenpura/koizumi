@@ -8,9 +8,9 @@
 #include"parameter.h"
 //ideal_photo[x][y]	xは0がハーフ,1がクラシック	yが光学センサの向きに対応。
 //right left front_right front_left,front
-const float parameter::ideal_photo[2][5] = { { 130, 200, 0, 0, 0/*中心からどれだけオフセットがあるか[mm]*/ },
+const float parameter::ideal_photo[2][5] = { { /*130*/ 13, /*200*/ -10, 0, 0, 0/*中心からどれだけオフセットがあるか[mm]*/ },
 		{ 3250, 3200, 10815, 10100, 0 } };
-const int16_t parameter::min_wall_photo[2][5] = { { 50, 70, 1400, 130, 300 }, {
+const int16_t parameter::min_wall_photo[2][5] = { { 30, 70, 1400, 130, 300 }, {
 		20000, 20000, 0, 0, 0 } };
 
 //0番目は探索用

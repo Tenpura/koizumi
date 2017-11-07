@@ -14,7 +14,8 @@
 #include"map.h"
 #include"flash.h"
 #include <queue>
-#include<cmath>
+#include <cmath>
+#include <array>
 
 //position
 typedef union {
@@ -155,6 +156,7 @@ private:
 	run();
 public:
 	static float DOWN_WALLEAGE_DISTANCE[static_cast<unsigned int>(PHOTO_TYPE::element_count)];
+	static float DOWN_WALLEAGE_OBLI[static_cast<unsigned int>(PHOTO_TYPE::element_count)];
 
 public:
 	static void accel_run(float distance_m, float end_velocity,
@@ -163,6 +165,8 @@ public:
 			const float end_velocity, const unsigned char select_mode,
 			const float check_distance);		//探索用
 	static void wall_eage_run_for_slalom(float distance_m,
+			float end_velocity, uint8_t select_mode, bool run_to_edge);	//最短の大廻スラロームの前距離用  distance_mは区画の中心からどれくらい進むか,run_to_edgeは壁キレ見るまで走り続けるか
+	static void wall_eage_run_for_obli(float distance_m,
 			float end_velocity, uint8_t select_mode, bool run_to_edge);	//最短の大廻スラロームの前距離用  distance_mは区画の中心からどれくらい進むか,run_to_edgeは壁キレ見るまで走り続けるか
 	static void path_accel_run_wall_eage(float distance_m,
 				float end_v, COORDINATE init, uint8_t select);	//最短用の走行関数　壁キレを読んだら相対角度を補正する　最後だけ読むとかでなく、走行中ずっと読む

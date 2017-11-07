@@ -168,7 +168,7 @@ void my7seg::blink(const unsigned char number,
 
 void my7seg::count_down(const unsigned char start_number,
 		const unsigned short cycle_ms) {
-	for (int i = start_number; i > 0; i--) {
+	for (volatile int i = start_number; i > 0; i--) {
 		light(i);
 		wait::ms(cycle_ms);
 	}
@@ -1043,7 +1043,7 @@ void photo::set_ad(PHOTO_TYPE _sensor_type, int16_t set_value) {
 }
 
 void photo::interrupt(bool is_light) {
-	const static int wait_number = 1200;	//1000でだいたい100us弱	1500で120usくらい
+	const static int wait_number = 800;	//1000でだいたい100us弱	1500で120usくらい
 	photo::turn_off_all();
 
 	photo::set_ref(PHOTO_TYPE::right, get_ad(PHOTO_TYPE::right));//消えてる時をrefにする
@@ -1065,33 +1065,33 @@ void photo::interrupt(bool is_light) {
 			get_ad(PHOTO_TYPE::left) - get_ref(PHOTO_TYPE::left));		//差分を代入
 	photo::turn_off(PHOTO_TYPE::right);
 	photo::turn_off(PHOTO_TYPE::left);
+	/*
+	 if (is_light) {
+	 photo::light(PHOTO_TYPE::front_right);
+	 for (volatile int i = 0; i < wait_number; i++) {
+	 }
+	 }
+	 photo::set_ad(PHOTO_TYPE::front_right,
+	 get_ad(PHOTO_TYPE::front_right) - get_ref(PHOTO_TYPE::front_right));//差分を代入
+	 photo::turn_off(PHOTO_TYPE::front_right);
 
-	if (is_light) {
-		photo::light(PHOTO_TYPE::front_right);
-		for (volatile int i = 0; i < wait_number; i++) {
-		}
-	}
-	photo::set_ad(PHOTO_TYPE::front_right,
-			get_ad(PHOTO_TYPE::front_right) - get_ref(PHOTO_TYPE::front_right));//差分を代入
-	photo::turn_off(PHOTO_TYPE::front_right);
-
-	if (is_light) {
-		photo::light(PHOTO_TYPE::front_left);
-		for (volatile int i = 0; i < wait_number; i++) {
-		}
-	}
-	photo::set_ad(PHOTO_TYPE::front_left,
-			get_ad(PHOTO_TYPE::front_left) - get_ref(PHOTO_TYPE::front_left));//差分を代入
-	photo::turn_off(PHOTO_TYPE::front_left);
+	 if (is_light) {
+	 photo::light(PHOTO_TYPE::front_left);
+	 for (volatile int i = 0; i < wait_number; i++) {
+	 }
+	 }
+	 photo::set_ad(PHOTO_TYPE::front_left,
+	 get_ad(PHOTO_TYPE::front_left) - get_ref(PHOTO_TYPE::front_left));//差分を代入
+	 photo::turn_off(PHOTO_TYPE::front_left);
+	 */
 
 	if (is_light) {
 		photo::light(PHOTO_TYPE::front);
-		for (volatile int i = 0; i < wait_number * 2; i++) {
+		for (volatile int i = 0; i < wait_number; i++) {
 		}
 	}
 	photo::set_ad(PHOTO_TYPE::front,
 			get_ad(PHOTO_TYPE::front) - get_ref(PHOTO_TYPE::front));	//差分を代入
-			//photo::set_ad(PHOTO_TYPE::front, get_ad(PHOTO_TYPE::front));	//差分を代入
 	photo::turn_off(PHOTO_TYPE::front);
 
 	photo::turn_off_all();
@@ -1252,7 +1252,7 @@ void photo::get_displa_from_center_void(PHOTO_TYPE sensor_type, float val) {
 float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
 	float a0, a1, a2, alog;	//小島近似の係数	x^0,x,x^2,logの係数
 	float f = val;		//対称のセンサ値
-	float f_c = ABS(parameter::get_ideal_photo(sensor_type));	//中心位置におけるセンサ値
+	float f_c = (parameter::get_ideal_photo(sensor_type));	//中心位置におけるセンサ値
 	float ans = 0;
 
 	if (f <= 0) {
@@ -1264,17 +1264,27 @@ float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
 
 	switch (sensor_type) {
 	case PHOTO_TYPE::right:
-		a = 0.058;
+
+		a0 = -45.8514 + f_c;
+		a1 = 0.0902958;
+		a2 = -7.23724 * 0.00001;
+		alog = 5.79814;
 		break;
 
 	case PHOTO_TYPE::left:
-		a = -0.056;
+
+		a0 = 134.392 + f_c;
+		a1 = 0.0503701;
+		a2 = -3.30731 * 0.00001;
+		alog = -25.5219;
 		break;
 
 	case PHOTO_TYPE::front_right:
+		return 0;
 		break;
 
 	case PHOTO_TYPE::front_left:
+		return 0;
 		break;
 
 	case PHOTO_TYPE::front: {
@@ -1282,12 +1292,6 @@ float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
 		a1 = -0.03;
 		a2 = 3.5 * 0.000001;
 		alog = 47.7675;
-
-		ans = a2 * f + a1;
-		ans = ans * f + a0 + alog * logf(f);
-		return ans * 0.001;
-
-		a = 0.0369;
 		break;
 	}
 
@@ -1296,9 +1300,9 @@ float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
 		break;
 	}
 
-	//センサ値fは f=f_c*exp(a*x) と仮定し、xを求める。-> x = 1/a*log(f/f_c)
-	//f_c:中心のセンサ値、x:中心からのずれ[m]
-	return logf(f / f_c) / a * 0.001;
+	ans = a2 * f + a1;
+	ans = ans * f + a0 + alog * logf(f);
+	return ans * 0.001;
 }
 
 bool photo::check_wall(unsigned char muki) {
@@ -1497,6 +1501,11 @@ void control::cal_delta() {
 				photo_delta.P = 0;//mouse::get_relative_side();		//センサを信用しない　= 推定値を突っ込んどく
 			}
 			//photo_delta.P = mouse::get_relative_side();
+
+			//センサの推定値で補正
+			if(photo_delta.P != 0)
+				mouse::set_relative_side(photo_delta.P);
+
 			break;
 
 			//斜めなら
@@ -1505,7 +1514,17 @@ void control::cal_delta() {
 		case south_east:
 		case south_west:
 
-			photo_delta.P = mouse::get_relative_side();
+			photo_delta.P = 0;
+			photo_delta.I = 0;//要検討
+
+			//ぶつかりそうな時だけ避けるように
+			if( photo::get_displa_from_center(PHOTO_TYPE::right) >= 0)
+				photo_delta.P = photo::get_displa_from_center(PHOTO_TYPE::right);
+			if( photo::get_displa_from_center(PHOTO_TYPE::left) <= 0)
+				photo_delta.P = photo::get_displa_from_center(PHOTO_TYPE::left);
+
+			photo_delta.P *= 1; //斜めの制御パラメータ
+
 			break;
 
 		}
@@ -1517,8 +1536,6 @@ void control::cal_delta() {
 		}
 		photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
 		photo_delta.D = mouse::get_velocity() * mouse::get_relative_rad();//Vθ オドメトリから求めたD項　Sinθ~θと近似
-				//if(photo_delta.P != 0)
-				//	photo_delta.D = (photo_delta.P - before_p_delta) / CONTROL_PERIOD;
 	} else {
 		//壁制御かけないときは初期化し続ける。
 		photo_delta.P = 0;
@@ -1681,7 +1698,7 @@ void control::fail_safe() {
 		return;
 
 	//閾値どのくらいかわからない。Gyroも参照すべき？
-	if (ABS(encoder_delta.P) > 1) {
+	if (ABS(encoder_delta.P) > 0.8) {
 //		if (ABS(gyro_delta.P) > 1) {
 		motor::sleep_motor();
 		mouse::set_fail_flag(true);

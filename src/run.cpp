@@ -955,6 +955,8 @@ mouse::~mouse() {
 // right left front_right front_left front
 float run::DOWN_WALLEAGE_DISTANCE[static_cast<int>(PHOTO_TYPE::element_count)] =
 		{ 0.032, 0.032, 0, 0, 0 };
+float run::DOWN_WALLEAGE_OBLI[static_cast<int>(PHOTO_TYPE::element_count)] = {
+		0.000, 0.000, 0, 0, 0 };
 
 void run::accel_run(const float distance_m, const float end_velocity,
 		const unsigned char select_mode) {
@@ -962,7 +964,6 @@ void run::accel_run(const float distance_m, const float end_velocity,
 	float max_velocity = parameter::get_run_max_velocity(select_mode);
 	float accel_value = ABS(parameter::get_run_acceleration(select_mode));
 	float de_accel_value = ABS(parameter::get_run_de_acceleration(select_mode));
-
 	float de_accel_distance = ABS(
 			mouse::get_ideal_velocity() * mouse::get_ideal_velocity()
 			- end_velocity * end_velocity) / (2 * de_accel_value);	//減速に必要な距離
@@ -1286,48 +1287,237 @@ void run::wall_eage_run_for_slalom(const float distance_m,
 	GPIO_SetBits(GPIOC, GPIO_Pin_3);	//LED2
 }
 
+void run::wall_eage_run_for_obli(const float distance_m,
+		const float end_velocity, const uint8_t select_mode, bool run_to_edge) {
+
+	float run_dis = 0;		//走行距離
+	bool wall_eage_flag = true;
+	bool to_wall_edge = run_to_edge;
+
+	//right left front_right, front_left, front
+	float wall_eage[static_cast<int>(PHOTO_TYPE::element_count)] = { -0.02,
+			0.02, 0, 0, 0 };		//この値を超えたら壁キレ
+
+	//この関数内でも加減速できるように
+	//雑に目標速度まで加速or減速しかしない
+	float accel_sign = 0;
+	if (mouse::get_ideal_velocity() < end_velocity) {			//現在速度が足りないとき
+		mouse::set_ideal_accel(
+				ABS(parameter::get_run_acceleration(select_mode)));	//加速
+		accel_sign = 1;	//加速なので正
+	} else if (mouse::get_ideal_velocity() > end_velocity) {	//現在速度が超過してるとき
+		mouse::set_ideal_accel(
+				-ABS(parameter::get_run_de_acceleration(select_mode)));	//減速
+		accel_sign = -1;	//減速なので負
+	}
+
+	//区画の中心からスタート想定
+
+	//直前まで壁があってから壁キレを見る　＝　閾値をまたぐのを判断するよう	迷路の中心に近いか遠いか
+	enum UpDown {
+		inner = 0, outer = 1, element
+	};
+	uint16_t right[element] = { 0 };		//今閾値のどっち側にいるかカウントする
+	uint16_t left[element] = { 0 };
+
+	//直前に何ms以上 閾値を超えていれば壁キレが起こると判断するか（値がバラつく対策）
+	uint8_t w_cnt = 5;
+
+	//1ms まってから次のセンサー値をみるために、割り込みがされたか判断するよう
+	uint32_t time_count = mouse::get_count_ms();
+
+	while (!mouse::get_fail_flag()) {	//フェイルセーフが掛かっていればそこで抜ける
+
+		while (time_count == mouse::get_count_ms()) {
+			//割り込みが入るまで待つ
+		}
+		time_count = mouse::get_count_ms();
+
+		if (accel_sign != 0) {		//加速or減速している場合
+			if (((mouse::get_ideal_velocity() - end_velocity) * accel_sign)
+					>= 0) {		//目標速度を超えたら
+				mouse::set_ideal_accel(0);		//加減速を止める
+				mouse::set_ideal_velocity(end_velocity);	//目標速度をセット
+			}
+		}
+
+		//区画中心から、どのくらいの位置にいるか
+		run_dis = mouse::get_relative_go();
+
+		//目標距離走ったら抜ける
+		if (distance_m <= run_dis) {
+			if (!wall_eage_flag || !to_wall_edge)//to_wall_edge（壁キレ見るまで走る）場合は壁キレしてないと距離足りてても抜けない
+				break;
+		}
+
+		//壁キレ！
+		if (!wall_eage_flag) {
+			GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
+		} else {
+			//直前w_cnt[ms]以上閾値の反対側にいて、このときはじめて閾値を超えたなら
+			if (left[inner] >= w_cnt) {
+				if (photo::get_displa_from_center(PHOTO_TYPE::left)
+						> wall_eage[static_cast<int>(PHOTO_TYPE::left)]) {
+					mouse::set_relative_go(
+							DOWN_WALLEAGE_OBLI[static_cast<int>(PHOTO_TYPE::left)]);//区画中央を原点として位置を更新
+					left[inner] = 0;
+					wall_eage_flag = false;
+				}
+			} else if (left[outer] > w_cnt) {
+				if (photo::get_displa_from_center(PHOTO_TYPE::left)
+						< wall_eage[static_cast<int>(PHOTO_TYPE::left)]) {
+					/*
+					 mouse::set_relative_go(
+					 0.045 * MOUSE_MODE
+					 - DOWN_WALLEAGE_DISTANCE[static_cast<int>(PHOTO_TYPE::left)]);//区画中央を原点として位置を更新
+					 left[down]=0;
+					 wall_eage_flag = false;
+
+					 * */
+				}
+			}
+			//直前w_cnt[ms]以上閾値の反対側にいて、このときはじめて閾値を超えたなら
+			if (right[inner] >= w_cnt) {
+				if (photo::get_displa_from_center(PHOTO_TYPE::right)
+						< wall_eage[static_cast<int>(PHOTO_TYPE::right)]) {
+					mouse::set_relative_go(
+							DOWN_WALLEAGE_OBLI[static_cast<int>(PHOTO_TYPE::right)]);//区画中央を原点として位置を更新
+					right[inner] = 0;
+					wall_eage_flag = false;
+				}
+			} else if (right[outer] >= w_cnt) {
+				if (photo::get_displa_from_center(PHOTO_TYPE::right)
+						> wall_eage[static_cast<int>(PHOTO_TYPE::right)]) {
+					/*
+					 mouse::set_relative_go(
+					 0.045 * MOUSE_MODE
+					 - UP_WALLEAGE_DISTANCE[static_cast<int>(PHOTO_TYPE::right)]);	//区画中央を原点として位置を更新
+					 right[down]=0;
+					 wall_eage_flag = false;
+					 */
+				}
+			}
+
+			//今閾値のどっち側にいるか
+			if (photo::get_displa_from_center(PHOTO_TYPE::left)
+					< wall_eage[static_cast<int>(PHOTO_TYPE::left)]) {
+				left[inner]++;
+				left[outer] = 0;
+			} else {
+				left[inner] = 0;
+				left[outer]++;
+			}
+			if (photo::get_displa_from_center(PHOTO_TYPE::right)
+					> wall_eage[static_cast<int>(PHOTO_TYPE::right)]) {
+				right[inner]++;
+				right[outer] = 0;
+			} else {
+				right[inner] = 0;
+				right[outer]++;
+			}
+
+		}
+
+	}
+
+	my7seg::turn_off();
+	mouse::set_ideal_velocity(end_velocity);	//目標速度をセット
+	mouse::set_distance_m(0);
+	GPIO_SetBits(GPIOC, GPIO_Pin_3);	//LED2
+}
+
 void run::path_accel_run_wall_eage(const float distance_m, const float end_v,
 		const COORDINATE init, const uint8_t select) {
+	//毎回書くのめんどくさいので、変数用意しとく
+	const static int photo_R = static_cast<int>(PHOTO_TYPE::right);
+	const static int photo_L = static_cast<int>(PHOTO_TYPE::left);
+
 	enum {
 		ACCEL, FLAT, DE_ACCEL, ENOUGH
 	} mode = ACCEL;
 	float run_square = 0;		//走行距離の２乗
 	float tar_square = distance_m * distance_m;	//目標距離の2乗	毎回計算するの面倒だし長くなるから
-	float sign = 1;
-	if (distance_m < 0)	//バックするなら
-		sign = -1;
+	float sign = SIGN(distance_m);	//前進なら1、バックするなら―1
 	float ideal_v = mouse::get_ideal_velocity();
 	float max_v = ABS(parameter::get_run(select)->max_v) * sign;
 	float accel = ABS(parameter::get_run(select)->accel) * sign;
 	float de_accel = ABS(parameter::get_run(select)->de_accel) * sign;
 	float de_accel_distance = (ideal_v * ideal_v - end_v * end_v)
 			/ (2 * de_accel);	//減速に必要な距離
-	std::array<bool, static_cast<uint8_t>(PHOTO_TYPE::element_count)> wall_flag =
-			{ false, false, false, false, false };
+	//right left front_right, front_left, front
+	static const std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> wall_eage =
+			{ -0.02, 0.02, 0, 0, 0 };		//この値を超えたら壁キレ
+//	std::array<bool, static_cast<uint8_t>(PHOTO_TYPE::element_count)> wall_flag ={ false, false, false, false, false };
+	//直前まで壁があってから壁キレを見る　＝　閾値をまたぐのを判断するよう	迷路の中心に近いか遠いか
+	enum {
+		inner = 0, outer = 1, InOut
+	};
+
+	uint8_t cnt[static_cast<int>(PHOTO_TYPE::element_count)][InOut] = { 0 };//今閾値のどっち側にいるかカウントする
+	//直前に何ms以上 閾値を超えていれば壁キレが起こると判断するか（値がバラつく対策）
+	static const uint8_t w_cnt = 5;
+
+	bool safety = false;		//Dutyが100超えると制御できないので、その時は加速を止め落ち着くまで待つ
+
 	GPIO_SetBits(GPIOC, GPIO_Pin_3);	//LED2
 
 	while (!mouse::get_fail_flag()) {	//フェイルセーフで抜ける
 		//理想速度を取得
 		ideal_v = mouse::get_ideal_velocity();
 
-		/*
-		 //壁キレで座標を補正
-		 if (photo::check_wall_edge(PHOTO_TYPE::right, true)) {
-		 wall_flag.at(static_cast<uint8_t>(PHOTO_TYPE::right)) = false;
-		 GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
-		 }
-		 */
-		/*
-		if (wall_flag.at(right)) {
-			if (photo::check_wall_edge(right, true)) {
-				wall_flag.at(right) = false;
+		//直前w_cnt[ms]以上閾値の反対側にいて、このときはじめて閾値を超えたなら
+		if (cnt[photo_R][inner] >= w_cnt) {
+			if (photo::get_displa_from_center(PHOTO_TYPE::right)
+					< wall_eage[photo_R]) {
+				mouse::set_relative_go(DOWN_WALLEAGE_DISTANCE[photo_R]);//区画中央を原点として位置を更新
+				cnt[photo_R][inner] = 0;
+				GPIO_SetBits(GPIOC, GPIO_Pin_3);	//LED2
+			}
+		} else if (cnt[photo_R][outer] >= w_cnt) {
+			if (photo::get_displa_from_center(PHOTO_TYPE::right)
+					> wall_eage[photo_R]) {
+				/*
+				 mouse::set_relative_go(
+				 0.045 * MOUSE_MODE
+				 - UP_WALLEAGE_DISTANCE[static_cast<int>(PHOTO_TYPE::right)]);	//区画中央を原点として位置を更新
+				 right[outer]=0;
+				 */
+				cnt[photo_R][outer] = 0;
 				GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
 			}
-		} else if (photo::wall_edge_down.at(right)
-				> photo::get_displa_from_center(right)) {
-			wall_flag.at(right) = true;
 		}
-		*/
+		if (cnt[photo_L][inner] >= w_cnt) {
+			if (photo::get_displa_from_center(PHOTO_TYPE::left)
+					> wall_eage[photo_L]) {
+				mouse::set_relative_go(DOWN_WALLEAGE_DISTANCE[photo_L]);//区画中央を原点として位置を更新
+				cnt[photo_L][inner] = 0;
+				GPIO_SetBits(GPIOC, GPIO_Pin_3);	//LED2
+			}
+		} else if (cnt[photo_L][outer] >= w_cnt) {
+			if (photo::get_displa_from_center(PHOTO_TYPE::left)
+					< wall_eage[photo_L]) {
+				cnt[photo_L][outer] = 0;
+				GPIO_ResetBits(GPIOC, GPIO_Pin_3);	//LED2
+			}
+		}
+
+		//壁キレを待つ前にそもそも壁キレが起こるのかを判断
+		if (photo::get_displa_from_center(PHOTO_TYPE::right)
+				> wall_eage[photo_R]) {
+			cnt[photo_R][inner]++;
+			cnt[photo_R][outer] = 0;
+		} else {
+			cnt[photo_R][inner] = 0;
+			cnt[photo_R][outer]++;
+		}
+		if (photo::get_displa_from_center(PHOTO_TYPE::left)
+				< wall_eage[photo_L]) {
+			cnt[photo_L][inner]++;
+			cnt[photo_L][outer] = 0;
+		} else {
+			cnt[photo_L][inner] = 0;
+			cnt[photo_L][outer]++;
+		}
 
 		/*
 		 if (wall_flag.at(left)) {
@@ -1338,6 +1528,7 @@ void run::path_accel_run_wall_eage(const float distance_m, const float end_v,
 		 wall_flag.at(left) = true;
 		 }
 		 */
+
 		//絶対座標から移動距離を求める
 		run_square = (mouse::get_place().x - init.x)
 				* (mouse::get_place().x - init.x);
@@ -1357,7 +1548,17 @@ void run::path_accel_run_wall_eage(const float distance_m, const float end_v,
 
 		switch (mode) {
 		case ACCEL:		//加速
-			mouse::set_ideal_accel(accel);
+			//duty100%越えたら安全スイッチON
+			if (MAX(ABS(motor::get_duty_right()),ABS(motor::get_duty_left())) >= 100)
+				safety = true;
+			if(safety){
+				mouse::set_ideal_accel(0);	//安全スイッチ入ったら加速はやめる
+				if(MAX(ABS(motor::get_duty_right()),ABS(motor::get_duty_left())) <= 70)	//70%以下に落ち着いたら安全スイッチ解除
+					safety = false;
+			}else{
+				mouse::set_ideal_accel(accel);
+			}
+
 			if (0 >= sign * (max_v - ideal_v)) {		//最大速度まで加速していたら
 				mouse::set_ideal_accel(0);
 				mouse::set_ideal_velocity(max_v);
@@ -2557,7 +2758,6 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 	mouse::get_direction(&direction_x, &direction_y);
 
 	mouse::run_init(true, true);
-
 	my7seg::count_down(3, 500);
 
 	run::accel_run((0.045 * MOUSE_MODE), SEARCH_VELOCITY, 0);

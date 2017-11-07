@@ -105,13 +105,13 @@ uint8_t mode::select_mode(const unsigned char mode_number,
 
 	return select;
 }
-bool mode::select_RorL(const PHOTO_TYPE type){
+bool mode::select_RorL(const PHOTO_TYPE type) {
 	bool is_right = true;
 	bool stnby_flag = true;		//モード送り可能のときtrue	センサーを反応させてるとき高速でモードが送られないように
 
 	while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 1) {	//押されたら決定
 		my7seg::turn_off();
-		if(is_right)
+		if (is_right)
 			my7seg::light(my7seg::DIRECTION::right);
 		else
 			my7seg::light(my7seg::DIRECTION::left);
@@ -129,7 +129,7 @@ bool mode::select_RorL(const PHOTO_TYPE type){
 	}
 	//決定したときは選択したモードを強調
 	for (int i = 0; i < 5; i++) {
-		if(is_right)
+		if (is_right)
 			my7seg::light(my7seg::DIRECTION::right);
 		else
 			my7seg::light(my7seg::DIRECTION::left);
@@ -143,13 +143,13 @@ bool mode::select_RorL(const PHOTO_TYPE type){
 
 bool mode::search_mode() {
 	//ゴール座標を変数に
-	std::vector< std::pair<uint8_t, uint8_t> > goal_vect;
+	std::vector<std::pair<uint8_t, uint8_t> > goal_vect;
 	goal_vect.emplace_back(std::make_pair(GOAL_x, GOAL_y));
-	goal_vect.emplace_back(std::make_pair(GOAL_x+1, GOAL_y));
-	goal_vect.emplace_back(std::make_pair(GOAL_x, GOAL_y+1));
-	goal_vect.emplace_back(std::make_pair(GOAL_x+1, GOAL_y+1));
+	goal_vect.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y));
+	goal_vect.emplace_back(std::make_pair(GOAL_x, GOAL_y + 1));
+	goal_vect.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y + 1));
 
-	uint8_t select = select_mode(6+1, PHOTO_TYPE::right);
+	uint8_t select = select_mode(6 + 1, PHOTO_TYPE::right);
 	//encoder::yi_correct();		//YI式補正
 
 	while (select != 0) {
@@ -165,14 +165,14 @@ bool mode::search_mode() {
 	case 1:		//1は普通の足立法
 		mouse::set_position(0, 0);
 		mouse::set_direction(north);
-		if(adachi::adachi_method(GOAL_x, GOAL_y, false)){		//足立方が成功したら
+		if (adachi::adachi_method(GOAL_x, GOAL_y, false)) {		//足立方が成功したら
 			wait::ms(300);
 			motor::sleep_motor();
 			flash_maze flash_l;
 			MAP_DATA temp;
 			map::output_map_data(&temp);
 			flash_l.save_maze(0, &temp);
-		//	flash_l.save_maze(1, &temp);
+			//	flash_l.save_maze(1, &temp);
 
 		}
 		break;
@@ -194,7 +194,7 @@ bool mode::search_mode() {
 			mouse::turn_90_dir(MUKI_RIGHT);
 			wait::ms(500);
 
-			if(adachi::adachi_method(0, 0, false)){
+			if (adachi::adachi_method(0, 0, false)) {
 				wait::ms(300);
 				map::output_map_data(&temp);
 				flash_l.save_maze(0, &temp);
@@ -209,14 +209,14 @@ bool mode::search_mode() {
 	case 3:			//ノード型足立法
 		mouse::set_position(0, 0);
 		mouse::set_direction(north);
-		if(adachi::adachi_method(GOAL_x, GOAL_y, true)){		//足立方が成功したら
+		if (adachi::adachi_method(GOAL_x, GOAL_y, true)) {		//足立方が成功したら
 			wait::ms(300);
 			motor::sleep_motor();
 			flash_maze flash_l;
 			MAP_DATA temp;
 			map::output_map_data(&temp);
 			flash_l.save_maze(0, &temp);
-		//	flash_l.save_maze(1, &temp);
+			//	flash_l.save_maze(1, &temp);
 
 		}
 		break;
@@ -309,32 +309,33 @@ bool mode::shortest_mode() {
 	search.set_weight_algo(T_Wataru_method);		//重みづけの方法を設定
 	search.input_map_data(&mouse::now_map);
 
-	mouse::set_position(0,0);		//マウスの現在位置を初期位置に
-	if(!search.create_small_path(goal,std::make_pair<uint8_t, uint8_t>(0,0),north))
+	mouse::set_position(0, 0);		//マウスの現在位置を初期位置に
+	if (!search.create_small_path(goal, std::make_pair<uint8_t, uint8_t>(0, 0),
+			north))
 		return false;
 	search.convert_path();
 
-	uint8_t select = select_mode(3+1, PHOTO_TYPE::right);
+	uint8_t select = select_mode(3 + 1, PHOTO_TYPE::right);
 
 	switch (select) {
 	case 0:		//0はメニューに戻る
 		return false;
 		break;
 
-	case 1:{
+	case 1: {
 		//小回り
 		break;
 	}
 	case 2:
 		path::improve_path();
 		break;
-	case 3:{
+	case 3: {
 		path::improve_advance_path();
 		break;
 	}
 	}
 
-	uint8_t straight = select_mode(5+1, PHOTO_TYPE::right);
+	uint8_t straight = select_mode(5 + 1, PHOTO_TYPE::right);
 	uint8_t curve = select_mode(3, PHOTO_TYPE::right);
 
 	while (straight != 0) {
@@ -346,15 +347,27 @@ bool mode::shortest_mode() {
 	mouse::run_init(true, true);
 	my7seg::count_down(3, 500);
 
-	run::path(0, straight,curve);
-
-	wait::ms(500);
+	run::path(0, straight, curve);
+	//フェイルセーフがかかってなかったら帰りも
+	if (!mouse::get_fail_flag()) {
+		wait::ms(500);
+		run::spin_turn(180);
+		mouse::turn_90_dir(MUKI_RIGHT);
+		mouse::turn_90_dir(MUKI_RIGHT);
+		wait::ms(500);
+		if (adachi::adachi_method(0, 0, false)) {
+			wait::ms(300);
+			MAP_DATA temp;
+			map::output_map_data(&temp);
+			flash_maze flash_l;
+			flash_l.save_maze(0, &temp);
+			//flash_l.save_maze(1, &temp);
+		}
+	}
 	motor::sleep_motor();
-
 	return false;
 
 }
-
 
 mode::mode() {
 }
@@ -375,7 +388,7 @@ uint16_t my_queue::size() {
 int8_t my_queue::pop() {
 	int8_t ans = queue[tail];
 	//リング内でtailを1進める
-	if(tail + 1 == QUEUE_SIZE)
+	if (tail + 1 == QUEUE_SIZE)
 		tail = 0;
 	else
 		tail++;
@@ -385,7 +398,7 @@ int8_t my_queue::pop() {
 void my_queue::push(int8_t _var) {
 	queue[head] = _var;		//Queueにぶち込む
 	//リング内でheadを1進める
-	if(head + 1 == QUEUE_SIZE)
+	if (head + 1 == QUEUE_SIZE)
 		head = 0;
 	else
 		head++;
@@ -403,126 +416,123 @@ my_queue::~my_queue() {
 
 }
 
-
-
-
 /*
-char log::buf[buf_count] = { 0 };
-uint16_t log::length = 0;
-bool log::available_flag = true;
+ char log::buf[buf_count] = { 0 };
+ uint16_t log::length = 0;
+ bool log::available_flag = true;
 
-bool log::check_put_available(uint16_t put_byte) {
-	if (length < (buf_count - put_byte))
-		return true;		//まだ書き込める
-	else
-		return false;
-}
+ bool log::check_put_available(uint16_t put_byte) {
+ if (length < (buf_count - put_byte))
+ return true;		//まだ書き込める
+ else
+ return false;
+ }
 
-void log::add_buffer(char* add_buf, uint16_t buf_size) {
-	//XXX 追加するのはここからで良いか要検討
-	for (uint16_t byte_count = 0; byte_count < buf_size; byte_count++) {
-		buf[(length + byte_count)] = add_buf[byte_count];
-	}
-}
+ void log::add_buffer(char* add_buf, uint16_t buf_size) {
+ //XXX 追加するのはここからで良いか要検討
+ for (uint16_t byte_count = 0; byte_count < buf_size; byte_count++) {
+ buf[(length + byte_count)] = add_buf[byte_count];
+ }
+ }
 
-int16_t log::put_log(const char* fmt, ...) {
-	uint16_t len;
-	char temp_buf[100] = { 0 };
+ int16_t log::put_log(const char* fmt, ...) {
+ uint16_t len;
+ char temp_buf[100] = { 0 };
 
-	va_list ap;		//可変長引数処理に使用する変数定義
-	va_start(ap, fmt);		//可変長引数アクセスのための初期処理
-	len = vsprintf(temp_buf, fmt, ap);	// 可変長引数データの書き込み
-	va_end(ap);		//可変長引数アクセス後の終了処理
-	if (check_put_available(len)) {		//書き込めるなら書き込む
-		add_buffer(temp_buf, len);		//全体のbufに追加
-		length += len;					//長さを更新
-		return len;
-	}
-	return -1;
-}
+ va_list ap;		//可変長引数処理に使用する変数定義
+ va_start(ap, fmt);		//可変長引数アクセスのための初期処理
+ len = vsprintf(temp_buf, fmt, ap);	// 可変長引数データの書き込み
+ va_end(ap);		//可変長引数アクセス後の終了処理
+ if (check_put_available(len)) {		//書き込めるなら書き込む
+ add_buffer(temp_buf, len);		//全体のbufに追加
+ length += len;					//長さを更新
+ return len;
+ }
+ return -1;
+ }
 
-void log::printf_log(void) {
-	putnbyte(log::buf, length);		//ログを出力
-	if (available_flag) {
-//書き込めるならOK
-	} else {
-//書き込みミスったことある状態なら警告
-		myprintf("\r\n------------Warning!!----------------\r\n");
-		myprintf("\r\nバッファオーバーフローが発生しました！\r\n");
-	}
-}
+ void log::printf_log(void) {
+ putnbyte(log::buf, length);		//ログを出力
+ if (available_flag) {
+ //書き込めるならOK
+ } else {
+ //書き込みミスったことある状態なら警告
+ myprintf("\r\n------------Warning!!----------------\r\n");
+ myprintf("\r\nバッファオーバーフローが発生しました！\r\n");
+ }
+ }
 
-void log::reset_log(void) {
-	for (uint16_t count = 0; count < length; count++) {
-		buf[count] = 0;
-	}
-	length = 0;
-	available_flag = true;
-}
+ void log::reset_log(void) {
+ for (uint16_t count = 0; count < length; count++) {
+ buf[count] = 0;
+ }
+ length = 0;
+ available_flag = true;
+ }
 
-signed int int_log::log_case[2][log_count];
-unsigned int int_log::log_counter;
+ signed int int_log::log_case[2][log_count];
+ unsigned int int_log::log_counter;
 
-void int_log::reset_log() {
-	log_counter = log_count;		//リセット中の書き込み対策。
-	for (unsigned int i = 0; i < log_count; i++) {
-		log_case[0][i] = init_number;
-		log_case[1][i] = init_number;
-	}
-	log_counter = 0;	//カウントを初期化
-}
+ void int_log::reset_log() {
+ log_counter = log_count;		//リセット中の書き込み対策。
+ for (unsigned int i = 0; i < log_count; i++) {
+ log_case[0][i] = init_number;
+ log_case[1][i] = init_number;
+ }
+ log_counter = 0;	//カウントを初期化
+ }
 
-void int_log::put_log(const int put_number) {
-	if (log_counter >= log_count) {		//LOG_COUNT以上の個数は弾く。それ以上の配列が用意されてないから
-//何もしない
-	} else {
-		log_case[0][log_counter] = put_number;
-		log_counter++;
-	}
-}
+ void int_log::put_log(const int put_number) {
+ if (log_counter >= log_count) {		//LOG_COUNT以上の個数は弾く。それ以上の配列が用意されてないから
+ //何もしない
+ } else {
+ log_case[0][log_counter] = put_number;
+ log_counter++;
+ }
+ }
 
-void int_log::put_log(const int put_number, const int put_number2) {
-	if (log_counter >= log_count) {		//LOG_COUNT以上の個数は弾く。それ以上の配列が用意されてないから
-//何もしない
-	} else {
-		log_case[0][log_counter] = put_number;
-		log_case[1][log_counter] = put_number;
-		log_counter++;
-	}
-}
+ void int_log::put_log(const int put_number, const int put_number2) {
+ if (log_counter >= log_count) {		//LOG_COUNT以上の個数は弾く。それ以上の配列が用意されてないから
+ //何もしない
+ } else {
+ log_case[0][log_counter] = put_number;
+ log_case[1][log_counter] = put_number;
+ log_counter++;
+ }
+ }
 
-int int_log::get_log(const unsigned int get_number) {
-	if (get_number >= log_count) {		//LOG_COUNT以上の個数は弾く。それ以上の配列が用意されてないから
-		return init_number;
-	} else {
-		return log_case[0][get_number];
-	}
-}
+ int int_log::get_log(const unsigned int get_number) {
+ if (get_number >= log_count) {		//LOG_COUNT以上の個数は弾く。それ以上の配列が用意されてないから
+ return init_number;
+ } else {
+ return log_case[0][get_number];
+ }
+ }
 
-int int_log::get_log(const unsigned int ordinal_number,
-		const unsigned int get_number) {
-	if (get_number >= log_count) {		//LOG_COUNT以上の個数は弾く。それ以上の配列が用意されてないから
-		return init_number;
-	} else {
-		return log_case[ordinal_number][get_number];
-	}
-}
+ int int_log::get_log(const unsigned int ordinal_number,
+ const unsigned int get_number) {
+ if (get_number >= log_count) {		//LOG_COUNT以上の個数は弾く。それ以上の配列が用意されてないから
+ return init_number;
+ } else {
+ return log_case[ordinal_number][get_number];
+ }
+ }
 
-int_log::int_log() {
-	init_number = 0;
-	log_counter = 0;
-	reset_log();
-}
+ int_log::int_log() {
+ init_number = 0;
+ log_counter = 0;
+ reset_log();
+ }
 
-int_log::int_log(int initialize_number) {
-	init_number = initialize_number;
-	log_counter = 0;
-	reset_log();
-}
+ int_log::int_log(int initialize_number) {
+ init_number = initialize_number;
+ log_counter = 0;
+ reset_log();
+ }
 
-int_log::~int_log() {
-}
-*/
+ int_log::~int_log() {
+ }
+ */
 /*
  float float_log::log_case[LOG_DIMENSION][LOG_COUNT];
  unsigned int float_log::log_counter;
@@ -586,26 +596,25 @@ int_log::~int_log() {
  }
  */
 
-const float my_math::sin_table[92] = {  0, 0.017452406, 0.034899497, 0.052335956,
+const float my_math::sin_table[92] = { 0, 0.017452406, 0.034899497, 0.052335956,
 
-		0.069756474, 0.087155743, 0.104528463, 0.121869343, 0.139173101,
-		0.156434465, 0.173648178, 0.190808995, 0.207911691, 0.224951054,
-		0.241921896, 0.258819045, 0.275637356, 0.292371705, 0.309016994,
-		0.325568154, 0.342020143, 0.35836795, 0.374606593, 0.390731128,
-		0.406736643, 0.422618262, 0.438371147, 0.4539905, 0.469471563,
-		0.48480962, 0.5, 0.515038075, 0.529919264, 0.544639035, 0.559192903,
-		0.573576436, 0.587785252, 0.601815023, 0.615661475, 0.629320391,
-		0.64278761, 0.656059029, 0.669130606, 0.68199836, 0.69465837,
-		0.707106781, 0.7193398, 0.731353702, 0.743144825, 0.75470958,
-		0.766044443, 0.777145961, 0.788010754, 0.79863551, 0.809016994,
-		0.819152044, 0.829037573, 0.838670568, 0.848048096, 0.857167301,
-		0.866025404, 0.874619707, 0.882947593, 0.891006524, 0.898794046,
-		0.906307787, 0.913545458, 0.920504853, 0.927183855, 0.933580426,
-		0.939692621, 0.945518576, 0.951056516, 0.956304756, 0.961261696,
-		0.965925826, 0.970295726, 0.974370065, 0.978147601, 0.981627183,
-		0.984807753, 0.987688341, 0.990268069, 0.992546152, 0.994521895,
-		0.996194698, 0.99756405, 0.998629535, 0.999390827, 0.999847695, 1,
-		0.999847695 };
+0.069756474, 0.087155743, 0.104528463, 0.121869343, 0.139173101, 0.156434465,
+		0.173648178, 0.190808995, 0.207911691, 0.224951054, 0.241921896,
+		0.258819045, 0.275637356, 0.292371705, 0.309016994, 0.325568154,
+		0.342020143, 0.35836795, 0.374606593, 0.390731128, 0.406736643,
+		0.422618262, 0.438371147, 0.4539905, 0.469471563, 0.48480962, 0.5,
+		0.515038075, 0.529919264, 0.544639035, 0.559192903, 0.573576436,
+		0.587785252, 0.601815023, 0.615661475, 0.629320391, 0.64278761,
+		0.656059029, 0.669130606, 0.68199836, 0.69465837, 0.707106781,
+		0.7193398, 0.731353702, 0.743144825, 0.75470958, 0.766044443,
+		0.777145961, 0.788010754, 0.79863551, 0.809016994, 0.819152044,
+		0.829037573, 0.838670568, 0.848048096, 0.857167301, 0.866025404,
+		0.874619707, 0.882947593, 0.891006524, 0.898794046, 0.906307787,
+		0.913545458, 0.920504853, 0.927183855, 0.933580426, 0.939692621,
+		0.945518576, 0.951056516, 0.956304756, 0.961261696, 0.965925826,
+		0.970295726, 0.974370065, 0.978147601, 0.981627183, 0.984807753,
+		0.987688341, 0.990268069, 0.992546152, 0.994521895, 0.996194698,
+		0.99756405, 0.998629535, 0.999390827, 0.999847695, 1, 0.999847695 };
 
 const float my_math::log_table[LOG_N + 1] = { -2.30259, -2.30159, -2.3006,
 		-2.29961, -2.29862, -2.29762, -2.29663, -2.29563, -2.29463, -2.29364,
@@ -809,7 +818,6 @@ float my_math::log(float x) {
 		return log_table[0];
 	if (index_int > LOG_N)
 		return log_table[LOG_N];
-
 
 	//my7seg::light(7);
 

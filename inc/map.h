@@ -14,6 +14,8 @@
 #include"user.h"
 #include <queue>
 
+extern uint32_t loop;	//デバック用　歩数マップ生成時のループ回数を数えてる
+
 //TODO 何をstaticにすべきで、何をローカルのままで置くべきか
 
 class map {
@@ -130,8 +132,9 @@ public:
 void direction_turn(signed char *direction_x, signed char *direction_y,
 		unsigned char direction_turn_muki);
 
-//compasを与えると、方角ベクトルを返す. firstがX方向、　secondがY方向
+//compas<->方角ベクトル   firstがX方向、　secondがY方向
 std::pair<int8_t, int8_t> compas_to_direction(compas tar);
+compas direction_to_compas(std::pair<int8_t,int8_t>);
 
 class node_step: public map {
 protected:

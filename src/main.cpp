@@ -29,7 +29,7 @@ void abort(void);
 uint32_t wait_counter = 0;
 static const int16_t flog_number = 2000;
 float flog[3][flog_number] = { 0 };
-
+uint32_t loop=0;		//デバック用　歩数マップ生成のループ数を数えてる
 void interrupt_timer();			//CONTROL_PERIODごとに割り込む関数
 
 int main(void) {
@@ -45,12 +45,6 @@ int main(void) {
 
 	my7seg::blink(8, 200, 5);
 
-	myprintf("Compile DATE: %s\n\r", __DATE__);
-	myprintf("Compile TIME: %s\n\r", __TIME__);
-
-	myprintf("vol -> %f\n\r", get_battery());
-
-
 	mpu6000::init();
 
 	my7seg::turn_off();
@@ -60,6 +54,11 @@ int main(void) {
 	map::output_map_data(&mouse::now_map);
 
 	//encoder::yi_correct();		//YI式補正
+
+	myprintf("Compile DATE: %s\n\r", __DATE__);
+	myprintf("Compile TIME: %s\n\r", __TIME__);
+	myprintf("vol -> %f\n\r", get_battery());
+
 
 	uint8_t select = 0;	//モード管理用
 	while (1) {
@@ -157,7 +156,7 @@ int main(void) {
 			}
 			my7seg::count_down(3, 500);
 			mouse::run_init(true, true);
-
+			//mouse::set_place(0,0);
 			flog[0][0] = -1;
 			//run::accel_run(0.09, SEARCH_VELOCITY, 0);
 			//run::path_run_wall_eage(0.03, 0.5, 1);
@@ -167,17 +166,18 @@ int main(void) {
 //			run::wall_eage_run_for_slalom(0.04,0.5,2,false);
 //			run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
 //			run::accel_run(0.05, 0, 2);
-			run::accel_run_by_distance(0.09, 1, mouse::get_place(), 2);
+			//run::accel_run_by_distance(0.09, 1, mouse::get_place(), 2);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
 			//control::stop_wall_control();
 			//run::accel_run_by_distance(0.09, 0, mouse::get_place(), 0);
-			run::wall_eage_run_for_slalom(0.04, 1, 2,true);
-			run::accel_run_by_distance(0.09+0.005, 0.5, mouse::get_place(), 2);
-			run::accel_run_by_distance(0.09, 0, mouse::get_place(), 0);
+			//run::wall_eage_run_for_slalom(0.04, 1, 2,true);
+			//run::accel_run_by_distance(0.09+0.005, 0.5, mouse::get_place(), 2);
+			//run::accel_run_by_distance(0.09 * SQRT2 * 5, 0, mouse::get_place(), 0);
 			//run::spin_turn(-180);
 			//run::accel_run(0.09 * 7, 0, 2);
-			//run::spin_turn(360);
-			//flog[0][0] = -1;
+			//run::accel_run(0.09, 0.5, 2);
+			//run::wall_eage_run_for_slalom(0.04, 0.5, 2,true);
+			run::accel_run(0.09*5, 0, 0);
 			wait::ms(2000);
 			motor::sleep_motor();
 			my7seg::turn_off();
@@ -278,7 +278,7 @@ int main(void) {
 			MAP_DATA temp;
 			map::output_map_data(&temp);
 			flash_l.save_maze(0, &temp);
-			flash_l.save_maze(1, &temp);
+			//flash_l.save_maze(1, &temp);
 
 			std::vector<std::pair<uint8_t, uint8_t> > goal;
 			goal.emplace_back(std::make_pair(GOAL_x, GOAL_y));
@@ -290,11 +290,11 @@ int main(void) {
 			search.set_weight_algo(based_distance);		//重みづけの方法を設定
 			uint32_t temp_cnt = wait::get_count();
 			step::spread_step(GOAL_x, GOAL_y, false);		//歩数マップを作製
-			myprintf("square cal. count->%d\n\r", wait::get_count() - temp_cnt);
+			myprintf("square cal. time->%d, loop->%d\n\r", wait::get_count() - temp_cnt,loop);
 			//map::draw_map(true);
 			temp_cnt = wait::get_count();
 			search.spread_step(goal, false);		//歩数マップを作製
-			myprintf("node cal. count->%d\n\r", wait::get_count() - temp_cnt);
+			myprintf("node cal. count->%d, loop->%d\n\r", wait::get_count() - temp_cnt,loop);
 			search.draw_step();
 
 			search.create_small_path(goal,
@@ -345,8 +345,8 @@ void interrupt_timer() {
 		}
 	} else if (i < flog_number) {
 		flog[0][i] = mouse::get_place().y;
-		flog[1][i] = mouse::get_ideal_velocity();//photo::get_displa_from_center(PHOTO_TYPE::right);
-		flog[2][i] = mouse::get_velocity();//photo::get_displa_from_center(PHOTO_TYPE::left);//photo::get_value(left);
+		flog[1][i] = photo::get_displa_from_center(PHOTO_TYPE::right);
+		flog[2][i] = photo::get_displa_from_center(PHOTO_TYPE::left);
 		i++;
 	} else if (i == flog_number) {
 		flog[0][0] = 0;

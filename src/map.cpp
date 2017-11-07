@@ -901,6 +901,7 @@ void step::step_reset() {
 void step::spread_step(uint8_t tar_x, uint8_t tar_y, bool by_known) {
 	uint8_t x, y;	//一時的に座標をもっとくよう
 	uint16_t now_step;
+	loop = 0;
 
 	//座標保存用Queue
 	my_queue x_que;
@@ -914,6 +915,7 @@ void step::spread_step(uint8_t tar_x, uint8_t tar_y, bool by_known) {
 	y_que.push(tar_y);
 
 	while (x_que.size() != 0) {		//xもyもサイズは同じなので代表してxを使う
+		loop++;
 		//座標を代入
 		x = x_que.front();
 		y = y_que.front();
@@ -1611,6 +1613,34 @@ std::pair<int8_t, int8_t> compas_to_direction(compas tar) {
 	return ans;
 }
 
+compas direction_to_compas(std::pair<int8_t, int8_t> tar) {
+	//TODO 斜め
+	compas ans=north;
+	switch(tar.first) {
+	case 0:
+		switch(tar.second){
+		case 0:
+			ans = center;
+			break;
+		case 1:
+			ans = north;
+			break;
+		case -1:
+			ans = south;
+			break;
+		}
+		break;
+	case 1:
+		ans = east;
+		break;
+	case -1:
+		ans = west;
+		break;
+	}
+	return ans;
+}
+
+
 uint16_t node_step::step[x_size][y_size];
 
 bool node_step::able_set_step(uint8_t double_x, uint8_t y, compas muki,
@@ -1874,7 +1904,7 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 	bool debranch = false;	//枝切するか否か
 
 //座標管理は歩数の配列(X方向だけ倍)と異なりX,Y方向両方で倍にする　隣接座標の取り扱いが楽だから
-	union {
+	union _dir{
 		int8_t xy;
 		struct {
 			int8_t x :4;
@@ -1885,8 +1915,9 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 			x = _x;
 			y = _y;
 		}
-
 	} dir;			//方向管理用　int8_tでxy両方管理したかった
+
+	union _dir temp_dir;
 
 	my_queue x_queue;		//座標管理用Queue
 	my_queue y_queue;		//座標管理用Queue
@@ -1930,7 +1961,7 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 
 //直進する歩数の重みを管理
 	uint8_t straight;
-	uint32_t loop=0;
+	loop=0;
 	while (x_queue.size() != 0) {
 		loop++;
 
@@ -1938,6 +1969,9 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 		x = x_queue.pop();	//取り出して削除
 		y = y_queue.pop();	//取り出して削除
 		next_step = get_step_double(x, y);
+		mouse_step = get_step(mouse_x, mouse_y,
+					get_min_compas(mouse_x, mouse_y));
+
 
 		//キューから方向を取り出す
 		dir.xy = dir_queue.pop();	//取り出して削除
@@ -1946,21 +1980,24 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 		if (debranch && (next_step > mouse_step)) {
 			//何もしない
 		} else {
+			temp_dir.xy = dir.xy;
 			for (int n = -1; n <= 1; n++) {
+				next_step = get_step_double(x, y);
 				//次に行く方向は3パターンしか見ない　区画中心より今の方向側にある3種　ex.now(1,1)ならdx>0の(1,1)(2,0)(-1,0)
 				//つまるところ、ここの歩数にたどり着く直前で候補にあったやつらは、その時に行ったほうが早いに決まってるので無視
+				temp_dir = dir;
 				if (!(x % 2)) {		//縦壁の時
 					dx = (2 - ABS(n)) * SIGN(dir.x);
 					dy = n;
 					curve_index = ABS(dir.y - dy);		//0が直進、1が45°、2が90°
+					temp_dir.y = n;
 				} else {			//縦でなければ横（y%2==0）しかない
 					dx = n;
 					dy = (2 - ABS(n)) * SIGN(dir.y);
 					curve_index = ABS(dir.x - dx);			//0が直進、1が45°、2が90°
+					temp_dir.x = n;
 				}
 				next_step += curve_w.at(curve_index);	//カーブすることに対する重みを足す
-				dir.set(dx,dy);
-
 
 //その直線方向に、書き込めなくなるまで書き込んでいく
 				for (uint8_t i = 0;; i++) {
@@ -1978,7 +2015,7 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 						next_step += straight;		//ステップを更新
 						x_queue.push(x + (i + 1) * dx);
 						y_queue.push(y + (i + 1) * dy);
-						dir_queue.push(dir.xy);
+						dir_queue.push(temp_dir.xy);
 					} else{
 						break;	//書き込めなくなったらループを抜ける
 					}
@@ -2312,8 +2349,10 @@ bool node_path::create_path(std::pair<uint8_t, uint8_t> init,
 		}
 
 	}
-
 	node_path::push_straight(1);		//区画に入りきるために半区画直進して終了
+
+	mouse::set_position(now_x,now_y);
+
 	return true;
 
 }
