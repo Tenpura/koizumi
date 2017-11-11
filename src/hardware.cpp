@@ -1257,10 +1257,9 @@ float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
 
 	if (f <= 0) {
 		f = 0.1;
+	}else if(f > 5000){
+		f=5000;
 	}
-
-	//フォトセンサの特性を示すパラメータ
-	float a = 0.1;
 
 	switch (sensor_type) {
 	case PHOTO_TYPE::right:
@@ -1503,8 +1502,8 @@ void control::cal_delta() {
 			//photo_delta.P = mouse::get_relative_side();
 
 			//センサの推定値で補正
-			if(photo_delta.P != 0)
-				mouse::set_relative_side(photo_delta.P);
+			//if(photo_delta.P != 0)
+			//	mouse::set_relative_side(photo_delta.P);
 
 			break;
 
@@ -1523,7 +1522,7 @@ void control::cal_delta() {
 			if( photo::get_displa_from_center(PHOTO_TYPE::left) <= 0)
 				photo_delta.P = photo::get_displa_from_center(PHOTO_TYPE::left);
 
-			photo_delta.P *= 1; //斜めの制御パラメータ
+			photo_delta.P *= 0.9; //斜めの制御パラメータ
 
 			break;
 

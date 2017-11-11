@@ -1615,10 +1615,10 @@ std::pair<int8_t, int8_t> compas_to_direction(compas tar) {
 
 compas direction_to_compas(std::pair<int8_t, int8_t> tar) {
 	//TODO 斜め
-	compas ans=north;
-	switch(tar.first) {
+	compas ans = north;
+	switch (tar.first) {
 	case 0:
-		switch(tar.second){
+		switch (tar.second) {
 		case 0:
 			ans = center;
 			break;
@@ -1639,7 +1639,6 @@ compas direction_to_compas(std::pair<int8_t, int8_t> tar) {
 	}
 	return ans;
 }
-
 
 uint16_t node_step::step[x_size][y_size];
 
@@ -1688,7 +1687,7 @@ bool node_step::set_step(uint8_t x, uint8_t y, compas muki, uint16_t step_val,
 	uint8_t step_y = y;
 
 	switch (muki) {
-		//南向きと西向きに変更してやりなおし
+	//南向きと西向きに変更してやりなおし
 	case north:
 		step_y++;	//yを1つ増やして南向き扱いに
 		step_x = 2 * x + 1;	//南向きだと横向きの壁なので、x方向が2x+1
@@ -1816,7 +1815,10 @@ void node_step::draw_step() {
 			if (get_wall(tekitou_x, tekitou_y, MUKI_UP)) {	//壁があるなら
 				myprintf("---");
 			} else {
-				myprintf("%3d", get_step(tekitou_x, tekitou_y, north));	//なければ歩数を書く
+				if (get_step(tekitou_x, tekitou_y, north) == init_step)
+					myprintf("   ");	//初期値なら空白に
+				else
+					myprintf("%3d", get_step(tekitou_x, tekitou_y, north));	//なければ歩数を書く
 			}
 		}
 		myprintf("+\n\r");
@@ -1828,7 +1830,10 @@ void node_step::draw_step() {
 			if (get_wall(tekitou_x, tekitou_y, MUKI_RIGHT)) {//今書いたマスの右の壁があれば壁を書く
 				myprintf(" | ");
 			} else {
-				myprintf("%3d", get_step(tekitou_x, tekitou_y, east));//なければ歩数を書く
+				if (get_step(tekitou_x, tekitou_y, east) == init_step)
+					myprintf("   ");	//初期値なら空白に
+				else
+					myprintf("%3d", get_step(tekitou_x, tekitou_y, east));//なければ歩数を書く
 			}
 		}
 		myprintf("\n\r");
@@ -1904,14 +1909,14 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 	bool debranch = false;	//枝切するか否か
 
 //座標管理は歩数の配列(X方向だけ倍)と異なりX,Y方向両方で倍にする　隣接座標の取り扱いが楽だから
-	union _dir{
+	union _dir {
 		int8_t xy;
 		struct {
 			int8_t x :4;
 			int8_t y :4;
 		};
 
-		void set(int8_t _x, int8_t _y){
+		void set(int8_t _x, int8_t _y) {
 			x = _x;
 			y = _y;
 		}
@@ -1941,14 +1946,14 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 			if (set_step_double(x + i, y, 0, by_known)) {
 				x_queue.push(x + i);
 				y_queue.push(y);
-				dir.set(i,0);
+				dir.set(i, 0);
 				dir_queue.push(dir.xy);
 				//方向も記録
 			}
 			if (set_step_double(x, y + i, 0, by_known)) {
 				x_queue.push(x);
 				y_queue.push(y + i);
-				dir.set(0,i);
+				dir.set(0, i);
 				dir_queue.push(dir.xy);
 				//方向も記録
 			}
@@ -1961,7 +1966,7 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 
 //直進する歩数の重みを管理
 	uint8_t straight;
-	loop=0;
+	loop = 0;
 	while (x_queue.size() != 0) {
 		loop++;
 
@@ -1970,8 +1975,7 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 		y = y_queue.pop();	//取り出して削除
 		next_step = get_step_double(x, y);
 		mouse_step = get_step(mouse_x, mouse_y,
-					get_min_compas(mouse_x, mouse_y));
-
+				get_min_compas(mouse_x, mouse_y));
 
 		//キューから方向を取り出す
 		dir.xy = dir_queue.pop();	//取り出して削除
@@ -2016,7 +2020,7 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 						x_queue.push(x + (i + 1) * dx);
 						y_queue.push(y + (i + 1) * dy);
 						dir_queue.push(temp_dir.xy);
-					} else{
+					} else {
 						break;	//書き込めなくなったらループを抜ける
 					}
 //直線が続くことによる重みの減少がないなら一回だけで抜ける
@@ -2032,8 +2036,6 @@ void node_search::spread_step(std::vector<std::pair<uint8_t, uint8_t> > finish,
 			}
 		}
 	}
-
-
 
 }
 
@@ -2351,7 +2353,7 @@ bool node_path::create_path(std::pair<uint8_t, uint8_t> init,
 	}
 	node_path::push_straight(1);		//区画に入りきるために半区画直進して終了
 
-	mouse::set_position(now_x,now_y);
+	mouse::set_position(now_x, now_y);
 
 	return true;
 

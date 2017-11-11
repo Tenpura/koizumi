@@ -8,7 +8,7 @@
 #include"parameter.h"
 //ideal_photo[x][y]	xは0がハーフ,1がクラシック	yが光学センサの向きに対応。
 //right left front_right front_left,front
-const float parameter::ideal_photo[2][5] = { { /*130*/ 13, /*200*/ -10, 0, 0, 0/*中心からどれだけオフセットがあるか[mm]*/ },
+const float parameter::ideal_photo[2][5] = { { /*130*/ 13, /*200*/ -10, 0, 0, -5/*中心からどれだけオフセットがあるか[mm]*/ },
 		{ 3250, 3200, 10815, 10100, 0 } };
 const int16_t parameter::min_wall_photo[2][5] = { { 30, 70, 1400, 130, 300 }, {
 		20000, 20000, 0, 0, 0 } };
@@ -55,7 +55,7 @@ const std::array<INIT_SLALOM, 1> left_big180_half ={ {
 
 //入り45°ターン
 const std::array<INIT_SLALOM, 1> right_begin45_half = { {
-		{ 0.5, 45.8, 20, 0.016, 0.030, 195.0775, 11.67003, 0 },
+		{ 0.5, 45.8, 20, 0.016, 0.027, 195.0775, 11.67003, 0 },
 } };
 const std::array<INIT_SLALOM, 1> left_begin45_half = { {
 		{ 0.5, 45, 20, 0.008, 0.032, 195.0775, 11.67003, 0 },

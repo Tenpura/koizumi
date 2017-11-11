@@ -310,7 +310,7 @@ bool mode::shortest_mode() {
 	search.input_map_data(&mouse::now_map);
 
 	mouse::set_position(0, 0);		//マウスの現在位置を初期位置に
-	if (!search.create_small_path(goal, std::make_pair<uint8_t, uint8_t>(0, 0),
+	if (!search.create_small_path(goal, std::pair<uint8_t, uint8_t>(0, 0),
 			north))
 		return false;
 	search.convert_path();

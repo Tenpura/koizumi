@@ -29,7 +29,7 @@ void abort(void);
 uint32_t wait_counter = 0;
 static const int16_t flog_number = 2000;
 float flog[3][flog_number] = { 0 };
-uint32_t loop=0;		//デバック用　歩数マップ生成のループ数を数えてる
+uint32_t loop = 0;		//デバック用　歩数マップ生成のループ数を数えてる
 void interrupt_timer();			//CONTROL_PERIODごとに割り込む関数
 
 int main(void) {
@@ -53,12 +53,11 @@ int main(void) {
 	map::reset_maze();
 	map::output_map_data(&mouse::now_map);
 
-	//encoder::yi_correct();		//YI式補正
+	encoder::yi_correct();		//YI式補正
 
 	myprintf("Compile DATE: %s\n\r", __DATE__);
 	myprintf("Compile TIME: %s\n\r", __TIME__);
 	myprintf("vol -> %f\n\r", get_battery());
-
 
 	uint8_t select = 0;	//モード管理用
 	while (1) {
@@ -82,8 +81,10 @@ int main(void) {
 				wait::ms(500);
 				if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0) {
 					wait::ms(100);
+					myprintf("vol -> %f\n\r", get_battery());
 					break;
 				}
+
 			}
 		}
 
@@ -103,8 +104,10 @@ int main(void) {
 			while (1) {
 				myprintf("right %4.3f  ", photo::get_value(PHOTO_TYPE::right));
 				myprintf("left %4.3f  ", photo::get_value(PHOTO_TYPE::left));
-				myprintf("f_r %4.3f  ", photo::get_value(PHOTO_TYPE::front_right));
-				myprintf("f_l %4.3f  ", photo::get_value(PHOTO_TYPE::front_left));
+				myprintf("f_r %4.3f  ",
+						photo::get_value(PHOTO_TYPE::front_right));
+				myprintf("f_l %4.3f  ",
+						photo::get_value(PHOTO_TYPE::front_left));
 				myprintf("front %4.3f  ", photo::get_value(PHOTO_TYPE::front));
 				myprintf("\n\r");
 
@@ -177,7 +180,19 @@ int main(void) {
 			//run::accel_run(0.09 * 7, 0, 2);
 			//run::accel_run(0.09, 0.5, 2);
 			//run::wall_eage_run_for_slalom(0.04, 0.5, 2,true);
-			run::accel_run(0.09*5, 0, 0);
+
+			//run::accel_run(0.09*2, 0.5, 2);
+			//run::slalom(begin_135, MUKI_RIGHT, 2);
+
+			//run::path_accel_run_wall_eage(0.09*5,0,mouse::get_place(),1);
+			run::accel_run(0.09, 0.5, 1);
+			run::slalom(begin_45, MUKI_RIGHT, 1);
+			run::accel_run_by_distance(0.09 * SQRT2 * 1.5 - (0.09 * SQRT2 / 4), 0.5,
+					mouse::get_place(), 1);
+			run::wall_eage_run_for_obli(0.09 * SQRT2 / 4 - 0.002, 0.5, 1, true);
+			run::accel_run_by_distance(0.09 * SQRT2-(0.09 * SQRT2 / 4 - 0.002),
+					0, mouse::get_place(), 1);
+
 			wait::ms(2000);
 			motor::sleep_motor();
 			my7seg::turn_off();
@@ -287,24 +302,22 @@ int main(void) {
 			goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y + 1));
 			node_search search(999);
 			search.input_map_data(&mouse::now_map);		//保存していたマップを読みだす
-			search.set_weight_algo(based_distance);		//重みづけの方法を設定
+			search.set_weight_algo(T_Wataru_method);		//重みづけの方法を設定
 			uint32_t temp_cnt = wait::get_count();
 			step::spread_step(GOAL_x, GOAL_y, false);		//歩数マップを作製
-			myprintf("square cal. time->%d, loop->%d\n\r", wait::get_count() - temp_cnt,loop);
+			myprintf("square cal. time->%d, loop->%d\n\r",
+					wait::get_count() - temp_cnt, loop);
 			//map::draw_map(true);
 			temp_cnt = wait::get_count();
-			search.spread_step(goal, false);		//歩数マップを作製
-			myprintf("node cal. count->%d, loop->%d\n\r", wait::get_count() - temp_cnt,loop);
+			search.spread_step(goal, true);		//歩数マップを作製
+			myprintf("node cal. count->%d, loop->%d\n\r",
+					wait::get_count() - temp_cnt, loop);
 			search.draw_step();
 
 			search.create_small_path(goal,
 					std::make_pair<uint8_t, uint8_t>(0, 0), north);
 			search.convert_path();
-			path::draw_path();
-
-			search.create_big_path(goal, std::make_pair<uint8_t, uint8_t>(0, 0),
-					north);
-			search.convert_path();
+			path::improve_advance_path();
 			path::draw_path();
 
 			break;
