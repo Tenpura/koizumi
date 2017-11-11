@@ -160,21 +160,23 @@ class run {
 private:
 	run();
 public:
+	static std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> WALLEAGE_BODOR;
+	static std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> WALLEAGE_BODOR_OBLI;
 	static std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> DOWN_WALLEAGE_DISTANCE;
 	static std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> DOWN_WALLEAGE_OBLI;
 
 public:
 	static void accel_run(float distance_m, float end_velocity,
 				unsigned char select_mode);
-	static void wall_eage_run_for_search(const float distance_m,
+	static void wall_edge_run_for_search(const float distance_m,
 			const float end_velocity, const unsigned char select_mode,
 			const float check_distance);		//探索用
-	static void wall_eage_run_for_slalom(float distance_m,
-			float end_velocity, uint8_t select_mode, bool is_obli, bool run_to_edge);	//最短の大廻スラロームの前距離用  distance_mは区画の中心からどれくらい進むか,is_obliは今斜め走行中か，run_to_edgeは壁キレ見るまで走り続けるか
-	static void wall_eage_run_for_obli(float distance_m,
+	static void wall_edge_run_for_slalom(float distance_m,
+			float end_velocity, uint8_t select_mode, bool is_right, bool is_obli, bool run_to_edge);	//最短の大廻スラロームの前距離用  distance_mは区画の中心からどれくらい進むか,is_obliは今斜め走行中か，run_to_edgeは壁キレ見るまで走り続けるか
+	static void wall_edge_run_for_obli(float distance_m,
 			float end_velocity, uint8_t select_mode, bool run_to_edge);	//最短の大廻スラロームの前距離用  distance_mは区画の中心からどれくらい進むか,run_to_edgeは壁キレ見るまで走り続けるか
-	static void path_accel_run_wall_eage(float distance_m,
-				float end_v, COORDINATE init, uint8_t select);	//最短用の走行関数　壁キレを読んだら相対角度を補正する　最後だけ読むとかでなく、走行中ずっと読む
+	static void path_accel_run_wall_edge(float distance_m,
+				float end_v, COORDINATE init, uint8_t select, bool is_obli);	//最短用の走行関数　壁キレを読んだら相対角度を補正する　最後だけ読むとかでなく、走行中ずっと読む
 
 	static void accel_run_by_distance(float tar_L_m, float end_velocity,
 			COORDINATE init, uint8_t select_mode);	//割り込みの積算距離ではなく、初期座標と現在座標の間の距離を考える

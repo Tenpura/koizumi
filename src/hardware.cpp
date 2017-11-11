@@ -1250,6 +1250,12 @@ void photo::get_displa_from_center_void(PHOTO_TYPE sensor_type, float val) {
 }
 
 float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
+	static bool reent = false;		//リエントラント性担保
+
+	if(reent)		//実行中なので、適当な値返して抜ける
+		return 0;
+	else
+		reent = true;
 	float a0, a1, a2, alog;	//小島近似の係数	x^0,x,x^2,logの係数
 	float f = val;		//対称のセンサ値
 	float f_c = (parameter::get_ideal_photo(sensor_type));	//中心位置におけるセンサ値
@@ -1301,6 +1307,8 @@ float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
 
 	ans = a2 * f + a1;
 	ans = ans * f + a0 + alog * logf(f);
+
+	reent = false;	//終了する前にリエントラントをオフに
 	return ans * 0.001;
 }
 
@@ -1522,7 +1530,7 @@ void control::cal_delta() {
 			if( photo::get_displa_from_center(PHOTO_TYPE::left) <= 0)
 				photo_delta.P = photo::get_displa_from_center(PHOTO_TYPE::left);
 
-			photo_delta.P *= 0.9; //斜めの制御パラメータ
+			photo_delta.P *= 0.8; //斜めの制御パラメータ
 
 			break;
 

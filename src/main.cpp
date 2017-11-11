@@ -53,7 +53,7 @@ int main(void) {
 	map::reset_maze();
 	map::output_map_data(&mouse::now_map);
 
-	encoder::yi_correct();		//YIŽ®•â³
+//	encoder::yi_correct();		//YIŽ®•â³
 
 	myprintf("Compile DATE: %s\n\r", __DATE__);
 	myprintf("Compile TIME: %s\n\r", __TIME__);
@@ -70,6 +70,8 @@ int main(void) {
 				my7seg::light_error();
 				if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0) {
 					wait::ms(100);
+					myprintf("\n\r!!!!!  Worning   !!!!!\n\r\n\r");
+					myprintf("vol -> %f\n\r", get_battery());
 					break;
 				}
 			}
@@ -184,7 +186,8 @@ int main(void) {
 			//run::accel_run(0.09*2, 0.5, 2);
 			//run::slalom(begin_135, MUKI_RIGHT, 2);
 
-			//run::path_accel_run_wall_eage(0.09*5,0,mouse::get_place(),1);
+			run::path_accel_run_wall_edge(0.09*5,0,mouse::get_place(),1,false);
+			/*
 			run::accel_run(0.09, 0.5, 1);
 			run::slalom(begin_45, MUKI_RIGHT, 1);
 			run::accel_run_by_distance(0.09 * SQRT2 * 1.5 - (0.09 * SQRT2 / 4), 0.5,
@@ -192,7 +195,7 @@ int main(void) {
 			run::wall_eage_run_for_obli(0.09 * SQRT2 / 4 - 0.002, 0.5, 1, true);
 			run::accel_run_by_distance(0.09 * SQRT2-(0.09 * SQRT2 / 4 - 0.002),
 					0, mouse::get_place(), 1);
-
+			*/
 			wait::ms(2000);
 			motor::sleep_motor();
 			my7seg::turn_off();
