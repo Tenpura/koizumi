@@ -19,10 +19,10 @@
 
 //position
 typedef union {
-	unsigned char all;
+	uint16_t all;
 	struct {
-		unsigned char x :4;
-		unsigned char y :4;
+		uint8_t x :8;
+		uint8_t y :8;
 	} bit;
 } POSITION;
 

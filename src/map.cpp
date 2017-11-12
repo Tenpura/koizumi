@@ -904,8 +904,8 @@ void step::spread_step(uint8_t tar_x, uint8_t tar_y, bool by_known) {
 	loop = 0;
 
 	//座標保存用Queue
-	my_queue x_que;
-	my_queue y_que;
+	static my_queue x_que;
+	static my_queue y_que;
 
 	step_reset();
 	maze_step[tar_x][tar_y] = 0;

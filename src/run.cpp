@@ -1172,7 +1172,7 @@ void run::wall_edge_run_for_slalom(const float distance_m,
 	}
 
 	//right left front_right, front_left, front
-	std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> wall_edge;		//この値を超えたら壁キレ
+	std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> wall_edge;//この値を超えたら壁キレ
 	if (is_obli) {	//斜めの閾値
 		wall_edge = WALLEAGE_BODOR_OBLI;
 		down_dis = DOWN_WALLEAGE_OBLI;
@@ -1255,14 +1255,16 @@ void run::wall_edge_run_for_slalom(const float distance_m,
 			//今閾値のどっち側にいるか
 			if ((photo::get_displa_from_center(turn_photo)
 					- wall_edge.at(photo_Int)) * turn_sign > 0) {
-				if (in.at(photo_Int) < 60000)
-					in.at(photo_Int)++;out
-				.at(photo_Int) = 0;
+				if (in.at(photo_Int) < 60000) {
+					in.at(photo_Int)++;}
+				out.at(photo_Int) = 0;
 			} else {
 				in.at(photo_Int) = 0;
-				if (out.at(photo_Int) < 60000)
+				if (out.at(photo_Int) < 60000) {
 					out.at(photo_Int)++;}
+			}
 
+			/*
 			if (!is_obli) {		//斜めじゃないときは両方見る
 				//反転する
 				if (photo_Int == photo_R) {
@@ -1302,8 +1304,10 @@ void run::wall_edge_run_for_slalom(const float distance_m,
 				}
 
 			}
+			*/
 
 		}
+	}
 
 	my7seg::turn_off();
 	mouse::set_ideal_velocity(end_velocity);	//目標速度をセット
@@ -1325,7 +1329,7 @@ void run::wall_edge_run_for_obli(const float distance_m,
 	//この関数内でも加減速できるように
 	//雑に目標速度まで加速or減速しかしない
 	float accel_sign = 0;
-	if (mouse::get_ideal_velocity() < end_velocity) {			//現在速度が足りないとき
+	if (mouse::get_ideal_velocity() < end_velocity) {	//現在速度が足りないとき
 		mouse::set_ideal_accel(
 				ABS(parameter::get_run_acceleration(select_mode)));	//加速
 		accel_sign = 1;	//加速なので正
@@ -1361,7 +1365,7 @@ void run::wall_edge_run_for_obli(const float distance_m,
 			if (((mouse::get_ideal_velocity() - end_velocity) * accel_sign)
 					>= 0) {		//目標速度を超えたら
 				mouse::set_ideal_accel(0);		//加減速を止める
-				mouse::set_ideal_velocity(end_velocity);	//目標速度をセット
+				mouse::set_ideal_velocity(end_velocity);		//目標速度をセット
 			}
 		}
 
@@ -1455,15 +1459,14 @@ void run::path_accel_run_wall_edge(const float distance_m, const float end_v,
 	} mode = ACCEL;
 	float run_square = 0;		//走行距離の２乗
 	float tar_square = distance_m * distance_m;	//目標距離の2乗	毎回計算するの面倒だし長くなるから
-	float sign = SIGN(distance_m);	//前進なら1、バックするなら―1
+	float sign = SIGN(distance_m);		//前進なら1、バックするなら―1
 	float ideal_v = mouse::get_ideal_velocity();
 	float max_v = ABS(parameter::get_run(select)->max_v) * sign;
 	float accel = ABS(parameter::get_run(select)->accel) * sign;
 	float de_accel = ABS(parameter::get_run(select)->de_accel) * sign;
 	float de_accel_distance = (ideal_v * ideal_v - end_v * end_v)
-			/ (2 * de_accel);	//減速に必要な距離
-	uint32_t time = mouse::get_count_ms();			//1msに一回だけ処理が回るよう管理するため
-
+			/ (2 * de_accel);		//減速に必要な距離
+	uint32_t time = mouse::get_count_ms();		//1msに一回だけ処理が回るよう管理するため
 
 	//直前まで壁があってから壁キレを見る　＝　閾値をまたぐのを判断するよう	迷路の中心に近いか遠いか
 	enum {
@@ -1478,14 +1481,14 @@ void run::path_accel_run_wall_edge(const float distance_m, const float end_v,
 	COORDINATE now = { 0, 0 };
 
 	//right left front_right, front_left, front
-	std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> wall_eage;		//この値を超えたら壁キレ
+	std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> wall_eage;//この値を超えたら壁キレ
 	std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> down_dis;//壁キレ時に区画中心からどの程度ずれているか
 
 	if (is_obli) {
-		wall_eage=WALLEAGE_BODOR_OBLI;
+		wall_eage = WALLEAGE_BODOR_OBLI;
 		down_dis = DOWN_WALLEAGE_OBLI;
 	} else {
-		wall_eage=WALLEAGE_BODOR;
+		wall_eage = WALLEAGE_BODOR;
 		down_dis.at(photo_R) = 0.045 * MOUSE_MODE
 				- DOWN_WALLEAGE_DISTANCE.at(photo_R);
 		down_dis.at(photo_L) = 0.045 * MOUSE_MODE
@@ -1510,7 +1513,7 @@ void run::path_accel_run_wall_edge(const float distance_m, const float end_v,
 			if ((Ph2Dis < wall_eage.at(photo_R))) {
 				mouse::set_relative_go(down_dis.at(photo_R));//区画中央を原点として位置を更新
 				cnt[photo_R][inner] = 0;
-				GPIO_SetBits(GPIOC, GPIO_Pin_3);	//LED2
+				GPIO_SetBits(GPIOC, GPIO_Pin_3);			//LED2
 			}
 		} else if (cnt[photo_R][outer] >= w_cnt) {
 			if ((Ph2Dis > wall_eage.at(photo_R))) {
@@ -1572,7 +1575,7 @@ void run::path_accel_run_wall_edge(const float distance_m, const float end_v,
 		de_accel_distance = ABS(ideal_v * ideal_v - end_v * end_v)
 				/ (2 * de_accel);
 		de_accel_distance = ABS(distance_m) - de_accel_distance;//減速を考慮するとどこまで走ってよいのか
-		if (run_square >= (de_accel_distance * de_accel_distance)) //減速に距離が必要な距離が足りなくなったら減速モードに
+		if (run_square >= (de_accel_distance * de_accel_distance))//減速に距離が必要な距離が足りなくなったら減速モードに
 			mode = DE_ACCEL;
 
 		switch (mode) {
@@ -1590,7 +1593,7 @@ void run::path_accel_run_wall_edge(const float distance_m, const float end_v,
 				mouse::set_ideal_accel(accel);
 			}
 
-			if (0 >= sign * (max_v - ideal_v)) {		//最大速度まで加速していたら
+			if (0 >= sign * (max_v - ideal_v)) {	//最大速度まで加速していたら
 				mouse::set_ideal_accel(0);
 				mouse::set_ideal_velocity(max_v);
 				mode = FLAT;
@@ -1603,7 +1606,7 @@ void run::path_accel_run_wall_edge(const float distance_m, const float end_v,
 			my7seg::light(FLAT);
 			break;
 
-		case DE_ACCEL:	//減速
+		case DE_ACCEL:		//減速
 			mouse::set_ideal_accel(-de_accel);
 			if (sign * (ideal_v - end_v) <= 0) {	//終端速度まで減速したら
 				mouse::set_ideal_accel(0);
@@ -2102,7 +2105,7 @@ void run::slalom(const SLALOM_TYPE slalom_type, const signed char right_or_left,
 	accel_run(distance, slalom_velocity, select_mode);
 
 	if (wall_flag)
-		control::start_wall_control();		//もともと壁制御がかかってたら復活させる
+		control::start_wall_control();	//もともと壁制御がかかってたら復活させる
 
 	//control::reset_delta(sen_gyro);
 
@@ -2133,7 +2136,7 @@ void run::slalom_for_search(const SLALOM_TYPE slalom_type,
 	//スラロームの目標角は相対的な角度なので、最初の角度を記録しておく
 	float init_angle = mouse::get_angle_degree();
 	control::reset_delta(sen_gyro);
-	float correct = 0;		//補正項
+	float correct = 0;	//補正項
 	bool front_b = photo::check_wall(PHOTO_TYPE::front);//ifに直接入れると死ぬことあるので経由する
 	if (front_b) {
 		correct = (photo::get_displa_from_center(PHOTO_TYPE::front));//この関数で死ぬことあり
@@ -2921,6 +2924,7 @@ bool adachi::adachi_method(unsigned char target_x, unsigned char target_y,
 				mouse::get_y_position());
 		myprintf("place -> (%f,%f)\n\r", place.x, place.y);
 		myprintf("relative (displace,go)-> (%f,%f)\n\r", displace, go);
+		map::draw_map(false);
 	}
 
 	return false;

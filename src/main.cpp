@@ -53,7 +53,7 @@ int main(void) {
 	map::reset_maze();
 	map::output_map_data(&mouse::now_map);
 
-//	encoder::yi_correct();		//YI式補正
+	encoder::yi_correct();		//YI式補正
 
 	myprintf("Compile DATE: %s\n\r", __DATE__);
 	myprintf("Compile TIME: %s\n\r", __TIME__);
@@ -103,6 +103,10 @@ int main(void) {
 
 		switch (select) {
 		case 0:		//壁の値を読むだけ	事故防止のためにモード0は実害ない奴にしとく
+
+			mouse::set_position(20, 25);
+			myprintf("x->%d, y%d\n\r",mouse::get_x_position(),mouse::get_y_position());
+
 			while (1) {
 				myprintf("right %4.3f  ", photo::get_value(PHOTO_TYPE::right));
 				myprintf("left %4.3f  ", photo::get_value(PHOTO_TYPE::left));
@@ -163,7 +167,7 @@ int main(void) {
 			mouse::run_init(true, true);
 			//mouse::set_place(0,0);
 			flog[0][0] = -1;
-			//run::accel_run(0.09, SEARCH_VELOCITY, 0);
+			//run::accel_run(0.09*5, SEARCH_VELOCITY, 0);
 			//run::path_run_wall_eage(0.03, 0.5, 1);
 			//run::accel_run(0.045 + 0.09, SEARCH_VELOCITY, 0);
 			//run::slalom_for_search(small, MUKI_RIGHT, 0);
@@ -177,16 +181,13 @@ int main(void) {
 			//run::accel_run_by_distance(0.09, 0, mouse::get_place(), 0);
 			//run::wall_eage_run_for_slalom(0.04, 1, 2,true);
 			//run::accel_run_by_distance(0.09+0.005, 0.5, mouse::get_place(), 2);
-			//run::accel_run_by_distance(0.09 * SQRT2 * 5, 0, mouse::get_place(), 0);
-			//run::spin_turn(-180);
-			//run::accel_run(0.09 * 7, 0, 2);
-			//run::accel_run(0.09, 0.5, 2);
-			//run::wall_eage_run_for_slalom(0.04, 0.5, 2,true);
 
-			//run::accel_run(0.09*2, 0.5, 2);
-			//run::slalom(begin_135, MUKI_RIGHT, 2);
 
-			run::path_accel_run_wall_edge(0.09*5,0,mouse::get_place(),1,false);
+			run::accel_run_by_distance(0.09, 0.25, mouse::get_place(), 0);
+			run::wall_edge_run_for_slalom(0.045 - 0.002, 0.25, 0,false, false, true);
+			run::accel_run_by_distance(0.045 + 0.002, 0, mouse::get_place(), 0);
+
+			//run::path_accel_run_wall_edge(0.09*5,0,mouse::get_place(),1,false);
 			/*
 			run::accel_run(0.09, 0.5, 1);
 			run::slalom(begin_45, MUKI_RIGHT, 1);
@@ -290,7 +291,6 @@ int main(void) {
 
 		}
 		case 8: {
-			map::draw_map(false);
 			//今の迷路をスロット1に保存　探索完了とかで自動的に保存されるのはスロット0
 			flash_maze flash_l;
 			MAP_DATA temp;
@@ -304,13 +304,14 @@ int main(void) {
 			goal.emplace_back(std::make_pair(GOAL_x, GOAL_y + 1));
 			goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y + 1));
 			node_search search(999);
+
 			search.input_map_data(&mouse::now_map);		//保存していたマップを読みだす
 			search.set_weight_algo(T_Wataru_method);		//重みづけの方法を設定
 			uint32_t temp_cnt = wait::get_count();
 			step::spread_step(GOAL_x, GOAL_y, false);		//歩数マップを作製
 			myprintf("square cal. time->%d, loop->%d\n\r",
 					wait::get_count() - temp_cnt, loop);
-			//map::draw_map(true);
+			map::draw_map(true);
 			temp_cnt = wait::get_count();
 			search.spread_step(goal, true);		//歩数マップを作製
 			myprintf("node cal. count->%d, loop->%d\n\r",
