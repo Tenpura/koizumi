@@ -347,6 +347,10 @@ bool mode::shortest_mode() {
 	mouse::run_init(true, true);
 	my7seg::count_down(3, 500);
 
+	//壁に着けた状態からスタート想定
+	run::accel_run(0.02 * MOUSE_MODE, parameter::get_run(straight)->max_v,
+			straight);
+
 	run::path(0, straight, curve);
 	//フェイルセーフがかかってなかったら帰りも
 	if (!mouse::get_fail_flag()) {
@@ -355,7 +359,7 @@ bool mode::shortest_mode() {
 		mouse::turn_90_dir(MUKI_RIGHT);
 		mouse::turn_90_dir(MUKI_RIGHT);
 		wait::ms(500);
-		if (adachi::adachi_method(0, 0, false)) {
+		if (adachi::adachi_method(0, 0, true)) {
 			wait::ms(300);
 			MAP_DATA temp;
 			map::output_map_data(&temp);

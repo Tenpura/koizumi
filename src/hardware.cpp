@@ -1188,65 +1188,8 @@ float photo::get_value(PHOTO_TYPE sensor_type) {
 	return static_cast<float>(ad) * 4.0 / get_battery();	//電圧で値が減っている気がするので補正
 }
 
-float photo::get_displa_from_center_debag(PHOTO_TYPE type) {
-	static bool ReEntrant = false;
-	if (ReEntrant)
-		return 0;
-	ReEntrant = true;
-	my7seg::light(0);
-	float val = (photo::get_value(type));
-	my7seg::light(4);
-	get_displa_from_center_void(type, val);	//現在のセンサ値に対して求める
-	my7seg::light(7);
-	ReEntrant = false;
-	return 0;
-}
-
 float photo::get_displa_from_center(PHOTO_TYPE type) {
 	return get_displa_from_center(type, (photo::get_value(type)));//現在のセンサ値に対して求める
-}
-
-void photo::get_displa_from_center_void(PHOTO_TYPE sensor_type, float val) {
-	my7seg::light(5);
-	float f = val;		//対称のセンサ値
-	float f_c = static_cast<float>(parameter::get_ideal_photo(sensor_type));//中心位置におけるセンサ値
-
-	//フォトセンサの特性を示すパラメータ
-	float a = 0.1;
-
-	switch (sensor_type) {
-	case PHOTO_TYPE::right:
-		a = 0.058;
-		break;
-
-	case PHOTO_TYPE::left:
-		a = -0.056;
-		break;
-
-	case PHOTO_TYPE::front_right:
-		break;
-
-	case PHOTO_TYPE::front_left:
-		break;
-
-	case PHOTO_TYPE::front: {
-		a = 0.0398;
-		break;
-	}
-
-	default:
-		return;
-		break;
-	}
-
-	//センサ値fは f=f_c*exp(a*x) と仮定し、xを求める。-> x = 1/a*log(f/f_c)
-	//f_c:中心のセンサ値、x:中心からのずれ[mm]
-//	return (my_math::log(f / f_c) / a * 0.001);		//[m]
-
-	float ans = logf(f / f_c) / a * 0.001;
-	my7seg::light(6);
-	return;		//[m]
-
 }
 
 float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
@@ -1254,8 +1197,7 @@ float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
 
 	if(reent)		//実行中なので、適当な値返して抜ける
 		return 0;
-	else
-		reent = true;
+	reent = true;
 	float a0, a1, a2, alog;	//小島近似の係数	x^0,x,x^2,logの係数
 	float f = val;		//対称のセンサ値
 	float f_c = (parameter::get_ideal_photo(sensor_type));	//中心位置におけるセンサ値

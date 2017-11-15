@@ -12,10 +12,10 @@
 
 //パラメータ
 #define MASS	(20 * 0.001)			//マウスの重さ[kg]
-#define tire_R (7.1 * 0.001)	//タイヤの半径　[m]
+#define tire_R (7.57 * 0.001)	//タイヤの半径　[m]
 #define TREAD_W	(44*0.001)		//トレッド幅[m]
 
-#define LEAST_SQUARE_TIME	2000		//ジャイロの最小二乗法を何ms出かけるか
+#define LEAST_SQUARE_TIME	20		//ジャイロの最小二乗法を何ms出かけるか
 
 #define LOG_COUNT 2000	//LOGをいくつとるか。最低1、0にはしないこと
 #define INT_LOG_COUNT	1	//Int型のLogをいくつとるか　最低1

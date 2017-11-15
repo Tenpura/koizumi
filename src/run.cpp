@@ -6,7 +6,7 @@
  */
 
 #include"run.h"
-
+float mouse::debag_val_enc;
 float mouse::ideal_acceleration, mouse::ideal_angular_acceleration;
 float mouse::ideal_velocity, mouse::ideal_angular_velocity,
 		mouse::ideal_angle_degree, mouse::ideal_distance;
@@ -954,16 +954,16 @@ mouse::~mouse() {
 //XXX 壁キレのパラメータ
 // right left front_right front_left front
 //センサ距離の閾値
-std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> run::WALLEAGE_BODOR =
-		{ -0.002, 0.002, 0, 0, 0 };
-std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> run::WALLEAGE_BODOR_OBLI =
+const std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> run::WALLEAGE_BODOR =
+		{ -0.020, 0.020, 0, 0, 0 };
+const std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> run::WALLEAGE_BODOR_OBLI =
 		{ 0.000, 0.000, 0, 0, 0 };
 
 //距離[m]　区画の境目までどれくらいの距離なのか[m]
-std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> run::DOWN_WALLEAGE_DISTANCE =
-		{ 0.032, 0.032, 0, 0, 0 };
+const std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> run::DOWN_WALLEAGE_DISTANCE =
+		{ 0.037, 0.034, 0, 0, 0 };
 //斜めの場合は区画の境目"から"どのくらいずれているか
-std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> run::DOWN_WALLEAGE_OBLI =
+const std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> run::DOWN_WALLEAGE_OBLI =
 		{ 0.005, 0.005, 0, 0, 0 };
 
 void run::accel_run(const float distance_m, const float end_velocity,
@@ -1165,19 +1165,23 @@ void run::wall_edge_run_for_slalom(const float distance_m,
 	PHOTO_TYPE turn_photo = PHOTO_TYPE::right;	//曲がる方向　こっちの壁キレだけをみる
 	int photo_Int = photo_R;
 	int turn_sign = 1;	//右なら1,左なら-1		右と左でリファレンスとの閾値の関係（不等号が逆なのでつけとく）
-	if (!is_right) {
+/*
+	if (is_right == false) {
 		turn_photo = PHOTO_TYPE::left;
 		photo_Int = photo_L;
 		turn_sign = -1;
 	}
-
+*/
 	//right left front_right, front_left, front
 	std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> wall_edge;//この値を超えたら壁キレ
 	if (is_obli) {	//斜めの閾値
-		wall_edge = WALLEAGE_BODOR_OBLI;
-		down_dis = DOWN_WALLEAGE_OBLI;
+		wall_edge.at(photo_R) = WALLEAGE_BODOR_OBLI.at(photo_R);
+		wall_edge.at(photo_L) = WALLEAGE_BODOR_OBLI.at(photo_L);
+		down_dis.at(photo_R) = DOWN_WALLEAGE_OBLI.at(photo_R);
+		down_dis.at(photo_L) = DOWN_WALLEAGE_OBLI.at(photo_L);
 	} else {
-		wall_edge = WALLEAGE_BODOR;
+		wall_edge.at(photo_R) = WALLEAGE_BODOR.at(photo_R);
+		wall_edge.at(photo_L) = WALLEAGE_BODOR.at(photo_L);
 		down_dis.at(photo_R) = 0.045 * MOUSE_MODE
 				- DOWN_WALLEAGE_DISTANCE.at(photo_R);
 		down_dis.at(photo_L) = 0.045 * MOUSE_MODE
@@ -1254,60 +1258,45 @@ void run::wall_edge_run_for_slalom(const float distance_m,
 			}
 			//今閾値のどっち側にいるか
 			if ((photo::get_displa_from_center(turn_photo)
-					- wall_edge.at(photo_Int)) * turn_sign > 0) {
-				if (in.at(photo_Int) < 60000) {
+					- wall_edge.at(photo_R)) * turn_sign > 0) {
+				if (in.at(photo_Int) < 10000) {
 					in.at(photo_Int)++;}
 				out.at(photo_Int) = 0;
 			} else {
 				in.at(photo_Int) = 0;
-				if (out.at(photo_Int) < 60000) {
+				if (out.at(photo_Int) < 10000) {
 					out.at(photo_Int)++;}
 			}
 
-			/*
-			if (!is_obli) {		//斜めじゃないときは両方見る
-				//反転する
-				if (photo_Int == photo_R) {
-					photo_Int = photo_L;
-					turn_photo = PHOTO_TYPE::left;
-					turn_sign = -1;
-				} else {
-					photo_Int = photo_R;
-					turn_photo = PHOTO_TYPE::right;
-					turn_sign = 1;
+			//直前w_cnt[ms]以上閾値の反対側にいて、このときはじめて閾値を超えたなら
+			if (in.at(photo_L) >= w_cnt) {
+				if ((photo::get_displa_from_center(PHOTO_TYPE::left)
+						- wall_edge[photo_L]) * (-1) < 0) {
+					mouse::set_relative_go(down_dis.at(photo_L));	//区画中央を原点として位置を更新
+					in.at(photo_L) = 0;
+					wall_eage_flag = false;
 				}
-				//直前w_cnt[ms]以上閾値の反対側にいて、このときはじめて閾値を超えたなら
-				if (in.at(photo_Int) >= w_cnt) {
-					if ((photo::get_displa_from_center(turn_photo)
-							- wall_edge[photo_Int]) * turn_sign < 0) {
-						mouse::set_relative_go(down_dis.at(photo_Int));	//区画中央を原点として位置を更新
-						in.at(photo_Int) = 0;
-						wall_eage_flag = false;
-					}
-				} else if (out.at(photo_Int) > w_cnt) {
-					if ((photo::get_displa_from_center(turn_photo)
-							- wall_edge[photo_Int]) * turn_sign > 0) {
-						out.at(photo_Int) = 0;
-					}
+			} else if (out.at(photo_L) > w_cnt) {
+				if ((photo::get_displa_from_center(PHOTO_TYPE::left)
+						- wall_edge[photo_L]) * (-1) > 0) {
+					out.at(photo_Int) = 0;
 				}
-				//今閾値のどっち側にいるか
-				if ((photo::get_displa_from_center(turn_photo)
-						- wall_edge.at(photo_Int)) * turn_sign > 0) {
-					if (in.at(photo_Int) < 60000)
-						in.at(photo_Int)++;out
-					.at(photo_Int) = 0;
-				} else {
-					in.at(photo_Int) = 0;
-					if (out.at(photo_Int) < 60000)
-						out.at(photo_Int)++;}
-
+			}
+			//今閾値のどっち側にいるか
+			if ((photo::get_displa_from_center(PHOTO_TYPE::left)
+					- wall_edge.at(photo_L)) * (-1) > 0) {
+				if (in.at(photo_L) < 10000) {
+					in.at(photo_L)+=1;
 				}
+				out.at(photo_L) = 0;
+			} else {
+				in.at(photo_L) = 0;
+				if (out.at(photo_L) < 10000) {
+					out.at(photo_L)+=1;}
+			}
 
 			}
-			*/
-
 		}
-	}
 
 	my7seg::turn_off();
 	mouse::set_ideal_velocity(end_velocity);	//目標速度をセット
@@ -1642,6 +1631,8 @@ void run::accel_run_by_distance(const float distance_m,
 	float run_square = 0;	//走行距離の２乗
 	float tar_abs_m = ABS(distance_m);
 
+	uint32_t time = mouse::get_count_ms();
+
 	float sign = 1;
 	//バックするなら
 	if (distance_m < 0) {
@@ -1654,6 +1645,7 @@ void run::accel_run_by_distance(const float distance_m,
 
 	//加速
 	mouse::set_ideal_accel(accel_value);
+	time = mouse::get_count_ms();
 	while (0 < sign * (max_velocity - mouse::get_ideal_velocity())) {
 		//現在速度から減速にかかる距離を計算
 		de_accel_distance = (mouse::get_ideal_velocity()
@@ -1675,6 +1667,9 @@ void run::accel_run_by_distance(const float distance_m,
 
 		if (mouse::get_fail_flag())
 			return;
+		while(time == mouse::get_count_ms());
+		time = mouse::get_count_ms();
+
 	}
 
 	//等速
@@ -1684,6 +1679,7 @@ void run::accel_run_by_distance(const float distance_m,
 	de_accel_distance = (mouse::get_ideal_velocity() - end_velocity)
 			* (mouse::get_ideal_velocity() + end_velocity)
 			/ (2 * de_accel_value);
+	time = mouse::get_count_ms();
 	while (1) {
 
 		//絶対座標から移動距離を求める
@@ -1701,10 +1697,14 @@ void run::accel_run_by_distance(const float distance_m,
 
 		if (mouse::get_fail_flag())
 			return;
+		while(time == mouse::get_count_ms());
+		time = mouse::get_count_ms();
+
 	}
 
 	//減速
 	mouse::set_ideal_accel(-de_accel_value);
+	time = mouse::get_count_ms();
 	while (sign * (mouse::get_ideal_velocity() - end_velocity) > 0) {
 		//絶対座標から移動距離を求める
 		run_square = (mouse::get_place().x - init.x)
@@ -1718,6 +1718,8 @@ void run::accel_run_by_distance(const float distance_m,
 
 		if (mouse::get_fail_flag())
 			return;
+		while(time == mouse::get_count_ms());
+		time = mouse::get_count_ms();
 
 	}
 
@@ -1740,6 +1742,10 @@ void run::accel_run_by_distance(const float distance_m,
 			if (mouse::get_fail_flag())
 				return;
 		}
+
+		while(time == mouse::get_count_ms());
+		time = mouse::get_count_ms();
+
 	}
 
 	mouse::set_distance_m(0);
@@ -2573,7 +2579,7 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 		//caseに入ってからここにたどり着くまでに止まることがある。
 		//1区間直進
 		run::wall_edge_run_for_search((0.09 * MOUSE_MODE), SEARCH_VELOCITY, 0,
-				(0.07 * MOUSE_MODE));
+				(0.045 * MOUSE_MODE));
 		//両壁あり直線が連続?回　くらいの補正がかかっていたら姿勢が正されていると判断し角度を修正
 		/*
 		 if (str_score >= 4) {
@@ -2635,12 +2641,9 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 		mouse::turn_90_dir(MUKI_RIGHT);	//向きを90°変える
 		mouse::set_relative_base_rad(big_180, true);	//180°基準角度変更
 		mouse::set_distance_m(0);
-		run::accel_run(-(0.03 * MOUSE_MODE), 0, 0);	//半区間直進
+		run::accel_run(-(0.02 * MOUSE_MODE), 0, 0);	//半区間直進
 
-//		if (check_right | check_left)
-//			run::accel_run_wall_eage((0.065 * MOUSE_MODE), SEARCH_VELOCITY, 0,
-//					(0.03 * MOUSE_MODE));	//半区間直進
-//		else
+		//run::wall_edge_run_for_slalom(0.045*MOUSE_MODE - 0.010, SEARCH_VELOCITY, 0, false, false, false);
 		run::accel_run((0.055 * MOUSE_MODE),	// - mouse::get_relative_go()),
 				SEARCH_VELOCITY, 0);	//半区間直進
 		break;

@@ -28,6 +28,8 @@ typedef union {
 
 class mouse {
 private:
+
+
 	static float ideal_acceleration;			//マウスの加速度[m/s^2]
 	static float ideal_angular_acceleration;			//マウスの加角速度[rad/s^2]
 
@@ -63,6 +65,7 @@ private:
 	mouse();
 
 public:
+	static float debag_val_enc;		//デバック用変数
 
 	static MAP_DATA now_map;
 
@@ -160,10 +163,10 @@ class run {
 private:
 	run();
 public:
-	static std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> WALLEAGE_BODOR;
-	static std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> WALLEAGE_BODOR_OBLI;
-	static std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> DOWN_WALLEAGE_DISTANCE;
-	static std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> DOWN_WALLEAGE_OBLI;
+	static const std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> WALLEAGE_BODOR;
+	static const std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> WALLEAGE_BODOR_OBLI;
+	static const std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> DOWN_WALLEAGE_DISTANCE;
+	static const std::array<float, static_cast<int>(PHOTO_TYPE::element_count)> DOWN_WALLEAGE_OBLI;
 
 public:
 	static void accel_run(float distance_m, float end_velocity,

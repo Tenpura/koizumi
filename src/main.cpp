@@ -105,7 +105,8 @@ int main(void) {
 		case 0:		//•Ç‚Ì’l‚ð“Ç‚Þ‚¾‚¯	Ž–ŒÌ–hŽ~‚Ì‚½‚ß‚Éƒ‚[ƒh0‚ÍŽÀŠQ‚È‚¢“z‚É‚µ‚Æ‚­
 
 			mouse::set_position(20, 25);
-			myprintf("x->%d, y%d\n\r",mouse::get_x_position(),mouse::get_y_position());
+			myprintf("x->%d, y%d\n\r", mouse::get_x_position(),
+					mouse::get_y_position());
 
 			while (1) {
 				myprintf("right %4.3f  ", photo::get_value(PHOTO_TYPE::right));
@@ -182,21 +183,26 @@ int main(void) {
 			//run::wall_eage_run_for_slalom(0.04, 1, 2,true);
 			//run::accel_run_by_distance(0.09+0.005, 0.5, mouse::get_place(), 2);
 
-
-			run::accel_run_by_distance(0.09, 0.25, mouse::get_place(), 0);
-			run::wall_edge_run_for_slalom(0.045 - 0.002, 0.25, 0,false, false, true);
-			run::accel_run_by_distance(0.045 + 0.002, 0, mouse::get_place(), 0);
+//			run::accel_run_by_distance(0.09, 0.5, mouse::get_place(), 1);
+//			run::slalom(begin_45, MUKI_RIGHT, 1);
+//			run::wall_edge_run_for_slalom(0.045*SQRT2/2 - 0.002, 0.5, 0, false, true, true);
+			//run::wall_edge_run_for_search(0.09-0.012,0.25,0,0.01);
+			//run::accel_run_by_distance(0.090*SQRT2 + 0.002, 0, mouse::get_place(), 1);
+			for (int i = 1; i < 8; i++)
+				run::accel_run_by_distance(0.09, SEARCH_VELOCITY,
+						mouse::get_place(), 0);
+			run::accel_run(0.09, 0, 0);
 
 			//run::path_accel_run_wall_edge(0.09*5,0,mouse::get_place(),1,false);
 			/*
-			run::accel_run(0.09, 0.5, 1);
-			run::slalom(begin_45, MUKI_RIGHT, 1);
-			run::accel_run_by_distance(0.09 * SQRT2 * 1.5 - (0.09 * SQRT2 / 4), 0.5,
-					mouse::get_place(), 1);
-			run::wall_eage_run_for_obli(0.09 * SQRT2 / 4 - 0.002, 0.5, 1, true);
-			run::accel_run_by_distance(0.09 * SQRT2-(0.09 * SQRT2 / 4 - 0.002),
-					0, mouse::get_place(), 1);
-			*/
+			 run::accel_run(0.09, 0.5, 1);
+			 run::slalom(begin_45, MUKI_RIGHT, 1);
+			 run::accel_run_by_distance(0.09 * SQRT2 * 1.5 - (0.09 * SQRT2 / 4), 0.5,
+			 mouse::get_place(), 1);
+			 run::wall_eage_run_for_obli(0.09 * SQRT2 / 4 - 0.002, 0.5, 1, true);
+			 run::accel_run_by_distance(0.09 * SQRT2-(0.09 * SQRT2 / 4 - 0.002),
+			 0, mouse::get_place(), 1);
+			 */
 			wait::ms(2000);
 			motor::sleep_motor();
 			my7seg::turn_off();
@@ -261,15 +267,18 @@ int main(void) {
 					if (photo::check_wall(PHOTO_TYPE::front))
 						break;
 				}
+				int straight = 1;	//’¼i‚Ì‘–sƒ‚[ƒh
+				if ((sla_type == small) && (select == 0)) {
+					straight = 0;
+				}
 				my7seg::count_down(3, 500);
 				mouse::run_init(true, true);
-
 				flog[0][0] = -1;
 				run::accel_run(b_dis,
 						parameter::get_slalom_p(sla_type, true, select)->velocity,
-						1);
+						straight);
 				run::slalom(sla_type, right_or_left, select);
-				run::accel_run(a_dis, 0, 1);
+				run::accel_run(a_dis, 0, straight);
 			}
 
 			wait::ms(1000);
@@ -362,8 +371,8 @@ void interrupt_timer() {
 		}
 	} else if (i < flog_number) {
 		flog[0][i] = mouse::get_place().y;
-		flog[1][i] = photo::get_displa_from_center(PHOTO_TYPE::right);
-		flog[2][i] = photo::get_displa_from_center(PHOTO_TYPE::left);
+		flog[1][i] = mouse::get_velocity();	//photo::get_displa_from_center(PHOTO_TYPE::right);
+		flog[2][i] = mouse::get_ideal_velocity();//photo::get_displa_from_center(PHOTO_TYPE::left);
 		i++;
 	} else if (i == flog_number) {
 		flog[0][0] = 0;
