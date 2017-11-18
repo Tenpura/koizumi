@@ -662,6 +662,10 @@ void encoder::interrupt() {
 	TIM2->CNT = 32762;
 	TIM3->CNT = 32762;
 
+	//FIX_ME
+	mouse::debag_val_enc_r += delta_value_r;
+	mouse::debag_val_enc_l += delta_value_l;
+
 	//Y.I.式補正テーブルが完成していたら、Y.I.式補正をする.してなかったら移動平均をとる
 	if (isCorrect[enc_right])
 		//補正した差分を使って速度をとる
@@ -1366,7 +1370,7 @@ photo::~photo() {
 //XXX 各種ゲイン
 //control関連
 const PID gyro_gain = { 15, 750, 0.015 };
-const PID photo_gain = /*{ 100,0,0.003};*/{ 200, 0, 0.002 };
+PID photo_gain = /*{ 100,0,0.003};*/{ 200, 0, 0.003 };
 const PID encoder_gain = { 200, 1000, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
 const PID accel_gain = { 0, 0, 0 };	//{50, 0, 0 };
 
@@ -1454,6 +1458,13 @@ void control::cal_delta() {
 			//センサの推定値で補正
 			//if(photo_delta.P != 0)
 			//	mouse::set_relative_side(photo_delta.P);
+
+			//FIXME
+			if(mouse::get_ideal_velocity() < SEARCH_VELOCITY/2){
+				photo_gain.D = 0.001;
+			}else{
+				photo_gain.D = 0.003;
+			}
 
 			break;
 

@@ -298,12 +298,13 @@ bool mode::search_mode() {
 }
 
 bool mode::shortest_mode() {
-
 	std::vector<std::pair<uint8_t, uint8_t> > goal;
-	goal.emplace_back(std::make_pair(GOAL_x, GOAL_y));
-	goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y));
-	goal.emplace_back(std::make_pair(GOAL_x, GOAL_y + 1));
-	goal.emplace_back(std::make_pair(GOAL_x + 1, GOAL_y + 1));
+	//FIXME
+	for (int x = -1; x <= 1; x++) {
+		for (int y = -1; y <= 1; y++) {
+			goal.emplace_back(std::make_pair(GOAL_x + x, GOAL_y + y));
+		}
+	}
 
 	static node_search search;
 	search.set_weight_algo(T_Wataru_method);		//重みづけの方法を設定
@@ -335,7 +336,7 @@ bool mode::shortest_mode() {
 	}
 	}
 
-	uint8_t straight = select_mode(5 + 1, PHOTO_TYPE::right);
+	uint8_t straight = select_mode(RUN_MODE_NUMBER, PHOTO_TYPE::right);
 	uint8_t curve = select_mode(3, PHOTO_TYPE::right);
 
 	while (straight != 0) {
@@ -348,8 +349,8 @@ bool mode::shortest_mode() {
 	my7seg::count_down(3, 500);
 
 	//壁に着けた状態からスタート想定
-	run::accel_run(0.02 * MOUSE_MODE, parameter::get_run(straight)->max_v,
-			straight);
+	run::accel_run(0.02 * MOUSE_MODE, 0.5, 1);
+	mouse::set_place(0.045, 0.045);		//現在座標の中心位置
 
 	run::path(0, straight, curve);
 	//フェイルセーフがかかってなかったら帰りも

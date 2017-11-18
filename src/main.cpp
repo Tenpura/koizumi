@@ -168,30 +168,32 @@ int main(void) {
 			mouse::run_init(true, true);
 			//mouse::set_place(0,0);
 			flog[0][0] = -1;
-			//run::accel_run(0.09*5, SEARCH_VELOCITY, 0);
-			//run::path_run_wall_eage(0.03, 0.5, 1);
-			//run::accel_run(0.045 + 0.09, SEARCH_VELOCITY, 0);
-			//run::slalom_for_search(small, MUKI_RIGHT, 0);
-//			run::accel_run(0.09*3, 0.5, 2);
-//			run::wall_eage_run_for_slalom(0.04,0.5,2,false);
-//			run::accel_run_wall_eage(0.09 * 8, SEARCH_VELOCITY, 0, 0.09 * 7);
-//			run::accel_run(0.05, 0, 2);
-			//run::accel_run_by_distance(0.09, 1, mouse::get_place(), 2);
-			//run::slalom_for_search(small, MUKI_RIGHT, 0);
-			//control::stop_wall_control();
-			//run::accel_run_by_distance(0.09, 0, mouse::get_place(), 0);
-			//run::wall_eage_run_for_slalom(0.04, 1, 2,true);
-			//run::accel_run_by_distance(0.09+0.005, 0.5, mouse::get_place(), 2);
+
+			run::accel_run(0.09, 0.25, 0);
+			run::wall_edge_run_for_slalom(0.04, 0.25, 0, false, false, true);
+			run::accel_run(0.05, 0, 0);
+
+//			mouse::set_place(0.09, 0.045);
+//			mouse::set_direction(north_east);
+//			run::accel_run(0.09*SQRT2, 0.5, 1);
+//			run::wall_edge_run_for_slalom(0.045 * SQRT2 / 2 - 0.01, 0.5, 1,
+//					true, true, true);
+//			run::accel_run(0.045 * SQRT2 *3 / 2 + 0.01, 0, 1);
 
 //			run::accel_run_by_distance(0.09, 0.5, mouse::get_place(), 1);
 //			run::slalom(begin_45, MUKI_RIGHT, 1);
 //			run::wall_edge_run_for_slalom(0.045*SQRT2/2 - 0.002, 0.5, 0, false, true, true);
 			//run::wall_edge_run_for_search(0.09-0.012,0.25,0,0.01);
 			//run::accel_run_by_distance(0.090*SQRT2 + 0.002, 0, mouse::get_place(), 1);
-			for (int i = 1; i < 8; i++)
-				run::accel_run_by_distance(0.09, SEARCH_VELOCITY,
-						mouse::get_place(), 0);
-			run::accel_run(0.09, 0, 0);
+//			for (int i = 1; i < 5; i++)
+//				run::accel_run_by_distance(0.09, SEARCH_VELOCITY,
+//						mouse::get_place(), 0);
+//			run::accel_run(0.09, 0, 0);
+
+//			wait::ms(1000);
+//			run::spin_turn(180);
+//			mouse::set_distance_m(0);
+//			run::accel_run(0.09*15, 0, 0);
 
 			//run::path_accel_run_wall_edge(0.09*5,0,mouse::get_place(),1,false);
 			/*
@@ -371,8 +373,8 @@ void interrupt_timer() {
 		}
 	} else if (i < flog_number) {
 		flog[0][i] = mouse::get_place().y;
-		flog[1][i] = mouse::get_velocity();	//photo::get_displa_from_center(PHOTO_TYPE::right);
-		flog[2][i] = mouse::get_ideal_velocity();//photo::get_displa_from_center(PHOTO_TYPE::left);
+		flog[1][i] = photo::get_displa_from_center(PHOTO_TYPE::right);
+		flog[2][i] = photo::get_displa_from_center(PHOTO_TYPE::left);
 		i++;
 	} else if (i == flog_number) {
 		flog[0][0] = 0;

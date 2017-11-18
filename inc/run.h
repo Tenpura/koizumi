@@ -65,7 +65,8 @@ private:
 	mouse();
 
 public:
-	static float debag_val_enc;		//デバック用変数
+	static uint32_t debag_val_enc_l;		//デバック用変数
+	static uint32_t debag_val_enc_r;		//デバック用変数
 
 	static MAP_DATA now_map;
 
@@ -171,7 +172,7 @@ public:
 public:
 	static void accel_run(float distance_m, float end_velocity,
 				unsigned char select_mode);
-	static void wall_edge_run_for_search(const float distance_m,
+	static bool wall_edge_run_for_search(const float distance_m,
 			const float end_velocity, const unsigned char select_mode,
 			const float check_distance);		//探索用
 	static void wall_edge_run_for_slalom(float distance_m,

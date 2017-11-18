@@ -15,8 +15,8 @@
 
 #define MAZE_SIZE	32
 
-#define GOAL_x 4
-#define GOAL_y 4
+#define GOAL_x 19
+#define GOAL_y 20
 
 #define PATH_MAX 300
 
