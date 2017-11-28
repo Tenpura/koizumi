@@ -15,10 +15,10 @@
 
 #define MAZE_SIZE	32
 
-#define GOAL_x 19
-#define GOAL_y 20
+#define GOAL_x 20
+#define GOAL_y 21
 
-#define PATH_MAX 300
+#define PATH_MAX 500
 
 static const uint8_t log_count = 100;	//Logの配列個数
 static const uint16_t buf_count = 100;	//バッファ式ログのバッファ数。

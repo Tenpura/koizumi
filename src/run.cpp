@@ -2586,7 +2586,8 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 	if (next_action != go_straight)
 		str_score = 0;
 
-	//my7seg::light(0);
+	my7seg::turn_off();
+
 
 	switch (next_action) {
 	case go_straight: {
@@ -2624,7 +2625,6 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 		break;
 	}
 	case turn_right: {
-		my7seg::light(1);
 		//スラロームか超信地旋回か
 		if (slalom) {
 			run::slalom_for_search(small, MUKI_RIGHT, 0);
@@ -2637,7 +2637,6 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 		break;
 	}
 	case turn_left: {
-		my7seg::light(1);
 		//スラロームか超信地旋回か
 		if (slalom) {
 			run::slalom_for_search(small, MUKI_LEFT, 0);

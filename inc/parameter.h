@@ -33,7 +33,7 @@
 #include"serial.h"
 #include<array>
 
-#define RUN_MODE_NUMBER	5	//走行モードを何種類用意するか
+#define RUN_MODE_NUMBER	6	//走行モードを何種類用意するか
 
 class parameter {
 private:
