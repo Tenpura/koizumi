@@ -15,27 +15,23 @@
 
 #define MAZE_SIZE	32
 
-#define GOAL_x 20
-#define GOAL_y 21
+#define GOAL_x 3
+#define GOAL_y 3
 
 #define PATH_MAX 500
 
-static const uint8_t log_count = 100;	//Logの配列個数
-static const uint16_t buf_count = 100;	//バッファ式ログのバッファ数。
+static const uint8_t log_count = 1;	//Logの配列個数
+static const uint16_t buf_count = 1;	//バッファ式ログのバッファ数。
 
 //同じ機体を使ってる限り変わらないdefineはココに書く
 
 //ハードウェア
 
 #define LOGIK_V 3.3
-
 #define CONTORL_PERIOD 0.001		//制御周期[s]
-
 #define PINION	9	//ピニオンギアの歯数
 #define SPAR	41	//スパーギアの歯数
-
 #define V_BATT_RATIO 2.1	//バッテリー監視用の抵抗による分圧比。バッテリーの何分の1を見てるか
-
 #define MOTOR_ORM	4.5		//モーターの端子間抵抗[Ω]
 #define	M_DRIVER_ORM	1	//モータードライバーの抵抗[Ω]
 #define M_SUM_ORM	5.5		//上2つの合算抵抗[Ω]

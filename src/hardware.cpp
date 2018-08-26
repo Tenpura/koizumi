@@ -1369,10 +1369,12 @@ photo::~photo() {
 
 //XXX 各種ゲイン
 //control関連
+#if defined(_KOIZUMI_FISH)
 const PID gyro_gain = { 15, 750, 0.015 };
-PID photo_gain = /*{ 100,0,0.003};*/{ 200, 0, 0.003 };
+PID photo_gain = /*{ 100,0,0.003};*/{ 200, 1000, 0.005 };
 const PID encoder_gain = { 200, 1000, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
 const PID accel_gain = { 0, 0, 0 };	//{50, 0, 0 };
+#endif
 
 PID control::gyro_delta, control::photo_delta, control::encoder_delta,
 		control::accel_delta;
@@ -1439,10 +1441,11 @@ void control::cal_delta() {
 						PHOTO_TYPE::left);	//中心からのずれてる距離[m]
 			}
 
-			if (photo_right_delta == 0)
-				photo_left_delta *= 2;
-			else if (photo_left_delta == 0)
-				photo_right_delta *= 2;
+			//壁の切れ目ではじかれるので消去
+//			if (photo_right_delta == 0)
+//				photo_left_delta *= 2;
+//			else if (photo_left_delta == 0)
+//				photo_right_delta *= 2;
 
 			//photo_correct = (photo_right_delta + photo_left_delta) / 2;		//センサ値から推定した値をカルマンフィルタの推定値とする
 			photo_delta.P = (photo_right_delta + photo_left_delta) / 2;
@@ -1450,21 +1453,16 @@ void control::cal_delta() {
 			static const float half_section = 0.045 * MOUSE_MODE;	//1区間の半分の長さ
 			//柱近傍はセンサ値を信用しない。 区画の中央部分
 			if (ABS(mouse::get_relative_go() - 0.01 * MOUSE_MODE)
-					< (half_section * 0.5)) {
+					< (half_section * 0.2)) {
 				photo_delta.P = 0;//mouse::get_relative_side();		//センサを信用しない　= 推定値を突っ込んどく
 			}
 			//photo_delta.P = mouse::get_relative_side();
 
 			//センサの推定値で補正
-			//if(photo_delta.P != 0)
+			//if(photo_delta.P != 0){
 			//	mouse::set_relative_side(photo_delta.P);
+			//}
 
-			//FIXME
-			if(mouse::get_ideal_velocity() < SEARCH_VELOCITY/2){
-				photo_gain.D = 0.001;
-			}else{
-				photo_gain.D = 0.003;
-			}
 
 			break;
 
@@ -1496,6 +1494,10 @@ void control::cal_delta() {
 		}
 		photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
 		photo_delta.D = mouse::get_velocity() * mouse::get_relative_rad();//Vθ オドメトリから求めたD項　Sinθ~θと近似
+
+
+
+
 	} else {
 		//壁制御かけないときは初期化し続ける。
 		photo_delta.P = 0;
@@ -1503,11 +1505,16 @@ void control::cal_delta() {
 		photo_delta.D = 0;
 	}
 
+	float wall_delta = cross_delta_gain(sen_photo);
+	//if(wall_delta!=0)
+	//	mouse::set_relative_rad(mouse::get_relative_rad()-0.1*wall_delta,true);
+
+
 	//ジャイロのΔ計算
 	before_p_delta = gyro_delta.P;	//積分用
 	gyro_delta.P = (mouse::get_ideal_angular_velocity()
 			- gyro::get_angular_velocity());
-	gyro_delta.P -= cross_delta_gain(sen_photo);		//壁制御量を目標角速度に追加
+	gyro_delta.P -= wall_delta;		//壁制御量を目標角速度に追加
 	gyro_delta.I += (gyro_delta.P * CONTORL_PERIOD);
 	gyro_delta.D = (gyro_delta.P - before_p_delta) / CONTROL_PERIOD;
 

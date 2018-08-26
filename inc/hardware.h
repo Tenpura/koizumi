@@ -217,7 +217,7 @@ public:
 //光学センサー関連
 class photo {
 private:
-	static const int16_t PHOTO_AVERAGE_TIME = 5;	//XXX ad値のいくつの移動平均をとるか
+	static const int16_t PHOTO_AVERAGE_TIME = 30;	//XXX ad値のいくつの移動平均をとるか
 	static const uint16_t GAP_AVE_COUNT = 10;		//XXX 壁の切れ目対策にいくつの平均をとるか
 
 	static float ave_buf[static_cast<unsigned int>(PHOTO_TYPE::element_count)][GAP_AVE_COUNT];	//センサー値（平均取ったやつ）のバッファ　壁の切れ目チェックとかで使う

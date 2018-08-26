@@ -43,9 +43,17 @@ int main(void) {
 	init_all();
 	mouse::reset_count();
 
+
 	my7seg::blink(8, 200, 5);
 
 	mpu6000::init();
+
+//	myprintf("START!!\n\r");
+//	while(1){
+//		myprintf("omega = %4f",gyro::get_angular_velocity());
+//		myprintf("angle = %4f",gyro::get_angle_radian());
+//		myprintf("accel = %f\n\r",accelmeter::get_accel(axis_z));
+//	}
 
 	my7seg::turn_off();
 
@@ -169,9 +177,9 @@ int main(void) {
 			//mouse::set_place(0,0);
 			flog[0][0] = -1;
 
-			run::accel_run(0.09, 0.25, 0);
-			run::wall_edge_run_for_slalom(0.04, 0.25, 0, false, false, true);
-			run::accel_run(0.05, 0, 0);
+//			run::accel_run(0.09, 0.25, 0);
+//			run::wall_edge_run_for_slalom(0.04, 0.25, 0, false, false, true);
+//			run::accel_run(0.05, 0, 0);
 
 //			mouse::set_place(0.09, 0.045);
 //			mouse::set_direction(north_east);
@@ -192,8 +200,8 @@ int main(void) {
 
 //			wait::ms(1000);
 //			run::spin_turn(180);
-//			mouse::set_distance_m(0);
-//			run::accel_run(0.09*15, 0, 0);
+			mouse::set_distance_m(0);
+			run::accel_run(0.09*3, 0, 0);
 
 			//run::path_accel_run_wall_edge(0.09*5,0,mouse::get_place(),1,false);
 			/*

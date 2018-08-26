@@ -300,8 +300,8 @@ bool mode::search_mode() {
 bool mode::shortest_mode() {
 	std::vector<std::pair<uint8_t, uint8_t> > goal;
 	//FIXME
-	for (int x = -1; x <= 1; x++) {
-		for (int y = -1; y <= 1; y++) {
+	for (int x = 0; x <= 1; x++) {
+		for (int y = 0; y <= 1; y++) {
 			goal.emplace_back(std::make_pair(GOAL_x + x, GOAL_y + y));
 		}
 	}

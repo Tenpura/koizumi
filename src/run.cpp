@@ -285,7 +285,7 @@ void mouse::set_relative_side(float _set_value) {
 
 float mouse::get_relative_rad() {
 	//相対角度を計算　(絶対角度-基準角度)
-	return get_angle_radian() - relative_base_rad;
+	return (get_angle_radian() - relative_base_rad);
 }
 
 void mouse::set_relative_rad(float set_rad, bool update_abs) {
@@ -1058,7 +1058,7 @@ void run::accel_run(const float distance_m, const float end_velocity,
 	}
 
 	mouse::set_distance_m(sign * (distance_m - mouse::get_distance_m()));
-
+	mouse::set_distance_m(0);
 }
 
 bool run::wall_edge_run_for_search(const float distance_m,
@@ -2591,21 +2591,11 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 
 	switch (next_action) {
 	case go_straight: {
-		/*
-		 //壁があれば制御がかかるので姿勢が直されるため、スコア加算
-		 check = photo::check_wall(right);//ifの条件にcheck_wall入れると無限ループにとらわれることがあるので経由させる
-		 if (check) {
-		 str_score++;
-		 }
-		 check = photo::check_wall(left);
-		 if (check) {
-		 str_score++;
-		 }
-		 */
+
 		//caseに入ってからここにたどり着くまでに止まることがある。
 		//1区間直進
 		float distance = 0;
-		float check_l = 0.06 * MOUSE_MODE;
+		float check_l = 0.08 * MOUSE_MODE;
 //		distance = SIGN(mouse::get_relative_go())
 //				* (mouse::get_relative_go() - 0.045 * MOUSE_MODE);		//relative_go からずれた分だけ補正
 		distance += 0.090 * MOUSE_MODE;
@@ -2655,8 +2645,10 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 		float correct = 0;	//補正項
 		bool check_r = photo::check_wall(PHOTO_TYPE::right);
 		bool check_l = photo::check_wall(PHOTO_TYPE::left);
+		bool check_f = false;
 		if (photo::check_wall(PHOTO_TYPE::front)) {
 			correct = photo::get_displa_from_center(PHOTO_TYPE::front);	//区画の境目からどれだけずれているか
+			check_f = true;
 			if (correct > 0)
 				mouse::set_relative_go(correct - 0.045 * MOUSE_MODE);
 			else
@@ -2694,9 +2686,9 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 		mouse::set_distance_m(0);
 		run::accel_run(-(0.025 * MOUSE_MODE), 0, 0);	//半区間直進
 
-		//run::wall_edge_run_for_slalom(0.045*MOUSE_MODE - 0.010, SEARCH_VELOCITY, 0, false, false, false);
-		run::accel_run((0.07 * MOUSE_MODE),	// - mouse::get_relative_go()),
-				SEARCH_VELOCITY, 0);	//半区間直進
+		run::wall_edge_run_for_slalom(0.045*MOUSE_MODE - 0.001, SEARCH_VELOCITY, 0, false, false, false);
+		//run::accel_run((0.06 * MOUSE_MODE),	// - mouse::get_relative_go()),
+		//		SEARCH_VELOCITY, 0);	//半区間直進
 		break;
 	}
 	case stop:
