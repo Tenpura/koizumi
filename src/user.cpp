@@ -194,6 +194,12 @@ bool mode::search_mode() {
 			mouse::turn_90_dir(MUKI_RIGHT);
 			wait::ms(500);
 
+			control::stop_wall_control();
+			run::accel_run((-0.02 * MOUSE_MODE), 0, 0);
+			control::start_wall_control();
+			wait::ms(500);
+
+
 			if (adachi::adachi_method(0, 0, false)) {
 				wait::ms(300);
 				map::output_map_data(&temp);

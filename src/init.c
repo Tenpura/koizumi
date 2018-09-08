@@ -117,21 +117,21 @@ void init_gpio(void) {
 	GPIO_SetBits(GPIOH, GPIO_Pin_0);
 	GPIO_SetBits(GPIOH, GPIO_Pin_1);
 
-	//センサーLEDよう
-	GPIO_StructInit(&GPIO_InitStructure);	//構造体を初期化
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12;//設定するピンを決める
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;		//クロック
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;		//出力に設定
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;		//オープンドレインorプッシュプル
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;	//プルアップかプルダウンか
-	GPIO_Init(GPIOC, &GPIO_InitStructure);	//設定
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;	//設定するピンを決める
-	GPIO_Init(GPIOD, &GPIO_InitStructure);	//設定
-
-	GPIO_ResetBits(GPIOC, GPIO_Pin_10);	//F_LEFT
-	GPIO_ResetBits(GPIOC, GPIO_Pin_11);	//F_RIGHT
-	GPIO_ResetBits(GPIOC, GPIO_Pin_12);	//FRONT
-	GPIO_ResetBits(GPIOD, GPIO_Pin_2);	//SIDE
+//	//センサーLEDよう
+//	GPIO_StructInit(&GPIO_InitStructure);	//構造体を初期化
+//	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12;//設定するピンを決める
+//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;		//クロック
+//	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;		//出力に設定
+//	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;		//オープンドレインorプッシュプル
+//	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;	//プルアップかプルダウンか
+//	GPIO_Init(GPIOC, &GPIO_InitStructure);	//設定
+//	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;	//設定するピンを決める
+//	GPIO_Init(GPIOD, &GPIO_InitStructure);	//設定
+//
+//	GPIO_ResetBits(GPIOC, GPIO_Pin_10);	//F_LEFT
+//	GPIO_ResetBits(GPIOC, GPIO_Pin_11);	//F_RIGHT
+//	GPIO_ResetBits(GPIOC, GPIO_Pin_12);	//FRONT
+//	GPIO_ResetBits(GPIOD, GPIO_Pin_2);	//SIDE
 
 }
 
@@ -140,17 +140,16 @@ void init_adc(void) {
 	GPIO_InitTypeDef GPIO_InitStructure;
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+//	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
 	GPIO_StructInit(&GPIO_InitStructure);
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_4
-			| GPIO_Pin_5;
-	GPIO_Init(GPIOC, &GPIO_InitStructure);
-
+//	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_4
+//			| GPIO_Pin_5;
+//	GPIO_Init(GPIOC, &GPIO_InitStructure);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 

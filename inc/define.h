@@ -10,13 +10,14 @@
 
 #include <stdint.h>
 
-#define CONTROL_PERIOD 0.001		//§ŒäüŠú[sec]
+#define MOUSE_NAME (KOIZUMI_FISH)		//‚Ç‚Ì‹@‘Ì‚É‘‚«‚Ş‚©
 
+#define CONTROL_PERIOD 0.001		//§ŒäüŠú[sec]
 
 #define MAZE_SIZE	32
 
-#define GOAL_x 3
-#define GOAL_y 3
+#define GOAL_x 9
+#define GOAL_y 9
 
 #define PATH_MAX 500
 

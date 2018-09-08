@@ -25,7 +25,7 @@
 
 
 
-#define SEARCH_VELOCITY	0.25	//’Tõ‚Ì‘¬“x[m/s]
+#define SEARCH_VELOCITY	0.3	//’Tõ‚Ì‘¬“x[m/s]
 
 
 

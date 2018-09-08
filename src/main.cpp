@@ -41,6 +41,7 @@ int main(void) {
 
 	//初期設定
 	init_all();
+	photo::init();
 	mouse::reset_count();
 
 
@@ -61,7 +62,17 @@ int main(void) {
 	map::reset_maze();
 	map::output_map_data(&mouse::now_map);
 
-	encoder::yi_correct();		//YI式補正
+	//スイッチ押しながら起動したら補正しない　＝　デバック用
+	if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) != 0){
+		encoder::yi_correct();		//YI式補正
+	}else{
+		my7seg::light(0);
+	}
+	//チャタリング対策
+	while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == 0)
+		;
+	wait::ms(100);
+
 
 	myprintf("Compile DATE: %s\n\r", __DATE__);
 	myprintf("Compile TIME: %s\n\r", __TIME__);
@@ -177,42 +188,10 @@ int main(void) {
 			//mouse::set_place(0,0);
 			flog[0][0] = -1;
 
-//			run::accel_run(0.09, 0.25, 0);
-//			run::wall_edge_run_for_slalom(0.04, 0.25, 0, false, false, true);
-//			run::accel_run(0.05, 0, 0);
+			run::accel_run(0.09,SEARCH_VELOCITY,0);
+//			run::wall_edge_run_for_search(0.09, SEARCH_VELOCITY, 0,0.09);
+			run::accel_run(0.09,0,0);
 
-//			mouse::set_place(0.09, 0.045);
-//			mouse::set_direction(north_east);
-//			run::accel_run(0.09*SQRT2, 0.5, 1);
-//			run::wall_edge_run_for_slalom(0.045 * SQRT2 / 2 - 0.01, 0.5, 1,
-//					true, true, true);
-//			run::accel_run(0.045 * SQRT2 *3 / 2 + 0.01, 0, 1);
-
-//			run::accel_run_by_distance(0.09, 0.5, mouse::get_place(), 1);
-//			run::slalom(begin_45, MUKI_RIGHT, 1);
-//			run::wall_edge_run_for_slalom(0.045*SQRT2/2 - 0.002, 0.5, 0, false, true, true);
-			//run::wall_edge_run_for_search(0.09-0.012,0.25,0,0.01);
-			//run::accel_run_by_distance(0.090*SQRT2 + 0.002, 0, mouse::get_place(), 1);
-//			for (int i = 1; i < 5; i++)
-//				run::accel_run_by_distance(0.09, SEARCH_VELOCITY,
-//						mouse::get_place(), 0);
-//			run::accel_run(0.09, 0, 0);
-
-//			wait::ms(1000);
-//			run::spin_turn(180);
-			mouse::set_distance_m(0);
-			run::accel_run(0.09*3, 0, 0);
-
-			//run::path_accel_run_wall_edge(0.09*5,0,mouse::get_place(),1,false);
-			/*
-			 run::accel_run(0.09, 0.5, 1);
-			 run::slalom(begin_45, MUKI_RIGHT, 1);
-			 run::accel_run_by_distance(0.09 * SQRT2 * 1.5 - (0.09 * SQRT2 / 4), 0.5,
-			 mouse::get_place(), 1);
-			 run::wall_eage_run_for_obli(0.09 * SQRT2 / 4 - 0.002, 0.5, 1, true);
-			 run::accel_run_by_distance(0.09 * SQRT2-(0.09 * SQRT2 / 4 - 0.002),
-			 0, mouse::get_place(), 1);
-			 */
 			wait::ms(2000);
 			motor::sleep_motor();
 			my7seg::turn_off();

@@ -215,6 +215,39 @@ public:
 };
 
 //光学センサー関連
+#if (MOUSE_NAME == KOIZUMI_FISH)
+	#define LED_RCC_AHB1Periph (RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOD)	//LEDとして使っているGPIO　|を使って複数指定
+	#define LED_FRONT_GPIO (GPIOC)
+	#define LED_FRONT_PIN (GPIO_Pin_12)
+	#define LED_F_LEFT_GPIO (GPIOC)
+	#define LED_F_LEFT_PIN (GPIO_Pin_10)
+	#define LED_F_RIGHT_GPIO (GPIOC)
+	#define LED_F_RIGHT_PIN (GPIO_Pin_11)
+	#define LED_LEFT_GPIO (GPIOD)
+	#define LED_LEFT_PIN (GPIO_Pin_2)
+	#define LED_RIGHT_GPIO (GPIOD)
+	#define LED_RIGHT_PIN (GPIO_Pin_2)
+
+	#define SEN_RCC_AHB1Periph (RCC_AHB1Periph_GPIOC)	//センサーとして使っているGPIO　|を使って複数指定
+	#define SEN_ADC (ADC1)			//センサーとして使っているADC　|を使って複数指定
+	#define SEN_RCC_APB2Periph_ADC (RCC_APB2Periph_ADC1)	//センサーとして使っているADC　|を使って複数指定
+	#define SEN_FRONT_GPIO (GPIOC)
+	#define SEN_FRONT_PIN (GPIO_Pin_12)
+	#define SEN_FRONT_ADC (ADC1)
+	#define SEN_F_LEFT_GPIO (GPIOC)
+	#define SEN_F_LEFT_PIN (GPIO_Pin_10)
+	#define SEN_F_LEFT_ADC (ADC1)
+	#define SEN_F_RIGHT_GPIO (GPIOC)
+	#define SEN_F_RIGHT_PIN (GPIO_Pin_11)
+	#define SEN_F_RIGHT_ADC (ADC1)
+	#define SEN_SIDE_GPIO (GPIOD)
+	#define SEN_SIDE_PIN (GPIO_Pin_2)
+	#define SEN_LEFT_ADC (ADC1)
+	#define SEN_RIGHT_ADC (ADC1)
+#elif (MOUSE_NAME == KOIZUMI_OVER)
+
+#endif
+
 class photo {
 private:
 	static const int16_t PHOTO_AVERAGE_TIME = 30;	//XXX ad値のいくつの移動平均をとるか
@@ -224,11 +257,14 @@ private:
 	//static float diff_buf[element_count][GAP_AVE_COUNT];	//今のセンサー値とave_bufの差　壁の切れ目チェックとかで使う
 	//static uint8_t gap_buf[element_count][GAP_AVE_COUNT];		//count_wall_gapで数え上げた値を保存しておく
 
-	static signed int right_ad, left_ad, front_right_ad, front_left_ad,
+	static float right_ad, left_ad, front_right_ad, front_left_ad,
 			front_ad;
-	static signed int right_ref, left_ref, front_right_ref, front_left_ref,
+	static float right_ref, left_ref, front_right_ref, front_left_ref,
 			front_ref;
 	static bool light_flag;		//赤外線LEDを光らせてセンサー値を読むかどうかのフラグ
+
+	static void led_init();		//センサLEDの初期設定　GPIO
+	static void sen_init();		//受光側の初期設定	GPIO,ADC
 
 	static void switch_led(PHOTO_TYPE sensor_type, bool is_light);//LEDをつけたり消したり
 
@@ -245,8 +281,10 @@ public:
 	//壁キレを検知した距離　区画中心を0としてそこからどれだけ進んでいるか
 	static const std::array<float, static_cast<unsigned int>(PHOTO_TYPE::element_count)> edge_distance;
 
+	static void init();		//周辺機能の初期化
+
 	static uint16_t get_ad(PHOTO_TYPE sensor_type);			//??_adの値を取得
-	static void set_ad(PHOTO_TYPE _sensor_type, int16_t set_value);	//??_adに値を代入
+	static void set_ad(PHOTO_TYPE _sensor_type, float set_value);	//??_adに値を代入
 
 	static void light(PHOTO_TYPE sensor_type);
 	static void turn_off(PHOTO_TYPE sensor_type);

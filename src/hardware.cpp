@@ -862,9 +862,9 @@ float photo::ave_buf[static_cast<unsigned int>(PHOTO_TYPE::element_count)][GAP_A
 		{ 0.0f };
 //float photo::diff_buf[PHOTO_TYPE::element_count][GAP_AVE_COUNT] = { 0 };
 //uint8_t photo::gap_buf[PHOTO_TYPE::element_count][GAP_AVE_COUNT] = { 0 };
-signed int photo::right_ad, photo::left_ad, photo::front_right_ad,
+float photo::right_ad, photo::left_ad, photo::front_right_ad,
 		photo::front_left_ad, photo::front_ad;
-signed int photo::right_ref, photo::left_ref, photo::front_right_ref,
+float photo::right_ref, photo::left_ref, photo::front_right_ref,
 		photo::front_left_ref, photo::front_ref;
 bool photo::light_flag = false;
 //right left front_right front_left front
@@ -874,6 +874,98 @@ const std::array<float, static_cast<unsigned int>(PHOTO_TYPE::element_count)> ph
 		{ -0.02, 0.02, 0, 0, 0 };	//この値を越えたら壁キレ
 const std::array<float, static_cast<unsigned int>(PHOTO_TYPE::element_count)> photo::edge_distance =
 		{ 0.010, 0.007, 0, 0, 0 };	//壁キレを検知した距離　区画中心を0としてそこからどれだけ進んでいるか
+
+void photo::led_init(){
+	GPIO_InitTypeDef GPIO_InitStructure;	//初期設定のための構造体を宣言
+
+	RCC_AHB1PeriphClockCmd(LED_RCC_AHB1Periph, ENABLE);	//クロック供給
+
+	GPIO_StructInit(&GPIO_InitStructure);	//構造体を初期化
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;		//クロック
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;		//出力に設定
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;		//オープンドレインorプッシュプル
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;	//プルアップかプルダウンか
+
+	//front
+	GPIO_InitStructure.GPIO_Pin = LED_FRONT_PIN;
+	GPIO_Init(LED_FRONT_GPIO, &GPIO_InitStructure);	//設定
+	//f_left
+	GPIO_InitStructure.GPIO_Pin = LED_F_LEFT_PIN;
+	GPIO_Init(LED_F_LEFT_GPIO, &GPIO_InitStructure);	//設定
+	//f_right
+	GPIO_InitStructure.GPIO_Pin = LED_F_RIGHT_PIN;
+	GPIO_Init(LED_F_RIGHT_GPIO, &GPIO_InitStructure);	//設定
+	//side
+	GPIO_InitStructure.GPIO_Pin = LED_LEFT_PIN;	//設定するピンを決める
+	GPIO_Init(LED_LEFT_GPIO, &GPIO_InitStructure);	//設定
+	//side
+	GPIO_InitStructure.GPIO_Pin = LED_RIGHT_PIN;	//設定するピンを決める
+	GPIO_Init(LED_RIGHT_GPIO, &GPIO_InitStructure);	//設定
+
+	GPIO_ResetBits(LED_F_LEFT_GPIO, LED_F_LEFT_PIN);	//F_LEFT
+	GPIO_ResetBits(LED_F_RIGHT_GPIO, LED_F_RIGHT_PIN);	//F_RIGHT
+	GPIO_ResetBits(LED_FRONT_GPIO, LED_FRONT_PIN);	//FRONT
+	GPIO_ResetBits(LED_LEFT_GPIO, LED_LEFT_PIN);	//SIDE
+	GPIO_ResetBits(LED_RIGHT_GPIO, LED_RIGHT_PIN);	//SIDE
+
+}
+
+void photo::sen_init(){
+	//GPIO側でアナログモードに設定
+	GPIO_InitTypeDef GPIO_InitStructure;
+	RCC_AHB1PeriphClockCmd(SEN_RCC_AHB1Periph, ENABLE);
+	GPIO_StructInit(&GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	//front
+	GPIO_InitStructure.GPIO_Pin = SEN_FRONT_PIN;
+	GPIO_Init(SEN_FRONT_GPIO, &GPIO_InitStructure);	//設定
+	//f_left
+	GPIO_InitStructure.GPIO_Pin = SEN_F_LEFT_PIN;
+	GPIO_Init(SEN_F_LEFT_GPIO, &GPIO_InitStructure);	//設定
+	//f_right
+	GPIO_InitStructure.GPIO_Pin = SEN_F_RIGHT_PIN;
+	GPIO_Init(SEN_F_RIGHT_GPIO, &GPIO_InitStructure);	//設定
+	//side
+	GPIO_InitStructure.GPIO_Pin = SEN_SIDE_PIN;	//設定するピンを決める
+	GPIO_Init(SEN_SIDE_GPIO, &GPIO_InitStructure);	//設定
+
+
+//AD変換の設定
+	ADC_InitTypeDef ADC_InitStructure;		//初期設定用の構造体定義
+	ADC_CommonInitTypeDef ADC_CommonInitStructure;
+
+	ADC_Cmd(SEN_ADC, DISABLE);		//ADC1をDisableに
+	RCC_APB2PeriphClockCmd(SEN_RCC_APB2Periph_ADC, ENABLE);		//クロック供給
+	ADC_DeInit();		//ADCの周辺レジスタをデフォルトの値にリセットする
+
+	//AD変換の基本設定
+	ADC_CommonInitStructure.ADC_Mode = ADC_Mode_Independent;
+	ADC_CommonInitStructure.ADC_Prescaler = ADC_Prescaler_Div4;	//PCLK/4 = 16/4 MHz?
+	ADC_CommonInitStructure.ADC_DMAAccessMode = ADC_DMAAccessMode_Disabled;	//DMAは使用しない
+	ADC_CommonInitStructure.ADC_TwoSamplingDelay =
+	ADC_TwoSamplingDelay_20Cycles;//連続スキャンとかで使用？　ADC_delay_between_2_sampling_phases
+	ADC_CommonInit(&ADC_CommonInitStructure);
+
+	//ADC1の設定
+	ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;		//12bitのAD変換
+	ADC_InitStructure.ADC_ScanConvMode = DISABLE;		//シングルモードで動作
+	ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;		//シングルモードで動作
+	ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;	//AD変換の開始に外部トリガは使用しない
+	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;	//右詰め左詰め
+	ADC_InitStructure.ADC_NbrOfConversion = 9;		//AD変換の入力は9チャンネル
+
+	ADC_Init(SEN_FRONT_ADC, &ADC_InitStructure);		//front
+	ADC_Init(SEN_F_LEFT_ADC, &ADC_InitStructure);		//前センサの左
+	ADC_Init(SEN_F_RIGHT_ADC, &ADC_InitStructure);		//前センサの右
+	ADC_Init(SEN_RIGHT_ADC, &ADC_InitStructure);		//右
+	ADC_Init(SEN_LEFT_ADC, &ADC_InitStructure);		//左
+
+	ADC_Cmd(SEN_ADC, ENABLE);		//ADC1をEnableに
+	ADC_DMACmd(SEN_ADC, DISABLE);	//DMAは使わない
+}
+
 
 void photo::switch_led(PHOTO_TYPE sensor_type, bool is_light) {
 	GPIO_TypeDef* GPIOx;
@@ -915,6 +1007,11 @@ void photo::switch_led(PHOTO_TYPE sensor_type, bool is_light) {
 		GPIO_ResetBits(GPIOx, GPIO_Pin);
 
 }
+
+void photo::init(){
+	led_init();
+}
+
 
 uint16_t photo::get_ad(PHOTO_TYPE sensor_type) {
 	uint8_t ADC_CH;
@@ -981,13 +1078,13 @@ void photo::turn_off_all() {
 
 }
 
-void photo::set_ad(PHOTO_TYPE _sensor_type, int16_t set_value) {
+void photo::set_ad(PHOTO_TYPE _sensor_type, float set_value) {
 
-	static int16_t buf[static_cast<unsigned int>(PHOTO_TYPE::element_count)][PHOTO_AVERAGE_TIME] =
+	static float buf[static_cast<unsigned int>(PHOTO_TYPE::element_count)][PHOTO_AVERAGE_TIME] =
 			{ 0 };
 
 	uint8_t sen_type = static_cast<unsigned int>(_sensor_type);
-	int16_t sum = 0;
+	float sum = 0;
 	float ave_sum = 0;
 
 	for (uint8_t i = 0; (i + 1) < MAX(PHOTO_AVERAGE_TIME, GAP_AVE_COUNT); i++) {
@@ -1047,14 +1144,11 @@ void photo::set_ad(PHOTO_TYPE _sensor_type, int16_t set_value) {
 }
 
 void photo::interrupt(bool is_light) {
-	const static int wait_number = 800;	//1000でだいたい100us弱	1500で120usくらい
+	const static int wait_number = 1000;	//1000でだいたい100us弱	1500で120usくらい
 	photo::turn_off_all();
 
 	photo::set_ref(PHOTO_TYPE::right, get_ad(PHOTO_TYPE::right));//消えてる時をrefにする
 	photo::set_ref(PHOTO_TYPE::left, get_ad(PHOTO_TYPE::left));	//消えてる時をrefにする
-	photo::set_ref(PHOTO_TYPE::front_right, get_ad(PHOTO_TYPE::front_right));//消えてる時をrefにする
-	photo::set_ref(PHOTO_TYPE::front_left, get_ad(PHOTO_TYPE::front_left));	//消えてる時をrefにする
-	photo::set_ref(PHOTO_TYPE::front, get_ad(PHOTO_TYPE::front));//消えてる時をrefにする
 
 	//左右の発光は回路的に同時におこるので、同時に左右の値をとる
 	if (is_light) {
@@ -1064,38 +1158,42 @@ void photo::interrupt(bool is_light) {
 		}
 	}
 	photo::set_ad(PHOTO_TYPE::right,
-			get_ad(PHOTO_TYPE::right) - get_ref(PHOTO_TYPE::right));	//差分を代入
+			static_cast<float>(get_ad(PHOTO_TYPE::right) - get_ref(PHOTO_TYPE::right)));	//差分を代入
 	photo::set_ad(PHOTO_TYPE::left,
-			get_ad(PHOTO_TYPE::left) - get_ref(PHOTO_TYPE::left));		//差分を代入
+			static_cast<float>(get_ad(PHOTO_TYPE::left) - get_ref(PHOTO_TYPE::left)));		//差分を代入
 	photo::turn_off(PHOTO_TYPE::right);
 	photo::turn_off(PHOTO_TYPE::left);
+
 	/*
-	 if (is_light) {
-	 photo::light(PHOTO_TYPE::front_right);
-	 for (volatile int i = 0; i < wait_number; i++) {
-	 }
-	 }
-	 photo::set_ad(PHOTO_TYPE::front_right,
-	 get_ad(PHOTO_TYPE::front_right) - get_ref(PHOTO_TYPE::front_right));//差分を代入
-	 photo::turn_off(PHOTO_TYPE::front_right);
+	photo::set_ref(PHOTO_TYPE::front_right, get_ad(PHOTO_TYPE::front_right));//消えてる時をrefにする
+	photo::set_ref(PHOTO_TYPE::front_left, get_ad(PHOTO_TYPE::front_left));	//消えてる時をrefにする
+	if (is_light) {
+		photo::light(PHOTO_TYPE::front_right);
+		for (volatile int i = 0; i < wait_number; i++) {
+		}
+	}
+	photo::set_ad(PHOTO_TYPE::front_right,
+			get_ad(PHOTO_TYPE::front_right) - get_ref(PHOTO_TYPE::front_right));//差分を代入
+	photo::turn_off(PHOTO_TYPE::front_right);
 
-	 if (is_light) {
-	 photo::light(PHOTO_TYPE::front_left);
-	 for (volatile int i = 0; i < wait_number; i++) {
-	 }
-	 }
-	 photo::set_ad(PHOTO_TYPE::front_left,
-	 get_ad(PHOTO_TYPE::front_left) - get_ref(PHOTO_TYPE::front_left));//差分を代入
-	 photo::turn_off(PHOTO_TYPE::front_left);
-	 */
+	if (is_light) {
+		photo::light(PHOTO_TYPE::front_left);
+		for (volatile int i = 0; i < wait_number; i++) {
+		}
+	}
+	photo::set_ad(PHOTO_TYPE::front_left,
+			get_ad(PHOTO_TYPE::front_left) - get_ref(PHOTO_TYPE::front_left));//差分を代入
+	photo::turn_off(PHOTO_TYPE::front_left);
+	*/
 
+	photo::set_ref(PHOTO_TYPE::front, get_ad(PHOTO_TYPE::front));//消えてる時をrefにする
 	if (is_light) {
 		photo::light(PHOTO_TYPE::front);
 		for (volatile int i = 0; i < wait_number; i++) {
 		}
 	}
 	photo::set_ad(PHOTO_TYPE::front,
-			get_ad(PHOTO_TYPE::front) - get_ref(PHOTO_TYPE::front));	//差分を代入
+			static_cast<float>(get_ad(PHOTO_TYPE::front) - get_ref(PHOTO_TYPE::front)));	//差分を代入
 	photo::turn_off(PHOTO_TYPE::front);
 
 	photo::turn_off_all();
@@ -1199,7 +1297,7 @@ float photo::get_displa_from_center(PHOTO_TYPE type) {
 float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
 	static bool reent = false;		//リエントラント性担保
 
-	if(reent)		//実行中なので、適当な値返して抜ける
+	if (reent)		//実行中なので、適当な値返して抜ける
 		return 0;
 	reent = true;
 	float a0, a1, a2, alog;	//小島近似の係数	x^0,x,x^2,logの係数
@@ -1209,8 +1307,8 @@ float photo::get_displa_from_center(PHOTO_TYPE sensor_type, float val) {
 
 	if (f <= 0) {
 		f = 0.1;
-	}else if(f > 5000){
-		f=5000;
+	} else if (f > 5000) {
+		f = 5000;
 	}
 
 	switch (sensor_type) {
@@ -1277,8 +1375,26 @@ bool photo::check_wall(unsigned char muki) {
 
 	case MUKI_UP:
 		//TODO 暇があったら、前壁見るのは斜めセンサいらない？？
-		if (photo::get_value(PHOTO_TYPE::front)
-				>= parameter::get_min_wall_photo(PHOTO_TYPE::front)) {
+		//FIXME 3msくらいの多数決
+		uint32_t counter = mouse::get_count_ms();
+		int loop = 0;
+		int check = 0;
+		while(1){
+			loop++;
+			counter = mouse::get_count_ms();
+			while(mouse::get_count_ms() == counter){
+			}
+			if (photo::get_value(PHOTO_TYPE::front)
+							>= parameter::get_min_wall_photo(PHOTO_TYPE::front)){
+				check++;
+			}else{
+				check--;
+			}
+			if(loop>=3) break;
+		}
+		if(check >= 0){
+//		if (photo::get_value(PHOTO_TYPE::front)
+//				>= parameter::get_min_wall_photo(PHOTO_TYPE::front)) {
 			//if ((front_right_ad >= parameter::get_min_wall_photo(front_right))
 			//		|| (front_left_ad >= parameter::get_min_wall_photo(front_left))) {
 			return true;
@@ -1371,7 +1487,7 @@ photo::~photo() {
 //control関連
 #if defined(_KOIZUMI_FISH)
 const PID gyro_gain = { 15, 750, 0.015 };
-PID photo_gain = /*{ 100,0,0.003};*/{ 200, 1000, 0.005 };
+PID photo_gain = /*{ 100,0,0.003};*/{ 200, 0, 0.005 };
 const PID encoder_gain = { 200, 1000, 0, };	//カルマンフィルタでエンコーダーと加速度センサから求めた速度に対するフィルタ
 const PID accel_gain = { 0, 0, 0 };	//{50, 0, 0 };
 #endif
@@ -1463,7 +1579,6 @@ void control::cal_delta() {
 			//	mouse::set_relative_side(photo_delta.P);
 			//}
 
-
 			break;
 
 			//斜めなら
@@ -1473,12 +1588,13 @@ void control::cal_delta() {
 		case south_west:
 
 			photo_delta.P = 0;
-			photo_delta.I = 0;//要検討
+			photo_delta.I = 0;			//要検討
 
 			//ぶつかりそうな時だけ避けるように
-			if( photo::get_displa_from_center(PHOTO_TYPE::right) >= 0)
-				photo_delta.P = photo::get_displa_from_center(PHOTO_TYPE::right);
-			if( photo::get_displa_from_center(PHOTO_TYPE::left) <= 0)
+			if (photo::get_displa_from_center(PHOTO_TYPE::right) >= 0)
+				photo_delta.P = photo::get_displa_from_center(
+						PHOTO_TYPE::right);
+			if (photo::get_displa_from_center(PHOTO_TYPE::left) <= 0)
 				photo_delta.P = photo::get_displa_from_center(PHOTO_TYPE::left);
 
 			photo_delta.P *= 0.8; //斜めの制御パラメータ
@@ -1493,10 +1609,7 @@ void control::cal_delta() {
 			photo_delta.P = 0;
 		}
 		photo_delta.I += (photo_delta.P * CONTORL_PERIOD);
-		photo_delta.D = mouse::get_velocity() * mouse::get_relative_rad();//Vθ オドメトリから求めたD項　Sinθ~θと近似
-
-
-
+		photo_delta.D = mouse::get_velocity() * mouse::get_relative_rad(); //Vθ オドメトリから求めたD項　Sinθ~θと近似
 
 	} else {
 		//壁制御かけないときは初期化し続ける。
@@ -1508,7 +1621,6 @@ void control::cal_delta() {
 	float wall_delta = cross_delta_gain(sen_photo);
 	//if(wall_delta!=0)
 	//	mouse::set_relative_rad(mouse::get_relative_rad()-0.1*wall_delta,true);
-
 
 	//ジャイロのΔ計算
 	before_p_delta = gyro_delta.P;	//積分用

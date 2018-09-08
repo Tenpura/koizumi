@@ -517,9 +517,6 @@ void mouse::run_init(bool posture_ctrl, bool wall_ctrl) {
 
 	mouse::set_spin_flag(false);
 
-	//フェイルセーフを初期化
-	mouse::set_fail_flag(false);
-
 	accelmeter::set_accel_ref(AXIS_t::axis_y);
 	gyro::set_gyro_ref();
 	mouse::reset_angle();
@@ -532,6 +529,11 @@ void mouse::run_init(bool posture_ctrl, bool wall_ctrl) {
 			half_section * (1 + 2 * mouse::get_y_position()));		//現在座標の中心位置
 	wait::ms(1);
 	control::reset_delta();
+	wait::ms(1);
+
+	//フェイルセーフを初期化
+	mouse::set_fail_flag(false);
+
 
 	if (posture_ctrl)
 		control::start_control();
@@ -1240,7 +1242,7 @@ void run::wall_edge_run_for_slalom(const float distance_m,
 
 		//目標距離走ったら抜ける
 		if (distance_m <= run_dis) {
-			if (!wall_eage_flag || !to_wall_edge)//to_wall_edge（壁キレ見るまで走る）場合は壁キレしてないと距離足りてても抜けない
+			if ((!wall_eage_flag) || (!to_wall_edge))//to_wall_edge（壁キレ見るまで走る）場合は壁キレしてないと距離足りてても抜けない
 				break;
 		}
 
@@ -1944,22 +1946,27 @@ void run::fit_run(const unsigned char select_mode) {
 		diff_ang.P = (-diff_front + diff_front_left);
 		diff_ang.I += diff_ang.P * 0.001;			//各ループ1msなので
 
+
+		if(diff_vel.P * gain_vel.P + diff_vel.I * gain_vel.I > SEARCH_VELOCITY)
+			mouse::set_ideal_velocity(SEARCH_VELOCITY);
+		else if(diff_vel.P * gain_vel.P + diff_vel.I * gain_vel.I < -SEARCH_VELOCITY)
+			mouse::set_ideal_velocity(-SEARCH_VELOCITY);
 		mouse::set_ideal_velocity(
 				diff_vel.P * gain_vel.P + diff_vel.I * gain_vel.I);
 
 		//		mouse::set_ideal_angular_velocity(diff_ang.P * gain_ang.P + diff_ang.I * gain_ang.I );
 
-		if (ABS(diff_vel.P) < 0.0025)
-			break;
-
-		if (loop_count > 1000)
-			break;
+//		if (ABS(diff_vel.P) < 0.0025)
+//			break;
+//
+//		if (loop_count > 1000)
+//			break;
 
 		if (mouse::get_fail_flag())
 			return;
 
-		if (mouse::get_distance_m() > 0.02)
-			break;
+//		if (mouse::get_distance_m() > 0.02)
+//			break;
 
 	}
 	mouse::set_ideal_accel(0);
@@ -2643,16 +2650,18 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 
 		//前壁があれば前壁制御
 		float correct = 0;	//補正項
-		bool check_r = photo::check_wall(PHOTO_TYPE::right);
-		bool check_l = photo::check_wall(PHOTO_TYPE::left);
-		bool check_f = false;
+		//bool check_f = map::get_wall(mouse::get_x_position(),mouse::get_y_position(),mouse::get_compas());
+
 		if (photo::check_wall(PHOTO_TYPE::front)) {
 			correct = photo::get_displa_from_center(PHOTO_TYPE::front);	//区画の境目からどれだけずれているか
-			check_f = true;
-			if (correct > 0)
+			if(ABS(correct) > 0.09 * MOUSE_MODE ){
+				correct = 0;
+				//1区間以上ずれるのはおかしいので、センサ値のミスだと考え何もしない
+			}else if (correct > 0){
 				mouse::set_relative_go(correct - 0.045 * MOUSE_MODE);
-			else
+			}else{
 				mouse::set_relative_go(correct + 0.045 * MOUSE_MODE);
+			}
 		}
 		if (0.045 * MOUSE_MODE - correct < 0.016)//減速しきる上限を切る　だいたい1/64 2ax=v^2 a=2,v=0.25
 			correct = 0.045 * MOUSE_MODE - 0.016;
@@ -2666,29 +2675,12 @@ void adachi::run_next_action(const ACTION_TYPE next_action, bool slalom) {
 		mouse::turn_90_dir(MUKI_RIGHT);	//向きを90°変える
 		mouse::turn_90_dir(MUKI_RIGHT);	//向きを90°変える
 		mouse::set_relative_base_rad(big_180, true);	//180°基準角度変更
-
-//		if (check_r) {
-//			run::spin_turn(90);
-//			mouse::turn_90_dir(MUKI_RIGHT);	//向きを90°変える
-//			mouse::set_distance_m(0);
-//			run::accel_run(photo::get_displa_from_center(PHOTO_TYPE::front)- 0.045 * MOUSE_MODE, 0, 0);
-//			run::spin_turn(-90);
-//			mouse::turn_90_dir(MUKI_LEFT);	//向きを90°変える
-//		} else if (check_l) {
-//			run::spin_turn(-90);
-//			mouse::turn_90_dir(MUKI_LEFT);	//向きを90°変える
-//			mouse::set_distance_m(0);
-//			run::accel_run(photo::get_displa_from_center(PHOTO_TYPE::front)- 0.045 * MOUSE_MODE, 0, 0);
-//			run::spin_turn(90);
-//			mouse::turn_90_dir(MUKI_RIGHT);	//向きを90°変える
-//		}
-
 		mouse::set_distance_m(0);
-		run::accel_run(-(0.025 * MOUSE_MODE), 0, 0);	//半区間直進
 
-		run::wall_edge_run_for_slalom(0.045*MOUSE_MODE - 0.001, SEARCH_VELOCITY, 0, false, false, false);
-		//run::accel_run((0.06 * MOUSE_MODE),	// - mouse::get_relative_go()),
-		//		SEARCH_VELOCITY, 0);	//半区間直進
+		run::accel_run(-(0.025 * MOUSE_MODE), 0, 0);
+		run::wall_edge_run_for_slalom(0.04*MOUSE_MODE, SEARCH_VELOCITY, 0, false, false, false);	//0.45にすると条件を抜けない
+		run::accel_run((0.005 * MOUSE_MODE), SEARCH_VELOCITY, 0);
+
 		break;
 	}
 	case stop:

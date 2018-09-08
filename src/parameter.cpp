@@ -8,10 +8,9 @@
 #include"parameter.h"
 //ideal_photo[x][y]	xは0がハーフ,1がクラシック	yが光学センサの向きに対応。
 //right left front_right front_left,front
-#if defined(_KOIZUMI_FISH)
-const float parameter::ideal_photo[2][5] = { { 11.5, -6.5, 0, 0, -7/*中心からどれだけオフセットがあるか[mm]*/ },
+const float parameter::ideal_photo[2][5] = { { 13, 0, 0, 0, -7/*中心からどれだけオフセットがあるか[mm]*/ },
 		{ 3250, 3200, 10815, 10100, 0 } };
-const int16_t parameter::min_wall_photo[2][5] = { { 20, 70, 1400, 130, 200 }, {
+const int16_t parameter::min_wall_photo[2][5] = { { 20, 70, 1400, 130, 1500 }, {
 		20000, 20000, 0, 0, 0 } };
 
 //0番目は探索用
@@ -29,10 +28,10 @@ const TRAPEZOID parameter::straight_run[RUN_MODE_NUMBER] = {
 //速度、角度、加速角度、前距離、後ろ距離、角加速度、最高角速度
 //小回り90°ターン
 const std::array<INIT_SLALOM, 2> right_small_half = { {
-		{ SEARCH_VELOCITY, 91.5, 30, 0.012, 0.02, 162.2157, 13.0335, 0 },
+		{ 0.25, 91.5, 30, 0.012, 0.02, 162.2157, 13.0335, 0 },
 		{ SEARCH_VELOCITY, 91, 30, 0.008, 0.016, 162.2157, 13.0335, 0 } } };
 const std::array<INIT_SLALOM, 2> left_small_half = { {
-		{ SEARCH_VELOCITY, 89.3, 30, 0.014, 0.008, 119.1789, 11.17156, 0 },
+		{ 0.25, 89.3, 30, 0.014, 0.008, 119.1789, 11.17156, 0 },
 		{ SEARCH_VELOCITY, 89.6, 30, 0.009, 0.005, 119.1789, 11.17156, 0 } } };
 
 //大まわり90°ターン
@@ -92,9 +91,8 @@ const std::array<INIT_SLALOM, 1> right_obli90_half = { {
 		{ 0.5, 90.5, 40, 0.003, 0.008, 162.5137, 15.0636, 0 },
 } };
 const std::array<INIT_SLALOM, 1> left_obli90_half = { {
-		{ 0.5, 89.5, 40, 0.005, 0.007, 162.5137, 15.0636, 0 },
+		{ 0.5, 89.5, 40, 0.003, 0.007, 162.5137, 15.0636, 0 },
 } };
-#endif
 
 float parameter::get_run_acceleration(const uint8_t _select_mode) {
 	if (_select_mode >= RUN_MODE_NUMBER) {			//存在しないモードを選択したらエラー
